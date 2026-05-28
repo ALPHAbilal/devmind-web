@@ -59,8 +59,14 @@ export default async function MissionPage({
   > | null;
   const currentCheckpointId = missionRow?.current_checkpoint_id ?? null;
 
+  const initialSessionActive = initialState?.status === "active";
+
   return (
-    <AppShell userEmail={user.email ?? "user"}>
+    <AppShell
+      userEmail={user.email ?? "user"}
+      missionId={id}
+      initialSessionActive={initialSessionActive}
+    >
       <NotebookContent
         missionId={id}
         currentCheckpointId={currentCheckpointId}

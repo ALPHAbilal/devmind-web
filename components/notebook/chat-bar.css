@@ -171,3 +171,63 @@
   background: rgba(222, 55, 48, 0.1);
   box-shadow: inset 0 0 0 1px rgba(222, 55, 48, 0.22);
 }
+
+/* Inline error toast above the input. */
+.chat-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(222, 55, 48, 0.12);
+  color: var(--accent-red);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  line-height: 1.3;
+}
+.chat-toast-retry {
+  appearance: none;
+  border: 1px solid rgba(222, 55, 48, 0.3);
+  background: transparent;
+  color: var(--accent-red);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.chat-toast-retry:hover {
+  background: rgba(222, 55, 48, 0.16);
+}
+
+/* Tiny "thinking…" indicator (three pulsing dots + label). */
+.chat-thinking {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px 0;
+  height: 14px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-family: var(--font-ui);
+}
+.chat-thinking-label { margin-left: 4px; opacity: 0.7; }
+.chat-thinking-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.35;
+  animation: chat-thinking-pulse 1200ms infinite ease-in-out;
+}
+.chat-thinking-dot:nth-child(2) { animation-delay: 150ms; }
+.chat-thinking-dot:nth-child(3) { animation-delay: 300ms; }
+@keyframes chat-thinking-pulse {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
+  40% { opacity: 1; transform: scale(1.15); }
+}
+
+.chat-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

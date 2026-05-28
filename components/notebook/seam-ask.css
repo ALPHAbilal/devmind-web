@@ -1,0 +1,132 @@
+/* ============================================================================
+ * SeamAsk — "ask between cells" affordance. Collapsed: a thin hover line with
+ * a centered "+ Ask" pill. Expanded: inline textarea + submit.
+ * Visual feel mirrors demo-notebook.html seam patterns; tokens only.
+ * ========================================================================== */
+
+.seam-ask {
+  position: relative;
+  margin: 2px 0;
+}
+
+/* Collapsed state — invisible until the row is hovered. */
+.seam-ask-collapsed {
+  height: 14px;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.seam-ask-collapsed:hover,
+.seam-ask-collapsed:focus-within {
+  opacity: 1;
+}
+
+.seam-ask-trigger {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  color: var(--accent-green-dim, var(--text-muted));
+}
+.seam-ask-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.seam-ask-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.seam-ask-icon {
+  font-size: 10px;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+.seam-ask-trigger:hover:not(:disabled) .seam-ask-icon {
+  color: var(--accent-green);
+  border-color: rgba(156, 213, 148, 0.3);
+}
+
+/* Expanded state. */
+.seam-ask-open {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 10px;
+  border: 1px solid rgba(156, 213, 148, 0.18);
+  border-radius: var(--radius-md);
+  background: rgba(156, 213, 148, 0.04);
+}
+.seam-ask-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 44px;
+  max-height: 160px;
+  padding: 6px 8px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+.seam-ask-input:focus {
+  border-color: rgba(156, 213, 148, 0.4);
+}
+.seam-ask-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.seam-ask-error {
+  margin-right: auto;
+  color: var(--accent-red);
+  font-size: 11px;
+}
+.seam-ask-btn {
+  appearance: none;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.seam-ask-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+.seam-ask-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.seam-ask-submit {
+  background: rgba(156, 213, 148, 0.12);
+  border-color: rgba(156, 213, 148, 0.3);
+  color: var(--accent-green);
+}
+.seam-ask-submit:hover:not(:disabled) {
+  background: rgba(156, 213, 148, 0.2);
+  color: var(--accent-green-bright);
+}

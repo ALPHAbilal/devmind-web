@@ -192,6 +192,26 @@
   background: transparent;
   overflow-x: auto;
 }
+.cell-code .code-body-monaco {
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+.cell-code-skeleton {
+  min-height: 80px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.cell-code .code-run-error {
+  font-size: 11px;
+  color: var(--accent-red);
+  margin-right: 8px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .cell-code .code-body code {
   font-family: inherit;
   font-size: inherit;
@@ -246,3 +266,86 @@
 .cell-output-success .cell-output-body { color: var(--accent-green); }
 .cell-output-error .cell-output-body { color: var(--accent-red); }
 .cell-output-error .cell-output-label { color: var(--accent-red); }
+
+/* ─── Output v2 (Lane L: pytest runner) ─────────────────────────────────── */
+.cell-output-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+.cell-output-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid transparent;
+}
+.cell-output-pill.pill-passed {
+  background: rgba(156, 213, 148, 0.14);
+  color: var(--accent-green);
+  border-color: rgba(156, 213, 148, 0.3);
+}
+.cell-output-pill.pill-failed {
+  background: rgba(222, 55, 48, 0.12);
+  color: var(--accent-red);
+  border-color: rgba(222, 55, 48, 0.28);
+}
+.cell-output-pill.pill-errored {
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--accent-yellow, #fbbf24);
+  border-color: rgba(251, 191, 36, 0.28);
+}
+.cell-output-pill.pill-empty {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
+}
+.cell-output-counts {
+  color: var(--text-secondary);
+}
+.cell-output-duration {
+  color: var(--text-muted);
+  font-family: var(--font-code);
+  font-size: 10px;
+  margin-left: auto;
+}
+
+/* Status-row tints when no summary parsed. */
+.cell-output-passed .cell-output-body { color: var(--accent-green); }
+.cell-output-failed .cell-output-body { color: var(--text-primary); }
+.cell-output-errored .cell-output-body { color: var(--text-primary); }
+.cell-output-empty .cell-output-body { color: var(--text-muted); }
+
+/* Yellow "hint coming" callout (1st/2nd fail). */
+.cell-output-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin: 0 0 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  color: #fbbf24;
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+.cell-output-hint::before {
+  content: "💡";
+  font-size: 12px;
+}
+
+/* Traceback highlight spans. */
+.cell-output-body .tb-file { color: var(--accent-teal); }
+.cell-output-body .tb-exc { color: var(--accent-red); font-weight: 600; }
+.cell-output-body .tb-error-line { color: #f8a4a0; }
+.cell-output-body .tb-failed { color: var(--accent-red); font-weight: 600; }
+.cell-output-body .tb-passed { color: var(--accent-green); font-weight: 600; }
