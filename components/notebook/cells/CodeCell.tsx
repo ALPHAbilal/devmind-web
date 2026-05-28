@@ -102,7 +102,7 @@ export function CodeCell({ cell }: { cell: Cell }) {
       const supabase = createClient();
       await supabase
         .from("notebook_cells")
-        .update({ content: next })
+        .update({ content: next } as never)
         .eq("id", cell.id);
     },
     [cell.id],
