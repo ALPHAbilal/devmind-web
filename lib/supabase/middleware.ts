@@ -22,6 +22,8 @@ function isPublic(pathname: string): boolean {
   if (pathname.startsWith("/_next")) return true;
   if (pathname.startsWith("/api/auth/")) return true;
   if (pathname.startsWith("/favicon")) return true;
+  // /design-test/* sub-routes (e.g. /design-test/cells)
+  if (pathname.startsWith("/design-test/")) return true;
   return false;
 }
 
