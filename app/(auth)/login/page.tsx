@@ -1,12 +1,62 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import "../auth.css";
 
+/**
+ * Wrapping LoginForm in Suspense is required by Next.js 15: useSearchParams()
+ * suspends during prerendering. Without the boundary, `next build` aborts
+ * with "useSearchParams() should be wrapped in a suspense boundary". The
+ * skeleton is the static fallback shown during prerender + initial CSR.
+ */
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginSkeleton />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginSkeleton() {
+  return (
+    <main className="theme-mission auth-page">
+      <div className="auth-card" aria-hidden="true">
+        <div className="auth-header">
+          <span className="auth-greeting">Welcome back</span>
+          <h1 className="auth-title">Sign in to DevMind</h1>
+        </div>
+        <div className="auth-form">
+          <div className="auth-field">
+            <label className="auth-label">Email</label>
+            <input
+              className="auth-input"
+              type="email"
+              disabled
+              placeholder="you@example.com"
+            />
+          </div>
+          <div className="auth-field">
+            <label className="auth-label">Password</label>
+            <input
+              className="auth-input"
+              type="password"
+              disabled
+              placeholder="••••••••"
+            />
+          </div>
+          <button type="button" className="auth-submit" disabled>
+            Loading…
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/missions/new";
