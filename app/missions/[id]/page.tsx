@@ -3,6 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/notebook/AppShell";
 import { NotebookContent } from "@/components/notebook/NotebookContent";
 import type { Cell } from "@/components/notebook/cells";
+import type { Tables } from "@/lib/supabase/types";
+
+// KNOWN TYPING MISMATCH (see app/realtime-test/page.tsx): @supabase/ssr@0.5
+// returns a 3-generic SupabaseClient while @supabase/supabase-js expects 5,
+// so chained .select()/.maybeSingle() resolve to `never`. We cast the row
+// values back to the generated Tables<> shapes — RLS still gates the read.
+type MissionRow = Tables<"missions">;
+type LearningSessionRow = Tables<"learning_sessions">;
 
 /**
  * Notebook route — SSR seeds the initial cells + session row, then
@@ -44,8 +52,12 @@ export default async function MissionPage({
   ]);
 
   const initialCells = (cellsRes.data ?? []) as Cell[];
-  const initialState = sessionRes.data ?? null;
-  const currentCheckpointId = missionRes.data?.current_checkpoint_id ?? null;
+  const initialState = (sessionRes.data ?? null) as LearningSessionRow | null;
+  const missionRow = (missionRes.data ?? null) as Pick<
+    MissionRow,
+    "current_checkpoint_id"
+  > | null;
+  const currentCheckpointId = missionRow?.current_checkpoint_id ?? null;
 
   return (
     <AppShell userEmail={user.email ?? "user"}>
