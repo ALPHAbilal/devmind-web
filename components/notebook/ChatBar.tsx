@@ -8,6 +8,7 @@ import {
 } from "react";
 import { SendIcon, ThreadIcon } from "@/components/sidebar/icons";
 import { useNotebook } from "./NotebookProvider";
+import { StuckButton } from "./StuckButton";
 import "./chat-bar.css";
 
 type ChatMode = "chat" | "error";
@@ -189,6 +190,8 @@ export function ChatBar() {
               <span className="chat-mode-option-icon">⚠</span> Error
             </button>
           </div>
+
+          <StuckButton />
         </div>
 
         <button

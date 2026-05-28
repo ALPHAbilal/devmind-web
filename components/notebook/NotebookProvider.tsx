@@ -9,6 +9,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { Tables } from "@/lib/supabase/types";
+
+export type Puzzle = Tables<"puzzles">;
 
 interface NotebookContextValue {
   missionId: string;
@@ -23,6 +26,12 @@ interface NotebookContextValue {
   endThinking: () => void;
   /** NotebookContent calls this on cell/thread-message INSERT to settle the spinner. */
   notifyAgentReply: () => void;
+  /** Latest puzzle row for this mission (any status). NotebookContent owns it. */
+  puzzle: Puzzle | null;
+  setPuzzle: (p: Puzzle | null) => void;
+  /** mc_id of the current in-progress micro-challenge, derived from session.state_json. */
+  currentMicroChallengeId: string | null;
+  setCurrentMicroChallengeId: (id: string | null) => void;
 }
 
 const NotebookContext = createContext<NotebookContextValue | null>(null);
@@ -38,6 +47,10 @@ export function NotebookProvider({
 }) {
   const [sessionActive, setSessionActive] = useState(initialSessionActive);
   const [thinking, setThinking] = useState(false);
+  const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
+  const [currentMicroChallengeId, setCurrentMicroChallengeId] = useState<
+    string | null
+  >(null);
   // Tracks the moment thinking started so that pre-existing cells don't
   // race-clear the spinner (e.g. SSR seed events).
   const thinkingSinceRef = useRef<number>(0);
@@ -69,8 +82,21 @@ export function NotebookProvider({
       beginThinking,
       endThinking,
       notifyAgentReply,
+      puzzle,
+      setPuzzle,
+      currentMicroChallengeId,
+      setCurrentMicroChallengeId,
     }),
-    [missionId, sessionActive, thinking, beginThinking, endThinking, notifyAgentReply],
+    [
+      missionId,
+      sessionActive,
+      thinking,
+      beginThinking,
+      endThinking,
+      notifyAgentReply,
+      puzzle,
+      currentMicroChallengeId,
+    ],
   );
 
   return (

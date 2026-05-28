@@ -16,7 +16,8 @@ import { CellRenderer, type CellMeta } from "./cells";
 import type { Cell } from "./cells";
 import { SeamAsk } from "./SeamAsk";
 import { Thread } from "./Thread";
-import { useNotebook } from "./NotebookProvider";
+import { useNotebook, type Puzzle } from "./NotebookProvider";
+import { PuzzlePane } from "@/components/puzzle/PuzzlePane";
 import type { Tables } from "@/lib/supabase/types";
 
 type LearningSession = Tables<"learning_sessions">;
@@ -48,7 +49,13 @@ export function NotebookContent({
   initialCells,
   initialState,
 }: NotebookContentProps) {
-  const { setSessionActive, notifyAgentReply } = useNotebook();
+  const {
+    setSessionActive,
+    notifyAgentReply,
+    puzzle,
+    setPuzzle,
+    setCurrentMicroChallengeId,
+  } = useNotebook();
 
   const [cells, setCells] = useState<Cell[]>(initialCells);
   const [session, setSession] = useState<LearningSession | null>(initialState);
@@ -115,6 +122,53 @@ export function NotebookContent({
     onSessionChange,
     [missionId],
   );
+
+  const onPuzzleChange = useCallback(
+    (payload: RealtimeChangePayload<Puzzle>) => {
+      if (payload.eventType === "DELETE") {
+        setPuzzle(null);
+        return;
+      }
+      setPuzzle(payload.new);
+    },
+    [setPuzzle],
+  );
+
+  useRealtimeChannel<Puzzle>(
+    "puzzles",
+    { filter: { column: "mission_id", value: missionId } },
+    onPuzzleChange,
+    [missionId],
+  );
+
+  // Derive current micro-challenge id from session.state_json so StuckButton
+  // can pass it to /api/puzzle/open without an extra round-trip. Picks the
+  // first non-passed micro within the active checkpoint.
+  useEffect(() => {
+    const state = session?.state_json as
+      | {
+          current_checkpoint_id?: string | null;
+          checkpoints?: Record<
+            string,
+            {
+              micro_challenges?: Record<string, { status?: string }>;
+            }
+          >;
+        }
+      | null
+      | undefined;
+    const ckId = state?.current_checkpoint_id ?? null;
+    if (!ckId) {
+      setCurrentMicroChallengeId(null);
+      return;
+    }
+    const micros = state?.checkpoints?.[ckId]?.micro_challenges ?? {};
+    const next =
+      Object.entries(micros).find(([, mc]) => mc?.status !== "passed")?.[0] ??
+      Object.keys(micros)[0] ??
+      null;
+    setCurrentMicroChallengeId(next);
+  }, [session?.state_json, setCurrentMicroChallengeId]);
 
   const orderedCells = useMemo(
     () => [...cells].sort((a, b) => a.ord - b.ord),
@@ -224,6 +278,7 @@ export function NotebookContent({
           ))
         )}
       </div>
+      {puzzle ? <PuzzlePane puzzle={puzzle} /> : null}
     </div>
   );
 }
