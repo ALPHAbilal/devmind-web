@@ -1,0 +1,137 @@
+/* ============================================================================
+ * /login + /signup — shared styles. All tokens from .theme-mission.
+ * Mirrors the wizard's centered, ceremonial feel from demo-mission-creation.
+ * ========================================================================== */
+
+.auth-page {
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.auth-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-greeting {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.auth-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-quaternary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.auth-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-medium);
+  padding: 12px 0;
+  font-size: 16px;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+.auth-input::placeholder {
+  color: var(--text-quaternary);
+}
+.auth-input:focus {
+  border-color: var(--accent-green);
+}
+.auth-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-error {
+  background: var(--accent-red-soft);
+  border: 1px solid var(--accent-red-border);
+  color: var(--accent-red);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.auth-submit {
+  margin-top: 8px;
+  background: var(--accent-green);
+  border: none;
+  color: var(--bg-base);
+  padding: 14px 28px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.auth-submit:hover:not(:disabled) {
+  background: #a8dda1; /* §1.1 inline btn-primary hover value */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(156, 213, 148, 0.3);
+}
+.auth-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-switch {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.auth-switch a {
+  color: var(--accent-green);
+  font-weight: 500;
+  transition: opacity var(--transition-fast);
+}
+.auth-switch a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}

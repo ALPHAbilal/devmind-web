@@ -1,0 +1,224 @@
+/* ============================================================================
+ * Wizard outer layout. Tokens from .theme-mission.
+ * Source: demo-mission-creation.html lines 67–162, 640–702, 852–874.
+ * ========================================================================== */
+
+.wizard-page {
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 48px 32px;
+}
+
+.wizard-step {
+  width: 100%;
+  max-width: 540px;
+  animation: fadeUp 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Content blocks shared across steps ───────────────────────────────── */
+
+.wizard-content {
+  text-align: center;
+}
+
+.wizard-greeting {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+  font-weight: 400;
+}
+
+.wizard-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: 40px;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.wizard-input-wrap {
+  position: relative;
+  margin-bottom: 48px;
+}
+
+.wizard-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-medium);
+  padding: 16px 0;
+  font-size: 18px;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--transition-fast);
+  text-align: center;
+}
+.wizard-input::placeholder {
+  color: var(--text-quaternary);
+}
+.wizard-input:focus {
+  border-color: var(--accent-green);
+}
+
+/* ─── Buttons ──────────────────────────────────────────────────────────── */
+
+.wizard-action-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 40px;
+}
+
+.wizard-btn-primary {
+  flex: 1;
+  background: var(--accent-green);
+  border: none;
+  color: var(--bg-base);
+  padding: 14px 28px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.wizard-btn-primary:hover:not(:disabled) {
+  background: #a8dda1; /* demo-only btn-primary hover hex */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(156, 213, 148, 0.3);
+}
+.wizard-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.wizard-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border-medium);
+  color: var(--text-secondary);
+  padding: 14px 24px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.wizard-btn-secondary:hover {
+  background: var(--bg-interactive);
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+.wizard-skip-link {
+  display: block;
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-quaternary);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  width: 100%;
+}
+.wizard-skip-link:hover {
+  color: var(--text-tertiary);
+}
+
+/* ─── User context pill (shown on Step 2) ──────────────────────────────── */
+
+.wizard-user-context {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+  padding: 12px 20px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-full);
+}
+
+.wizard-user-context-text {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.wizard-user-context-text strong {
+  color: var(--text-secondary);
+}
+
+.wizard-edit-btn {
+  background: none;
+  border: none;
+  color: var(--accent-green);
+  font-size: 12px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  font-weight: 500;
+  opacity: 0.8;
+  transition: opacity var(--transition-fast);
+}
+.wizard-edit-btn:hover {
+  opacity: 1;
+}
+
+/* ─── Generating overlay (Step 4 pre-render) ───────────────────────────── */
+
+.wizard-generating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 48px;
+}
+
+.wizard-gen-spinner {
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--bg-interactive);
+  border-top-color: var(--accent-green);
+  border-radius: var(--radius-full);
+  animation: spin 800ms linear infinite;
+}
+
+.wizard-gen-text {
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.wizard-gen-sub {
+  font-size: 13px;
+  color: var(--text-quaternary);
+}
+
+@media (max-width: 640px) {
+  .wizard-page {
+    padding: 32px 20px;
+  }
+  .wizard-title {
+    font-size: 26px;
+  }
+}

@@ -1,0 +1,241 @@
+/* ============================================================================
+ * Step 3 — Shape your mission. Time chips + goal cards + tag input +
+ * custom constraint textarea.
+ * Source: demo-mission-creation.html lines 438–638.
+ * ========================================================================== */
+
+.constraints-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.constraints-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  font-weight: 400;
+}
+
+.constraints-subtitle {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}
+
+.constraint-section {
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.constraint-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-quaternary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.constraint-label-icon {
+  font-size: 13px;
+}
+
+/* ─── Time chips ───────────────────────────────────────────────────────── */
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-weight: 500;
+}
+
+.chip:hover {
+  background: var(--bg-interactive);
+  border-color: var(--border-medium);
+}
+
+.chip.is-selected {
+  background: var(--accent-green-soft);
+  border-color: var(--accent-green-border);
+  color: var(--accent-green);
+}
+
+/* ─── Goal cards ───────────────────────────────────────────────────────── */
+
+.goal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.goal-card {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: left;
+  color: inherit;
+  font-family: inherit;
+  width: 100%;
+}
+
+.goal-card:hover {
+  background: var(--bg-interactive);
+  border-color: var(--border-medium);
+}
+
+.goal-card.is-selected {
+  border-color: var(--accent-green-border);
+  background: var(--accent-green-soft);
+}
+
+.goal-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.goal-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.goal-desc {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .goal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Tag input ────────────────────────────────────────────────────────── */
+
+.tag-input-wrap {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 48px;
+  transition: border-color var(--transition-fast);
+  cursor: text;
+}
+
+.tag-input-wrap:focus-within {
+  border-color: var(--accent-green-border);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-interactive);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  color: var(--text-quaternary);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  transition: color var(--transition-fast);
+}
+.tag-remove:hover {
+  color: var(--accent-red);
+}
+
+.tag-input {
+  flex: 1;
+  min-width: 100px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-body);
+  outline: none;
+}
+.tag-input::placeholder {
+  color: var(--text-quaternary);
+}
+
+.tag-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.tag-suggestion {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px dashed var(--border-medium);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-family: var(--font-body);
+  color: var(--text-quaternary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tag-suggestion:hover {
+  color: var(--text-secondary);
+  border-color: var(--text-quaternary);
+}
+
+/* ─── Custom constraint textarea ───────────────────────────────────────── */
+
+.custom-input {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  outline: none;
+  resize: none;
+  min-height: 44px;
+  max-height: 100px;
+  line-height: 1.5;
+  transition: border-color var(--transition-fast);
+}
+.custom-input::placeholder {
+  color: var(--text-quaternary);
+}
+.custom-input:focus {
+  border-color: var(--accent-green-border);
+}

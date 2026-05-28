@@ -1,0 +1,173 @@
+/* ============================================================================
+ * ChatBar — floating pill at bottom of main area.
+ * Source: demo-notebook.html lines 384–536 (verbatim values).
+ * ========================================================================== */
+
+.chat-bar {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 64px);
+  max-width: 480px;
+  background: rgba(30, 40, 28, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(156, 213, 148, 0.12);
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 6px 6px 5px;
+  gap: 3px;
+  z-index: 20;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: border-color 250ms ease, box-shadow 250ms ease;
+}
+.chat-bar:focus-within {
+  border-color: rgba(156, 213, 148, 0.28);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35),
+    0 0 24px rgba(156, 213, 148, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.chat-input-wrap {
+  width: 100%;
+  min-width: 0;
+}
+
+.chat-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 6px 8px 4px;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  outline: none;
+  resize: none;
+  overflow-y: hidden;
+  min-height: 30px;
+  max-height: 120px;
+  line-height: 1.5;
+  display: block;
+}
+.chat-input::placeholder {
+  color: var(--text-disabled);
+  letter-spacing: 0.01em;
+}
+.chat-input.scrollable {
+  overflow-y: auto;
+}
+
+.chat-bottom-rail {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  gap: 4px;
+}
+.chat-bottom-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Send button (right-side, circle) */
+.chat-send {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-disabled);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 200ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chat-send:hover:not(:disabled) {
+  color: var(--accent-green);
+  background: rgba(156, 213, 148, 0.1);
+}
+.chat-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.chat-send svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Thread picker (left side) */
+.chat-thread-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: var(--text-disabled);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 200ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chat-thread-btn:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+}
+.chat-thread-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Segmented mode toggle (chat | error) — derived from demo's chat-mode-toggle
+   styling but rendered as two side-by-side buttons inside a track for a true
+   segmented control. Tokens-only. */
+.chat-mode-segmented {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 999px;
+  padding: 2px;
+  flex-shrink: 0;
+}
+.chat-mode-option {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1;
+}
+.chat-mode-option:hover {
+  color: var(--text-secondary);
+}
+.chat-mode-option .chat-mode-option-icon {
+  font-size: 11px;
+  line-height: 1;
+}
+.chat-mode-option.is-active.mode-chat {
+  color: var(--accent-green-dim);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(156, 213, 148, 0.12);
+}
+.chat-mode-option.is-active.mode-error {
+  color: var(--accent-red);
+  background: rgba(222, 55, 48, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(222, 55, 48, 0.22);
+}

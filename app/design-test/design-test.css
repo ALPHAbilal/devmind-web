@@ -1,0 +1,258 @@
+/* ============================================================================
+ * /design-test — visual verifier for DESIGN_TOKENS.md
+ *
+ * Side-by-side with demo-mission-creation.html and demo-notebook.html,
+ * every swatch / type sample / radius / brand mark on this page should look
+ * identical to what those demos render.
+ * ========================================================================== */
+
+.dt-page {
+  /* body is overflow:hidden globally (demos are full-screen apps), so .dt-page
+     is the scroll container for this verifier route. */
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.dt-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 32px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.dt-toolbar-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #b8bdb2);
+}
+
+.dt-toolbar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.14));
+  background: transparent;
+  color: var(--text-primary, #f4f5f2);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.dt-toolbar-toggle:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--accent-green-border, rgba(156, 213, 148, 0.25));
+}
+.dt-toolbar-toggle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green, #9cd594);
+  box-shadow: 0 0 6px rgba(156, 213, 148, 0.5);
+}
+
+.dt-content {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dt-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted, var(--text-tertiary, #7d8477));
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+/* ─── Swatch grid ────────────────────────────────────────────────────────── */
+.dt-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.dt-swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.dt-swatch-chip {
+  height: 80px;
+  width: 100%;
+}
+
+.dt-swatch-meta {
+  padding: 10px 12px;
+  background: var(--bg-subtle, var(--bg-surface, #22261f));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dt-swatch-name {
+  font-family: var(--font-code, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--text-primary, #f4f5f2);
+}
+.dt-swatch-value {
+  font-family: var(--font-code, ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--text-tertiary, var(--text-disabled, #7d8477));
+}
+
+/* Make text-* swatches show as a glyph on the surface background */
+.dt-text-swatch {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 600;
+  background: var(--bg-base, var(--bg-app, #1a1d18));
+}
+
+/* ─── Typography samples ─────────────────────────────────────────────────── */
+.dt-type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.dt-type-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 24px;
+  align-items: baseline;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+.dt-type-label {
+  font-family: var(--font-code, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--text-tertiary, var(--text-muted, #7d8477));
+  line-height: 1.4;
+}
+
+.dt-type-sample {
+  color: var(--text-primary, #f4f5f2);
+}
+
+/* ─── Radii grid ─────────────────────────────────────────────────────────── */
+.dt-radius-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 16px;
+}
+
+.dt-radius-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.dt-radius-shape {
+  width: 96px;
+  height: 96px;
+  background: var(--bg-elevated, #2a2f26);
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.14));
+}
+.dt-radius-shape.full {
+  width: 96px;
+  height: 48px;
+}
+.dt-radius-name {
+  font-family: var(--font-code, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--text-secondary, #baccb3);
+}
+.dt-radius-value {
+  font-family: var(--font-code, ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--text-tertiary, var(--text-disabled, #7d8477));
+}
+
+/* ─── Brand mark ─────────────────────────────────────────────────────────── */
+.dt-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+  background: var(--bg-subtle, var(--bg-surface, #22261f));
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+.dt-brand-mission {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(145deg, #7bc474, #4a8a44);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(74, 138, 68, 0.3);
+}
+.dt-brand-mission svg {
+  width: 16px;
+  height: 16px;
+}
+
+.dt-brand-notebook {
+  width: 28px;
+  height: 28px;
+  background: radial-gradient(
+    circle at 30% 30%,
+    #83cc7c,
+    #4e924a 55%,
+    #3a7136
+  );
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(58, 113, 54, 0.35),
+    0 3px 10px rgba(58, 113, 54, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.dt-brand-notebook svg {
+  width: 14px;
+  height: 14px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+}
+
+.dt-brand-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dt-brand-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #f4f5f2);
+}
+.dt-brand-desc {
+  font-size: 12px;
+  color: var(--text-tertiary, var(--text-muted, #7d8477));
+}
