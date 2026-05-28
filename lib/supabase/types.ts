@@ -425,7 +425,7 @@ export type Database = {
       message_role: "user" | "assistant"
       mission_goal: "build" | "understand" | "interview" | "work"
       mission_level: "beginner" | "intermediate" | "advanced"
-      mission_status: "draft" | "in_progress" | "completed" | "abandoned"
+      mission_status: "draft" | "in_progress" | "completed" | "abandoned" | "generating" | "failed"
       puzzle_status: "active" | "completed" | "abandoned"
       puzzle_step: "framing" | "hypothesis" | "try_it" | "fix" | "generalize"
       session_status: "active" | "paused" | "completed"
@@ -562,7 +562,7 @@ export const Constants = {
       message_role: ["user", "assistant"],
       mission_goal: ["build", "understand", "interview", "work"],
       mission_level: ["beginner", "intermediate", "advanced"],
-      mission_status: ["draft", "in_progress", "completed", "abandoned"],
+      mission_status: ["draft", "in_progress", "completed", "abandoned", "generating", "failed"],
       puzzle_status: ["active", "completed", "abandoned"],
       puzzle_step: ["framing", "hypothesis", "try_it", "fix", "generalize"],
       session_status: ["active", "paused", "completed"],

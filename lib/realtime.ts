@@ -13,7 +13,8 @@ export type RealtimeTable =
   | "notebook_cells"
   | "learning_sessions"
   | "thread_messages"
-  | "puzzles";
+  | "puzzles"
+  | "missions";
 
 export type RealtimeEventType = "INSERT" | "UPDATE" | "DELETE";
 

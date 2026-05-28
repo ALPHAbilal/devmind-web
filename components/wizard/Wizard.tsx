@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import "./wizard.css";
+import { useRealtimeChannel } from "@/lib/realtime";
+import type { Database } from "@/lib/supabase/types";
 import { StepIndicator } from "./StepIndicator";
 import { StepTopic } from "./StepTopic";
 import { StepLevel } from "./StepLevel";
@@ -20,6 +22,20 @@ import {
 } from "./types";
 
 const MOCK_DELAY_MS = 1500;
+
+/** No terminal Realtime update within this window → surface a timeout error. */
+const GEN_TIMEOUT_MS = 120_000;
+
+/** Subset of the `missions` row we read off the Realtime payload. */
+type MissionRow = Pick<
+  Database["public"]["Tables"]["missions"]["Row"],
+  "id" | "status" | "spec_json"
+>;
+
+/** Shape the backend writes into spec_json on failure. */
+type MissionFailureSpec = {
+  error?: { code?: string; message?: string; errors?: string[] };
+};
 
 /**
  * Wizard orchestrator. All state lives here as a single `WizardState`.
@@ -70,6 +86,75 @@ export function Wizard({ userEmail }: WizardProps) {
   const [isLaunching, setIsLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<LaunchError | null>(null);
 
+  // mission_id returned by the 202; we subscribe to its row for the result.
+  const [pendingMissionId, setPendingMissionId] = useState<string | null>(null);
+
+  // Latest wizard inputs + attempt, so the Realtime callback can transparently
+  // retry once on a validation failure without going stale across renders.
+  const genCtxRef = useRef<{
+    state: WizardState;
+    exclude: string[];
+    attempt: number;
+  } | null>(null);
+
+  // Client-side timeout: if no draft/failed update lands, stop the spinner.
+  const genTimeoutRef = useRef<number | null>(null);
+
+  function clearGenTimeout() {
+    if (genTimeoutRef.current !== null) {
+      window.clearTimeout(genTimeoutRef.current);
+      genTimeoutRef.current = null;
+    }
+  }
+
+  useEffect(() => clearGenTimeout, []);
+
+  // Subscribe to the pending mission row. With an empty value the filter is
+  // `id=eq.` which matches nothing — harmless until a generation starts.
+  useRealtimeChannel<MissionRow>(
+    "missions",
+    { filter: { column: "id", value: pendingMissionId ?? "" } },
+    (payload) => {
+      if (payload.eventType !== "UPDATE") return;
+      const row = payload.new;
+      if (!row || (row.status !== "draft" && row.status !== "failed")) return;
+
+      clearGenTimeout();
+
+      if (row.status === "draft") {
+        const spec = row.spec_json as unknown as MissionSpec;
+        if (!spec.mission_id) spec.mission_id = row.id;
+        setMission(spec);
+        setError(null);
+        setGenerating(false);
+        setPendingMissionId(null);
+        return;
+      }
+
+      // status === "failed"
+      const fail = (row.spec_json as MissionFailureSpec | null)?.error;
+      const ctx = genCtxRef.current;
+      if (fail?.code === "validation_failed" && ctx && ctx.attempt === 1) {
+        // Transparent single retry on validation failure.
+        setPendingMissionId(null);
+        runGeneration(ctx.state, ctx.exclude, 2);
+        return;
+      }
+      setError({
+        kind: fail?.code === "validation_failed" ? "validation" : "server",
+        message:
+          fail?.message ??
+          (fail?.code === "validation_failed"
+            ? "We couldn't generate a mission. Try a different topic or simpler constraints."
+            : "Something went wrong generating your mission."),
+        attempt: ctx?.attempt ?? 1,
+      });
+      setGenerating(false);
+      setPendingMissionId(null);
+    },
+    [pendingMissionId],
+  );
+
   function patch<K extends keyof WizardState>(key: K, value: WizardState[K]) {
     setState((s) => ({ ...s, [key]: value }));
   }
@@ -108,7 +193,14 @@ export function Wizard({ userEmail }: WizardProps) {
 
   async function callGenerate(
     payload: GeneratePayload,
-  ): Promise<{ status: number; body: { mission?: MissionSpec; error?: { code: string; message: string } } }> {
+  ): Promise<{
+    status: number;
+    body: {
+      mission_id?: string;
+      status?: string;
+      error?: { code?: string; message?: string };
+    };
+  }> {
     const res = await fetch("/api/missions/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -119,10 +211,13 @@ export function Wizard({ userEmail }: WizardProps) {
   }
 
   async function runGeneration(s: WizardState, exclude: string[], attempt = 1) {
+    clearGenTimeout();
     setGenerating(true);
     setMission(null);
     setError(null);
+    setPendingMissionId(null);
     setExcludeVariants(exclude);
+    genCtxRef.current = { state: s, exclude, attempt };
 
     if (isMockMode()) {
       window.setTimeout(() => {
@@ -136,25 +231,26 @@ export function Wizard({ userEmail }: WizardProps) {
       const payload = buildPayload(s, exclude);
       const { status, body } = await callGenerate(payload);
 
-      if (status === 200 && body.mission) {
-        setMission(body.mission);
-        setGenerating(false);
+      // New async contract: 202 + { mission_id, status: "generating" }.
+      // The result arrives later via the Realtime subscription on this row.
+      if (status === 202 && body.mission_id) {
+        genTimeoutRef.current = window.setTimeout(() => {
+          genTimeoutRef.current = null;
+          setError({
+            kind: "server",
+            message:
+              "Mission generation is taking longer than expected. Please try again.",
+            attempt,
+          });
+          setGenerating(false);
+          setPendingMissionId(null);
+        }, GEN_TIMEOUT_MS);
+        setPendingMissionId(body.mission_id);
         return;
       }
 
-      if (status === 422) {
-        // 4.5 — auto-retry once on validation failure.
-        if (attempt === 1) {
-          await runGeneration(s, exclude, 2);
-          return;
-        }
-        setError({
-          kind: "validation",
-          message:
-            "We couldn't generate a mission. Try a different topic or simpler constraints.",
-          attempt,
-        });
-      } else if (status === 401) {
+      // The POST itself can still fail synchronously (auth / upstream).
+      if (status === 401) {
         setError({
           kind: "auth",
           message: "Your session expired. Please sign in again.",
@@ -168,13 +264,13 @@ export function Wizard({ userEmail }: WizardProps) {
           attempt,
         });
       }
+      setGenerating(false);
     } catch {
       setError({
         kind: "network",
         message: "Couldn't reach the server. Check your connection and try again.",
         attempt,
       });
-    } finally {
       setGenerating(false);
     }
   }
