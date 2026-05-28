@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/notebook/AppShell";
+import { NotebookContent } from "@/components/notebook/NotebookContent";
+import type { Cell } from "@/components/notebook/cells";
 
 /**
- * Notebook route. For Phase 3.4 this is shell-only: auth gate + AppShell with
- * a placeholder content area. Real notebook rendering arrives in Phase 5.6;
- * the mission ID in the URL is currently unused.
+ * Notebook route — SSR seeds the initial cells + session row, then
+ * NotebookContent attaches Realtime subscriptions on the client. RLS gates
+ * both reads; a non-owner sees an empty notebook rather than a 403.
  */
 export default async function MissionPage({
   params,
@@ -19,25 +21,40 @@ export default async function MissionPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Middleware already redirects unauthenticated visitors, but a Server
-  // Component should never trust upstream guards alone.
   if (!user) {
     redirect(`/login?next=/missions/${id}`);
   }
 
+  const [cellsRes, sessionRes, missionRes] = await Promise.all([
+    supabase
+      .from("notebook_cells")
+      .select("*")
+      .eq("mission_id", id)
+      .order("ord", { ascending: true }),
+    supabase
+      .from("learning_sessions")
+      .select("*")
+      .eq("mission_id", id)
+      .maybeSingle(),
+    supabase
+      .from("missions")
+      .select("current_checkpoint_id")
+      .eq("id", id)
+      .maybeSingle(),
+  ]);
+
+  const initialCells = (cellsRes.data ?? []) as Cell[];
+  const initialState = sessionRes.data ?? null;
+  const currentCheckpointId = missionRes.data?.current_checkpoint_id ?? null;
+
   return (
     <AppShell userEmail={user.email ?? "user"}>
-      <div className="app-shell-placeholder">
-        <h1>Notebook content loads here</h1>
-        <p>
-          Phase 5.6 fills this region with the real cell renderer driven by
-          Supabase Realtime on <code>notebook_cells</code>. For now the shell
-          (sidebar rail, slide-over panel, floating chat bar) is the spec.
-        </p>
-        <p>
-          Mission id: <code>{id}</code>
-        </p>
-      </div>
+      <NotebookContent
+        missionId={id}
+        currentCheckpointId={currentCheckpointId}
+        initialCells={initialCells}
+        initialState={initialState}
+      />
     </AppShell>
   );
 }

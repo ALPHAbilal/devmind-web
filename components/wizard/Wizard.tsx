@@ -7,7 +7,7 @@ import { StepTopic } from "./StepTopic";
 import { StepLevel } from "./StepLevel";
 import { StepShape } from "./StepShape";
 import { StepPreview } from "./StepPreview";
-import { buildMockMission, variantIdOf } from "./mock";
+import { buildMockMission } from "./mock";
 import {
   INITIAL_STATE,
   type GeneratePayload,
@@ -21,16 +21,37 @@ import {
 const MOCK_DELAY_MS = 1500;
 
 /**
- * Wizard orchestrator. All state lives here as a single `WizardState` object
- * (chose useState over useReducer — the 4 transitions are simple enough that
- * a reducer would just be ceremony). Each step component owns its own
- * scratch state internally and reports up through narrow callbacks.
+ * Wizard orchestrator. All state lives here as a single `WizardState`.
  *
- * fadeUp animation is applied via `key={step}` on the .wizard-step wrapper,
- * which forces a remount on every step change.
+ * Step 4 calls `POST /api/missions/generate` (Vercel proxy → Fly HMAC →
+ * Opus). The wizard never talks to Fly directly. The mock generator stays
+ * in tree behind `?mock=true` for offline dev.
  */
 interface WizardProps {
   userEmail: string;
+}
+
+type GenError = {
+  kind: "validation" | "network" | "auth" | "server";
+  message: string;
+  attempt: number;
+};
+
+function isMockMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("mock") === "true";
+}
+
+function buildPayload(s: WizardState, exclude: string[]): GeneratePayload {
+  return {
+    topic: s.topic,
+    level: s.level ?? "beginner",
+    time_budget_minutes: s.time,
+    goal: s.goal ?? "understand",
+    known: s.known,
+    constraints: s.customConstraint ? [s.customConstraint] : [],
+    exclude_variants: exclude,
+  };
 }
 
 export function Wizard({ userEmail }: WizardProps) {
@@ -38,23 +59,21 @@ export function Wizard({ userEmail }: WizardProps) {
   const [generating, setGenerating] = useState(false);
   const [mission, setMission] = useState<MissionSpec | null>(null);
   const [excludeVariants, setExcludeVariants] = useState<string[]>([]);
+  const [error, setError] = useState<GenError | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
 
   function patch<K extends keyof WizardState>(key: K, value: WizardState[K]) {
     setState((s) => ({ ...s, [key]: value }));
   }
 
-  /* ── Step 1 → Step 2 ────────────────────────────────────────────────── */
   function handleTopicPick(topic: string) {
     setState((s) => ({ ...s, topic, step: 2 }));
   }
 
-  /* ── Step 2 → Step 3 ────────────────────────────────────────────────── */
   function handleLevelPick(level: MissionLevel) {
     setState((s) => ({ ...s, level, step: 3 }));
   }
 
-  /* ── Step 3 → Step 4 (mocked) ───────────────────────────────────────── */
   function handleShapeCommit(next: {
     time: TimeChipValue;
     goal: MissionGoal | null;
@@ -70,57 +89,109 @@ export function Wizard({ userEmail }: WizardProps) {
       step: 4,
     };
     setState(updated);
-    runMockGeneration(updated, []);
+    runGeneration(updated, []);
   }
 
   function handleShapeSkip() {
     const updated: WizardState = { ...state, step: 4 };
     setState(updated);
-    runMockGeneration(updated, []);
+    runGeneration(updated, []);
   }
 
-  function runMockGeneration(s: WizardState, exclude: string[]) {
+  async function callGenerate(
+    payload: GeneratePayload,
+  ): Promise<{ status: number; body: { mission?: MissionSpec; error?: { code: string; message: string } } }> {
+    const res = await fetch("/api/missions/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const body = await res.json().catch(() => ({}));
+    return { status: res.status, body };
+  }
+
+  async function runGeneration(s: WizardState, exclude: string[], attempt = 1) {
     setGenerating(true);
     setMission(null);
+    setError(null);
     setExcludeVariants(exclude);
-    window.setTimeout(() => {
-      const spec = buildMockMission(s, exclude);
-      setMission(spec);
+
+    if (isMockMode()) {
+      window.setTimeout(() => {
+        setMission(buildMockMission(s, exclude));
+        setGenerating(false);
+      }, MOCK_DELAY_MS);
+      return;
+    }
+
+    try {
+      const payload = buildPayload(s, exclude);
+      const { status, body } = await callGenerate(payload);
+
+      if (status === 200 && body.mission) {
+        setMission(body.mission);
+        setGenerating(false);
+        return;
+      }
+
+      if (status === 422) {
+        // 4.5 — auto-retry once on validation failure.
+        if (attempt === 1) {
+          await runGeneration(s, exclude, 2);
+          return;
+        }
+        setError({
+          kind: "validation",
+          message:
+            "We couldn't generate a mission. Try a different topic or simpler constraints.",
+          attempt,
+        });
+      } else if (status === 401) {
+        setError({
+          kind: "auth",
+          message: "Your session expired. Please sign in again.",
+          attempt,
+        });
+      } else {
+        setError({
+          kind: "server",
+          message:
+            body.error?.message ?? "Something went wrong generating your mission.",
+          attempt,
+        });
+      }
+    } catch {
+      setError({
+        kind: "network",
+        message: "Couldn't reach the server. Check your connection and try again.",
+        attempt,
+      });
+    } finally {
       setGenerating(false);
-    }, MOCK_DELAY_MS);
+    }
   }
 
-  /* ── Step 4 actions ─────────────────────────────────────────────────── */
+  function handleRetry() {
+    runGeneration(state, excludeVariants, 1);
+  }
+
   function handleLaunch() {
-    if (!mission || !state.level || !state.goal) return;
-
-    const payload: GeneratePayload = {
-      topic: state.topic,
-      level: state.level,
-      time_budget_minutes: state.time,
-      goal: state.goal,
-      known: state.known,
-      constraints: state.customConstraint ? [state.customConstraint] : [],
-      exclude_variants: excludeVariants,
-    };
-
-    // Real POST lands in Phase 4.2 / launch in 5.5. For now: just log.
+    if (!mission) return;
+    // TODO Phase 5.5 — POST /api/missions/[id]/start
     // eslint-disable-next-line no-console
-    console.log("[Wizard.launch] payload (POST /api/missions/generate):", payload);
-    // eslint-disable-next-line no-console
-    console.log("[Wizard.launch] mission (mocked MissionSpec):", mission);
-
+    console.log("[Wizard.launch] mission:", mission);
     setIsLaunching(true);
     window.setTimeout(() => setIsLaunching(false), 1500);
   }
 
   function handleDifferent() {
     if (!mission) return;
-    const justSaw = variantIdOf(mission);
-    runMockGeneration(state, [...excludeVariants, justSaw]);
+    const checkpointIds = mission.checkpoints.map((cp) => cp.id);
+    runGeneration(state, [...excludeVariants, ...checkpointIds], 1);
   }
 
-  /* ── Render ──────────────────────────────────────────────────────────── */
+  const showSpinner = generating || (!mission && !error);
+
   return (
     <div className="wizard-step" key={state.step}>
       <StepIndicator current={state.step} />
@@ -154,23 +225,41 @@ export function Wizard({ userEmail }: WizardProps) {
         />
       )}
 
-      {state.step === 4 &&
-        (generating || !mission ? (
-          <div className="wizard-generating">
-            <div className="wizard-gen-spinner" />
-            <div className="wizard-gen-text">Crafting your mission…</div>
-            <div className="wizard-gen-sub">
-              Fitting your constraints, level, and goals into a personalized path
+      {state.step === 4 && (
+        <>
+          {showSpinner && (
+            <div className="wizard-generating">
+              <div className="wizard-gen-spinner" />
+              <div className="wizard-gen-text">Crafting your mission…</div>
+              <div className="wizard-gen-sub">
+                Fitting your constraints, level, and goals into a personalized path.
+                This can take 30–60 seconds.
+              </div>
             </div>
-          </div>
-        ) : (
-          <StepPreview
-            mission={mission}
-            isLaunching={isLaunching}
-            onLaunch={handleLaunch}
-            onDifferent={handleDifferent}
-          />
-        ))}
+          )}
+          {!showSpinner && error && (
+            <div className="wizard-error" role="alert">
+              <div className="wizard-error-title">Mission generation failed</div>
+              <div className="wizard-error-msg">{error.message}</div>
+              <button
+                type="button"
+                className="wizard-btn-primary"
+                onClick={handleRetry}
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+          {!showSpinner && mission && !error && (
+            <StepPreview
+              mission={mission}
+              isLaunching={isLaunching}
+              onLaunch={handleLaunch}
+              onDifferent={handleDifferent}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }
