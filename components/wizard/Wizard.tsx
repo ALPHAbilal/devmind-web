@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import "./wizard.css";
 import { StepIndicator } from "./StepIndicator";
 import { StepTopic } from "./StepTopic";
@@ -37,6 +38,11 @@ type GenError = {
   attempt: number;
 };
 
+type LaunchError = {
+  kind: "bridge_timeout" | "auth" | "network" | "server";
+  message: string;
+};
+
 function isMockMode(): boolean {
   if (typeof window === "undefined") return false;
   return new URLSearchParams(window.location.search).get("mock") === "true";
@@ -55,12 +61,14 @@ function buildPayload(s: WizardState, exclude: string[]): GeneratePayload {
 }
 
 export function Wizard({ userEmail }: WizardProps) {
+  const router = useRouter();
   const [state, setState] = useState<WizardState>(INITIAL_STATE);
   const [generating, setGenerating] = useState(false);
   const [mission, setMission] = useState<MissionSpec | null>(null);
   const [excludeVariants, setExcludeVariants] = useState<string[]>([]);
   const [error, setError] = useState<GenError | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
+  const [launchError, setLaunchError] = useState<LaunchError | null>(null);
 
   function patch<K extends keyof WizardState>(key: K, value: WizardState[K]) {
     setState((s) => ({ ...s, [key]: value }));
@@ -175,17 +183,60 @@ export function Wizard({ userEmail }: WizardProps) {
     runGeneration(state, excludeVariants, 1);
   }
 
-  function handleLaunch() {
-    if (!mission) return;
-    // TODO Phase 5.5 — POST /api/missions/[id]/start
-    // eslint-disable-next-line no-console
-    console.log("[Wizard.launch] mission:", mission);
+  async function handleLaunch() {
+    if (!mission || isLaunching) return;
     setIsLaunching(true);
-    window.setTimeout(() => setIsLaunching(false), 1500);
+    setLaunchError(null);
+
+    try {
+      const res = await fetch(`/api/missions/${mission.mission_id}/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const body = await res.json().catch(() => ({}));
+
+      if (res.status === 200) {
+        router.push(`/missions/${mission.mission_id}`);
+        return;
+      }
+
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+
+      if (
+        res.status === 503 &&
+        body?.error?.code === "sandbox_bridge_timeout"
+      ) {
+        setLaunchError({
+          kind: "bridge_timeout",
+          message:
+            "Sandbox didn't come online in time. Try again — it usually works on the second attempt.",
+        });
+      } else {
+        setLaunchError({
+          kind: "server",
+          message:
+            body?.error?.message ??
+            "Backend not ready yet — try again in a few minutes.",
+        });
+      }
+      setIsLaunching(false);
+    } catch {
+      setLaunchError({
+        kind: "network",
+        message:
+          "Couldn't reach the server. Check your connection and try again.",
+      });
+      setIsLaunching(false);
+    }
   }
 
   function handleDifferent() {
     if (!mission) return;
+    setLaunchError(null);
     const checkpointIds = mission.checkpoints.map((cp) => cp.id);
     runGeneration(state, [...excludeVariants, ...checkpointIds], 1);
   }
@@ -254,6 +305,7 @@ export function Wizard({ userEmail }: WizardProps) {
             <StepPreview
               mission={mission}
               isLaunching={isLaunching}
+              launchError={launchError?.message ?? null}
               onLaunch={handleLaunch}
               onDifferent={handleDifferent}
             />

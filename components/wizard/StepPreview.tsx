@@ -30,6 +30,7 @@ function timeChipLabel(value: TimeChipValue): string {
 interface StepPreviewProps {
   mission: MissionSpec;
   isLaunching: boolean;
+  launchError: string | null;
   onLaunch: () => void;
   onDifferent: () => void;
 }
@@ -37,6 +38,7 @@ interface StepPreviewProps {
 export function StepPreview({
   mission,
   isLaunching,
+  launchError,
   onLaunch,
   onDifferent,
 }: StepPreviewProps) {
@@ -107,7 +109,11 @@ export function StepPreview({
           onClick={onLaunch}
           disabled={isLaunching}
         >
-          {isLaunching ? "✓ Launching…" : "🚀 Launch Mission"}
+          {isLaunching
+            ? "✓ Provisioning sandbox…"
+            : launchError
+              ? "🔁 Retry Launch"
+              : "🚀 Launch Mission"}
         </button>
         <button
           type="button"
@@ -118,6 +124,17 @@ export function StepPreview({
           🔄 Different Mission
         </button>
       </div>
+
+      {isLaunching && (
+        <div className="wizard-launch-status" role="status">
+          Provisioning your sandbox… (this can take 20–40 seconds)
+        </div>
+      )}
+      {!isLaunching && launchError && (
+        <div className="wizard-launch-error" role="alert">
+          {launchError}
+        </div>
+      )}
     </>
   );
 }
