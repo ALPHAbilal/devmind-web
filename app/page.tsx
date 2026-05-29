@@ -9,7 +9,7 @@ export default async function LandingPage() {
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
-      redirect("/missions/new");
+      redirect("/dashboard");
     }
   } catch {
     // Fall through to the unauthenticated landing.

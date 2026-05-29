@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import {
   FavoritesIcon,
+  GridIcon,
   HistoryIcon,
   JourneyIcon,
   LogoMark,
@@ -44,6 +46,15 @@ export function SidebarRail({
       </div>
 
       <div className="rail-divider" />
+
+      <Link
+        href="/dashboard"
+        className="rail-icon"
+        title="Dashboard"
+        aria-label="Dashboard"
+      >
+        <GridIcon />
+      </Link>
 
       <button
         type="button"
