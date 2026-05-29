@@ -1,0 +1,114 @@
+/* ============================================================================
+ * ConceptGraph (8.3) — compact node-link minimap, right rail of the notebook.
+ * Hand-rolled DAG layout (no graph lib). Tokens from .theme-notebook.
+ * ========================================================================== */
+
+.concept-graph {
+  flex-shrink: 0;
+  width: 220px;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cg-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.cg-svg {
+  max-width: 100%;
+  overflow: visible;
+}
+
+/* ─── Edges ──────────────────────────────────────────────────────────────── */
+.cg-edge {
+  stroke: var(--border-medium);
+  stroke-width: 1.5;
+}
+
+/* ─── Nodes ──────────────────────────────────────────────────────────────── */
+.cg-node circle {
+  stroke-width: 1.5;
+  transition: all var(--transition-fast);
+}
+
+.cg-node .cg-label {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  fill: var(--text-muted);
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.cg-locked circle {
+  fill: transparent;
+  stroke: var(--text-disabled);
+}
+
+.cg-mastered circle {
+  fill: var(--accent-green);
+  stroke: var(--accent-green);
+}
+
+.cg-mastered .cg-label {
+  fill: var(--text-secondary);
+}
+
+.cg-current circle {
+  fill: var(--accent-teal);
+  stroke: var(--accent-teal);
+}
+
+.cg-current .cg-label {
+  fill: var(--accent-teal);
+  font-weight: 600;
+}
+
+.cg-node:hover circle {
+  stroke: var(--text-primary);
+}
+
+/* ─── Legend ─────────────────────────────────────────────────────────────── */
+.cg-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.cg-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.cg-dot.cg-current {
+  background: var(--accent-teal);
+}
+
+.cg-dot.cg-mastered {
+  background: var(--accent-green);
+}
+
+.cg-dot.cg-locked {
+  background: transparent;
+  border: 1px solid var(--text-disabled);
+}

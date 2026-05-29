@@ -18,6 +18,12 @@ import { SeamAsk } from "./SeamAsk";
 import { Thread } from "./Thread";
 import { useNotebook, type Puzzle } from "./NotebookProvider";
 import { PuzzlePane } from "@/components/puzzle/PuzzlePane";
+import { SessionControl } from "./SessionControl";
+import {
+  ConceptGraph,
+  type ConceptGraphSpec,
+  type CheckpointLite,
+} from "@/components/sidebar/ConceptGraph";
 import type { Tables } from "@/lib/supabase/types";
 
 type LearningSession = Tables<"learning_sessions">;
@@ -27,6 +33,10 @@ interface NotebookContentProps {
   currentCheckpointId: string | null;
   initialCells: Cell[];
   initialState: LearningSession | null;
+  /** mission.spec_json.concept_graph — null when the spec has none. */
+  conceptGraph: ConceptGraphSpec | null;
+  /** Trimmed mission.spec_json.checkpoints, for node mastery coloring. */
+  checkpoints: CheckpointLite[];
 }
 
 /**
@@ -48,6 +58,8 @@ export function NotebookContent({
   currentCheckpointId,
   initialCells,
   initialState,
+  conceptGraph,
+  checkpoints,
 }: NotebookContentProps) {
   const {
     setSessionActive,
@@ -175,6 +187,17 @@ export function NotebookContent({
     [cells],
   );
 
+  // Live current checkpoint: prefer the session's state_json (advances via
+  // Realtime), fall back to the SSR-seeded mission prop. Feeds ConceptGraph
+  // coloring without a second subscription.
+  const liveCheckpointId = useMemo(() => {
+    const state = session?.state_json as
+      | { current_checkpoint_id?: string | null }
+      | null
+      | undefined;
+    return state?.current_checkpoint_id ?? currentCheckpointId;
+  }, [session?.state_json, currentCheckpointId]);
+
   // Auto-scroll on append, but only if user is already near the bottom.
   const prevCellCountRef = useRef(orderedCells.length);
   useEffect(() => {
@@ -235,7 +258,8 @@ export function NotebookContent({
   }
 
   return (
-    <div className="notebook-content">
+    <div className="notebook-layout">
+      <div className="notebook-content">
       <div
         className="notebook-progress"
         role="status"
@@ -249,6 +273,10 @@ export function NotebookContent({
             Checkpoint: <code>{currentCheckpointId}</code>
           </span>
         ) : null}
+        <SessionControl
+          missionId={missionId}
+          status={session?.status ?? null}
+        />
       </div>
 
       <div className="notebook-cells" ref={cellsContainerRef}>
@@ -279,6 +307,14 @@ export function NotebookContent({
         )}
       </div>
       {puzzle ? <PuzzlePane puzzle={puzzle} /> : null}
+      </div>
+      {conceptGraph ? (
+        <ConceptGraph
+          graph={conceptGraph}
+          checkpoints={checkpoints}
+          currentCheckpointId={liveCheckpointId}
+        />
+      ) : null}
     </div>
   );
 }

@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/notebook/AppShell";
 import { NotebookContent } from "@/components/notebook/NotebookContent";
 import type { Cell } from "@/components/notebook/cells";
+import type {
+  ConceptGraphSpec,
+  CheckpointLite,
+} from "@/components/sidebar/ConceptGraph";
 import type { Tables } from "@/lib/supabase/types";
 
 // KNOWN TYPING MISMATCH (see app/realtime-test/page.tsx): @supabase/ssr@0.5
@@ -46,7 +50,7 @@ export default async function MissionPage({
       .maybeSingle(),
     supabase
       .from("missions")
-      .select("current_checkpoint_id")
+      .select("current_checkpoint_id, spec_json")
       .eq("id", id)
       .maybeSingle(),
   ]);
@@ -55,9 +59,11 @@ export default async function MissionPage({
   const initialState = (sessionRes.data ?? null) as LearningSessionRow | null;
   const missionRow = (missionRes.data ?? null) as Pick<
     MissionRow,
-    "current_checkpoint_id"
+    "current_checkpoint_id" | "spec_json"
   > | null;
   const currentCheckpointId = missionRow?.current_checkpoint_id ?? null;
+
+  const { conceptGraph, checkpoints } = extractGraph(missionRow?.spec_json);
 
   const initialSessionActive = initialState?.status === "active";
 
@@ -72,7 +78,60 @@ export default async function MissionPage({
         currentCheckpointId={currentCheckpointId}
         initialCells={initialCells}
         initialState={initialState}
+        conceptGraph={conceptGraph}
+        checkpoints={checkpoints}
       />
     </AppShell>
   );
+}
+
+/**
+ * Pull concept_graph + a trimmed checkpoints list out of mission.spec_json.
+ * spec_json is typed as Json; we defensively narrow rather than trust shape.
+ * Returns nulls/empties when the spec lacks a usable graph (older missions).
+ */
+function extractGraph(specJson: Tables<"missions">["spec_json"] | undefined): {
+  conceptGraph: ConceptGraphSpec | null;
+  checkpoints: CheckpointLite[];
+} {
+  if (!specJson || typeof specJson !== "object" || Array.isArray(specJson)) {
+    return { conceptGraph: null, checkpoints: [] };
+  }
+  const spec = specJson as Record<string, unknown>;
+
+  const rawGraph = spec.concept_graph as
+    | { nodes?: unknown; edges?: unknown }
+    | undefined;
+  let conceptGraph: ConceptGraphSpec | null = null;
+  if (rawGraph && Array.isArray(rawGraph.nodes) && Array.isArray(rawGraph.edges)) {
+    conceptGraph = {
+      nodes: (rawGraph.nodes as Array<Record<string, unknown>>)
+        .filter((n) => typeof n?.id === "string")
+        .map((n) => ({
+          id: n.id as string,
+          label: typeof n.label === "string" ? (n.label as string) : (n.id as string),
+        })),
+      edges: rawGraph.edges as ConceptGraphSpec["edges"],
+    };
+  }
+
+  const rawCheckpoints = Array.isArray(spec.checkpoints)
+    ? (spec.checkpoints as Array<Record<string, unknown>>)
+    : [];
+  const checkpoints: CheckpointLite[] = rawCheckpoints
+    .filter(
+      (c) =>
+        typeof c?.id === "string" &&
+        typeof c?.n === "number" &&
+        Array.isArray(c?.concept_nodes),
+    )
+    .map((c) => ({
+      id: c.id as string,
+      n: c.n as number,
+      concept_nodes: (c.concept_nodes as unknown[]).filter(
+        (x): x is string => typeof x === "string",
+      ),
+    }));
+
+  return { conceptGraph, checkpoints };
 }

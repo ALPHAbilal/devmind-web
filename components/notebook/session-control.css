@@ -1,0 +1,55 @@
+/* ============================================================================
+ * SessionControl (8.5) — Pause / Resume pill in the notebook header.
+ * Tokens from .theme-notebook.
+ * ========================================================================== */
+
+.session-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-btn {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-medium);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.session-btn:hover:not(:disabled) {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.session-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.session-btn.session-resume {
+  border-color: var(--accent-green-border, rgba(156, 213, 148, 0.25));
+  color: var(--accent-green);
+}
+
+.session-btn.session-resume:hover:not(:disabled) {
+  background: rgba(156, 213, 148, 0.08);
+  border-color: var(--accent-green);
+}
+
+.session-done {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-green);
+}
+
+.session-toast {
+  font-size: 12px;
+  color: var(--accent-yellow);
+}

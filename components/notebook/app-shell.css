@@ -29,6 +29,39 @@
   padding: 32px 32px 120px; /* bottom padding clears the floating chat-bar */
 }
 
+/* Notebook + concept-graph rail row. The rail (ConceptGraph) is sticky and
+ * sits to the right of the cell column. */
+.notebook-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.notebook-layout .notebook-content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .notebook-layout {
+    flex-direction: column;
+  }
+  .notebook-layout .concept-graph {
+    width: 100%;
+    position: static;
+  }
+}
+
+.notebook-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 /* Placeholder used until Phase 5.6 lands real notebook rendering */
 .app-shell-placeholder {
   max-width: 720px;
