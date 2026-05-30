@@ -25,6 +25,7 @@ import {
   type CheckpointLite,
 } from "@/components/sidebar/ConceptGraph";
 import type { Tables } from "@/lib/supabase/types";
+import "./notebook-content.css";
 
 type LearningSession = Tables<"learning_sessions">;
 
@@ -37,6 +38,8 @@ interface NotebookContentProps {
   conceptGraph: ConceptGraphSpec | null;
   /** Trimmed mission.spec_json.checkpoints, for node mastery coloring. */
   checkpoints: CheckpointLite[];
+  /** mission.spec_json.title — shown in the warm opening state. */
+  missionTitle?: string | null;
 }
 
 /**
@@ -60,6 +63,7 @@ export function NotebookContent({
   initialState,
   conceptGraph,
   checkpoints,
+  missionTitle,
 }: NotebookContentProps) {
   const {
     setSessionActive,
@@ -77,6 +81,13 @@ export function NotebookContent({
   >({});
 
   const cellsContainerRef = useRef<HTMLDivElement>(null);
+
+  // Cells present at first render (SSR-seeded). Only cells whose ids are NOT in
+  // this set get the reveal animation — a returning, already-written notebook
+  // renders instantly with no re-animation.
+  const initialCellIdsRef = useRef<Set<string>>(
+    new Set(initialCells.map((c) => c.id)),
+  );
 
   // Push initial session-active state into context once on mount + whenever it changes.
   useEffect(() => {
@@ -198,6 +209,20 @@ export function NotebookContent({
     return state?.current_checkpoint_id ?? currentCheckpointId;
   }, [session?.state_json, currentCheckpointId]);
 
+  // 5.4-A persists `bootstrap_complete` to session.state_json once the agent has
+  // finished writing the lesson. Derived the same way as liveCheckpointId.
+  const bootstrapComplete = useMemo(() => {
+    const state = session?.state_json as
+      | { bootstrap_complete?: boolean }
+      | null
+      | undefined;
+    return state?.bootstrap_complete === true;
+  }, [session?.state_json]);
+
+  const sessionActive = session?.status === "active";
+  // The lesson is still being written: show the warm opening / writing affordances.
+  const writingLesson = sessionActive && !bootstrapComplete;
+
   // Auto-scroll on append, but only if user is already near the bottom.
   const prevCellCountRef = useRef(orderedCells.length);
   useEffect(() => {
@@ -249,6 +274,16 @@ export function NotebookContent({
     };
   }
 
+  // Reveal animation only for cells that arrived after initial mount. Section
+  // cells (chapter headers) get a slightly stronger reveal. SSR-seeded cells
+  // get no class so a returning notebook renders instantly.
+  function revealClass(cell: Cell): string | undefined {
+    if (initialCellIdsRef.current.has(cell.id)) return undefined;
+    return cell.kind === "section"
+      ? "cell-reveal cell-reveal-section"
+      : "cell-reveal";
+  }
+
   function openThreadForCell(cellId: string, threadId: string) {
     setOpenThreadsByCell((prev) => {
       const existing = prev[cellId] ?? [];
@@ -281,14 +316,31 @@ export function NotebookContent({
 
       <div className="notebook-cells" ref={cellsContainerRef}>
         {orderedCells.length === 0 ? (
-          <p className="notebook-empty">
-            No cells yet. The agent will start writing here once the mission
-            begins.
-          </p>
+          writingLesson ? (
+            <div className="notebook-opening" role="status" aria-live="polite">
+              <div className="notebook-opening-glyph" aria-hidden="true">
+                <span className="notebook-opening-pen">✍️</span>
+                <span className="notebook-opening-sparkle">✨</span>
+              </div>
+              <div className="notebook-opening-title">
+                {missionTitle
+                  ? `Writing your lesson on ${missionTitle}…`
+                  : "Writing your lesson…"}
+              </div>
+              <div className="notebook-opening-shimmer" aria-hidden="true" />
+            </div>
+          ) : (
+            <p className="notebook-empty">
+              No cells yet. The agent will start writing here once the mission
+              begins.
+            </p>
+          )
         ) : (
           orderedCells.map((cell, idx) => (
             <Fragment key={cell.id}>
-              <CellRenderer cell={cell} meta={metaFor(cell)} />
+              <div className={revealClass(cell)}>
+                <CellRenderer cell={cell} meta={metaFor(cell)} />
+              </div>
               {(openThreadsByCell[cell.id] ?? []).map((tid) => (
                 <Thread
                   key={tid}
@@ -305,6 +357,19 @@ export function NotebookContent({
             </Fragment>
           ))
         )}
+        {writingLesson && orderedCells.length > 0 ? (
+          <div className="notebook-writing" role="status" aria-live="polite">
+            <span className="notebook-writing-pen" aria-hidden="true">
+              ✍️
+            </span>
+            <span className="notebook-writing-text">writing your lesson…</span>
+            <span className="notebook-writing-dots" aria-hidden="true">
+              <span className="chat-thinking-dot" />
+              <span className="chat-thinking-dot" />
+              <span className="chat-thinking-dot" />
+            </span>
+          </div>
+        ) : null}
       </div>
       {puzzle ? <PuzzlePane puzzle={puzzle} /> : null}
       </div>

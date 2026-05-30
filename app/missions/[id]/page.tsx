@@ -64,6 +64,7 @@ export default async function MissionPage({
   const currentCheckpointId = missionRow?.current_checkpoint_id ?? null;
 
   const { conceptGraph, checkpoints } = extractGraph(missionRow?.spec_json);
+  const missionTitle = extractTitle(missionRow?.spec_json);
 
   const initialSessionActive = initialState?.status === "active";
 
@@ -80,9 +81,22 @@ export default async function MissionPage({
         initialState={initialState}
         conceptGraph={conceptGraph}
         checkpoints={checkpoints}
+        missionTitle={missionTitle}
       />
     </AppShell>
   );
+}
+
+/** Best-effort mission title from spec_json, for the warm "Writing your
+ * lesson on …" opening state. Returns null when the spec lacks one. */
+function extractTitle(
+  specJson: Tables<"missions">["spec_json"] | undefined,
+): string | null {
+  if (!specJson || typeof specJson !== "object" || Array.isArray(specJson)) {
+    return null;
+  }
+  const title = (specJson as Record<string, unknown>).title;
+  return typeof title === "string" && title.trim() ? title : null;
 }
 
 /**

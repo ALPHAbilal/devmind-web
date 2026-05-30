@@ -10,6 +10,7 @@ import { StepTopic } from "./StepTopic";
 import { StepLevel } from "./StepLevel";
 import { StepShape } from "./StepShape";
 import { StepPreview } from "./StepPreview";
+import { GenerationProgress } from "./GenerationProgress";
 import { buildMockMission } from "./mock";
 import {
   INITIAL_STATE,
@@ -378,10 +379,7 @@ export function Wizard({ userEmail }: WizardProps) {
             <div className="wizard-generating">
               <div className="wizard-gen-spinner" />
               <div className="wizard-gen-text">Crafting your mission…</div>
-              <div className="wizard-gen-sub">
-                Fitting your constraints, level, and goals into a personalized path.
-                This can take 30–60 seconds.
-              </div>
+              <GenerationProgress active={generating} topic={state.topic} />
             </div>
           )}
           {!showSpinner && error && (
