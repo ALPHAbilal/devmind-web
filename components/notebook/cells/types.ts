@@ -16,7 +16,12 @@ export type CellKind =
   | "code"
   | "output"
   | "section"
-  | "divider";
+  | "divider"
+  // Frontend-forward kind: the renderer + styling exist now; to actually emit
+  // these the DB `cell_kind` enum needs `challenge` added (additive migration)
+  // plus an agent notebook tool. Until then no `challenge` row arrives —
+  // listing it here is harmless and keeps the dispatch switch exhaustive.
+  | "challenge";
 
 export type CellSource = "agent" | "learner" | "backend";
 

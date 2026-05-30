@@ -123,6 +123,14 @@ ORDER BY username;
       "Traceback (most recent call last):\n  File \"app.py\", line 6, in <module>\n    return render_templat(...)\nNameError: name 'render_templat' is not defined",
     exit_code: 1,
   },
+  {
+    ...baseMeta,
+    id: "ch1",
+    ord: 11,
+    kind: "challenge",
+    content:
+      "Build a /about page\nNow it's your turn. Wire up a second route so visitors can learn about your app.\n- Add a route at `/about`\n- Render an `about.html` template\n- Pass a `name` variable into the template",
+  },
 ];
 
 export default function CellsDesignTestPage() {

@@ -40,6 +40,12 @@
 .notebook-layout .notebook-content {
   flex: 1;
   min-width: 0;
+  /* Reading measure — matches demo-notebook.html `.notebook { max-width:780px;
+   * margin:0 auto }`. With no concept rail the column centers in the full
+   * content area; with the rail present the auto margins center it in the
+   * space left of the rail. */
+  max-width: 780px;
+  margin-inline: auto;
 }
 
 @media (max-width: 900px) {

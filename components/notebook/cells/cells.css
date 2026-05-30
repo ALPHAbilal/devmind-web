@@ -5,8 +5,18 @@
  * ========================================================================== */
 
 .cell {
-  margin-bottom: 4px;
+  margin-bottom: 10px;
   position: relative;
+}
+/* Block-level cells get a touch more air so they read as distinct units,
+ * while sections still own the larger chapter break via their top padding. */
+.cell-code,
+.cell-challenge {
+  margin-block: 14px;
+}
+/* Output hugs the code cell it belongs to (it carries its own card chrome). */
+.cell-output {
+  margin-top: -4px;
 }
 
 /* ─── Section ───────────────────────────────────────────────────────────── */
@@ -349,3 +359,68 @@
 .cell-output-body .tb-error-line { color: #f8a4a0; }
 .cell-output-body .tb-failed { color: var(--accent-red); font-weight: 600; }
 .cell-output-body .tb-passed { color: var(--accent-green); font-weight: 600; }
+
+/* ─── Challenge ─────────────────────────────────────────────────────────────
+ * Yellow "What to Try" challenge card. Visual spec: demo-notebook.html
+ * `.cell-challenge` (yellow accent, header bar, requirement checklist).
+ * ────────────────────────────────────────────────────────────────────────── */
+.cell-challenge {
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: rgba(251, 191, 36, 0.02);
+}
+.cell-challenge .challenge-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(251, 191, 36, 0.08);
+  border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+}
+.cell-challenge .challenge-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+.cell-challenge .challenge-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-yellow);
+  letter-spacing: 0.2px;
+}
+.cell-challenge .challenge-body {
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.cell-challenge .challenge-body p {
+  margin: 0 0 8px;
+}
+.cell-challenge .challenge-body p:last-child {
+  margin-bottom: 0;
+}
+.cell-challenge .challenge-reqs {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.cell-challenge .challenge-req {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.cell-challenge .challenge-check {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  border-radius: 4px;
+  background: rgba(251, 191, 36, 0.06);
+}
