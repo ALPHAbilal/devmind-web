@@ -202,3 +202,73 @@ a {
     transform: rotate(360deg);
   }
 }
+
+/* ============================================================================
+ * THEME: BOARD  (demo-full-dashboard.html :root tokens — verbatim)
+ *
+ * Monochrome + holographic. Display/body: Inter. Code: JetBrains Mono.
+ * Used on: /board (the concept kanban + threads). Dark/light toggle via the
+ * `data-theme` attribute on the same `.theme-board` element (TopBar's toggle).
+ * Component styles: components/board/board.css. Do not "normalize" values.
+ * ========================================================================== */
+.theme-board {
+  --sans: "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", monospace;
+
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.theme-board[data-theme="dark"] {
+  --bg: #0a0b0a;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.05);
+  --ink: #e9ede8;
+  --ink-2: #9aa097;
+  --ink-3: #5e655c;
+  --col-bg: rgba(255, 255, 255, 0.018);
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --card-bd: rgba(255, 255, 255, 0.12);
+  --panel: #141613;
+  --holo: 233, 238, 232;
+  --act-bg: linear-gradient(rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  --act-bd: rgba(255, 255, 255, 0.24);
+  --act-glow: rgba(255, 255, 255, 0.1);
+  --scan: rgba(255, 255, 255, 0.07);
+  --elev: 0 -18px 60px -12px rgba(0, 0, 0, 0.75);
+  --amber: #d6a85f;
+  --you: #7fa7e0;
+  --kw: #c678dd;
+  --fn: #61afef;
+  --st: #98c379;
+}
+
+.theme-board[data-theme="light"] {
+  --bg: #eaece7;
+  --line: rgba(20, 30, 15, 0.1);
+  --line-2: rgba(20, 30, 15, 0.06);
+  --ink: #1a1e19;
+  --ink-2: #5b6157;
+  --ink-3: #9aa094;
+  --col-bg: rgba(255, 255, 255, 0.5);
+  --card-bg: #ffffff;
+  --card-bd: rgba(20, 30, 15, 0.1);
+  --panel: #f6f7f4;
+  --holo: 60, 66, 58;
+  --act-bg: linear-gradient(#ffffff, #fbfcfa);
+  --act-bd: rgba(60, 90, 60, 0.3);
+  --act-glow: rgba(120, 150, 120, 0.2);
+  --scan: rgba(20, 30, 15, 0.045);
+  --elev: 0 -18px 60px -14px rgba(40, 50, 30, 0.34);
+  --amber: #b9822f;
+  --you: #4078c2;
+  --kw: #a626a4;
+  --fn: #4078f2;
+  --st: #50a14f;
+}
