@@ -115,7 +115,12 @@
 .theme-board .col-h .agent { display: flex; align-items: center; gap: 6px; margin-left: auto; min-width: 0; font: 500 10px var(--mono); color: rgba(var(--holo), 0.85); }
 .theme-board .col-h .agent span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .theme-board .col-h .pulse { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--holo)); box-shadow: 0 0 8px rgb(var(--holo)); animation: p 1.1s ease-in-out infinite; flex-shrink: 0; }
-.theme-board .col-b { flex: 1; display: flex; flex-direction: column; gap: 9px; border: 1px solid var(--line); border-radius: 12px; padding: 10px; overflow-y: auto; background: var(--col-bg); scrollbar-gutter: stable; }
+.theme-board .col-b { flex: 1; display: flex; flex-direction: column; gap: 9px; border: 1px solid var(--line); border-radius: 12px; padding: 10px; overflow-y: auto; background: var(--col-bg); scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: rgba(127, 127, 127, 0.4) transparent; }
+/* thin per-column scrollbar — only appears when a column's cards overflow (mirrors .scrollarea) */
+.theme-board .col-b::-webkit-scrollbar { width: 8px; }
+.theme-board .col-b::-webkit-scrollbar-thumb { background: rgba(127, 127, 127, 0.3); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+.theme-board .col-b:hover::-webkit-scrollbar-thumb { background: rgba(127, 127, 127, 0.5); background-clip: content-box; }
+.theme-board .col-b::-webkit-scrollbar-track { background: transparent; }
 .theme-board .col.active .col-h .nm { color: rgb(var(--holo)); }
 /* active column — even edge-bleed hugging the border; a second glow layer BREATHES via opacity (composited = cheap) */
 .theme-board .col.active .col-b { position: relative; overflow: hidden; scrollbar-gutter: auto; contain: paint; background: var(--act-bg); border-color: rgba(var(--holo), 0.5); box-shadow: inset 0 0 22px -2px rgba(var(--holo), 0.2), inset 0 0 60px -16px rgba(var(--holo), 0.15); }
