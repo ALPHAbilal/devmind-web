@@ -326,11 +326,17 @@ export function boardReducer(state: BoardState, action: BoardAction): BoardState
 
     /* ── supabase live merge ──────────────────────────────────────────────── */
     case "rtConcept": {
-      const techConcepts = upsertConcept(
-        state.techConcepts,
-        action.tech,
-        action.concept,
-      );
+      // If this card already belongs to the active session's thread (its link
+      // may have arrived first), flag it so the "This session" filter catches it
+      // regardless of which subscription fired first.
+      const tid = state.session?.threadId;
+      const linked =
+        !!tid &&
+        state.threadConcepts.some(
+          (l) => l.threadId === tid && l.conceptId === action.concept.id,
+        );
+      const concept = linked ? { ...action.concept, session: true } : action.concept;
+      const techConcepts = upsertConcept(state.techConcepts, action.tech, concept);
       // a card that left 'gap' is no longer "building" in the prereq column
       let session = state.session;
       if (
