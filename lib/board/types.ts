@@ -17,6 +17,7 @@ export interface Concept {
   by?: Verifier; // set once `state==='known'`
   ev?: string; // "verified in <b>…</b>"
   nb?: number; // has a notebook
+  missionId?: string; // last_mission_id → "Open notebook →" navigates to /missions/[id]
   due?: number; // truthy ⇒ surfaces in the Review column
   review?: string; // "due today · 9-day interval"
   built?: string; // the "↳ built out of …" line
@@ -81,6 +82,15 @@ export interface ThreadNote {
   q: string; // thread id
   n: string; // concept name
   col: ColumnKey;
+  id?: string; // concept id (supabase) — mock notes are display-only and omit it
+}
+
+/** Raw thread↔concept belonging (supabase). The live `ThreadNote[]` is derived
+ * from these + the current concept states, so dot-ledgers move as cards do. */
+export interface ThreadLink {
+  threadId: string;
+  conceptId: string;
+  ord: number;
 }
 
 export interface ThreadBucket {
@@ -101,7 +111,7 @@ export type ViewScope = "all" | "session";
 export type SheetMode = "create" | "open";
 
 export interface SessionPrereq {
-  id: number;
+  id: string; // mock: "0".. ; supabase: the concept uuid
   name: string;
   desc: string;
   known: boolean;
@@ -109,9 +119,15 @@ export interface SessionPrereq {
 }
 
 export interface Session {
+  /** The backing question_thread (supabase). Null for mock + until POST returns. */
+  threadId: string | null;
   request: string;
   searching: boolean;
+  /** Mock source of truth (the streamed simulation). */
   prereqs: SessionPrereq[];
+  /** Supabase: concept ids whose "Create notebook" POST is in flight (optimistic).
+   *  The prereq set itself is derived from `threadConcepts` for `threadId`. */
+  building: string[];
 }
 
 export interface SheetConfig {
@@ -119,7 +135,7 @@ export interface SheetConfig {
   title: string;
   sub?: string;
   build?: boolean;
-  prereqId?: number;
+  prereqId?: string; // mock: "0".. ; supabase: the prereq concept's uuid
   conceptId?: string;
 }
 
@@ -138,4 +154,10 @@ export interface BoardState {
   sbCollapsed: boolean;
   /** Working copy of every tech's concepts (the demo mutated TECHS in place). */
   techConcepts: Record<string, Concept[]>;
+  /** Live question threads (seeded from SSR, kept current over Realtime). */
+  threads: QuestionThread[];
+  /** Live thread↔concept belonging (supabase); drives the derived ThreadNote[]. */
+  threadConcepts: ThreadLink[];
+  /** tech key → father-section id (replaces the mock-only `secOf`). */
+  techSec: Record<string, string>;
 }

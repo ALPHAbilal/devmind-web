@@ -18,24 +18,26 @@ function Html({ html }: { html: string }) {
 }
 
 export function ConceptCard({ concept: c }: { concept: Concept }) {
-  const { state, dispatch, data } = useBoard();
+  const { state, dispatch, data, markKnown, openNotebook } = useBoard();
   const col = colOf(c);
-  const mn = data.techs[state.tech].mn;
+  const mn = data.techs[state.tech]?.mn ?? "";
   const cls = `card${c.state === "known" ? " known" : ""}${c.session ? " in" : ""}`;
-
-  const openNotebook = () =>
-    dispatch({ type: "openSheet", cfg: { mode: "open", title: c.name, conceptId: c.id } });
 
   let body: ReactNode = null;
   if (col === "gap") {
-    const lk = locked(c, knownIds(state.techConcepts[state.tech]));
+    const cards = state.techConcepts[state.tech] ?? [];
+    const lk = locked(c, knownIds(cards));
+    // show prereq NAMES, not ids (real ids are uuids) — fall back to the id
+    const nameOf = (id: string) => cards.find((x) => x.id === id)?.name ?? id;
     body = (
       <>
         <div className="sub">
           ↳ built out of <Html html={c.built || "earlier ideas"} />
         </div>
         {lk ? (
-          <div className="lock">🔒 needs {(c.needs || []).join(", ")} first</div>
+          <div className="lock">
+            🔒 needs {(c.needs || []).map(nameOf).join(", ")} first
+          </div>
         ) : (
           <button
             className="mk"
@@ -59,10 +61,10 @@ export function ConceptCard({ concept: c }: { concept: Concept }) {
   } else if (col === "learning") {
     body = (
       <div className="frow">
-        <button className="btn-pri" onClick={openNotebook}>
+        <button className="btn-pri" onClick={() => openNotebook(c)}>
           Open notebook →
         </button>
-        <button className="btn-ghost" onClick={() => dispatch({ type: "markKnown", id: c.id })}>
+        <button className="btn-ghost" onClick={() => markKnown(c)}>
           Mark known
         </button>
       </div>
@@ -73,7 +75,7 @@ export function ConceptCard({ concept: c }: { concept: Concept }) {
         <div className="sub rev">↻ {c.review || "due for review"}</div>
         <div className="frow">
           <span className="lbl">spaced review</span>
-          <button className="btn-open" onClick={openNotebook}>
+          <button className="btn-open" onClick={() => openNotebook(c)}>
             Open →
           </button>
         </div>
@@ -94,7 +96,7 @@ export function ConceptCard({ concept: c }: { concept: Concept }) {
         </div>
         <div className="frow">
           <span className="lbl">{c.by === "agent" ? "agent verified" : "self-marked"}</span>
-          <button className="btn-open" onClick={openNotebook}>
+          <button className="btn-open" onClick={() => openNotebook(c)}>
             Open →
           </button>
         </div>

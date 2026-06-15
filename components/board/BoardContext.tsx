@@ -8,17 +8,34 @@
  */
 import { createContext, useContext, type Dispatch } from "react";
 import type { BoardData } from "@/lib/board/adapter";
-import type { BoardState } from "@/lib/board/types";
+import type { BoardState, Concept, SessionPrereq } from "@/lib/board/types";
 import type { BoardAction } from "./boardState";
+
+/** Values the MorphSheet create form collects and hands to `commitCreate`. */
+export interface CreateForm {
+  goal: string | null;
+  note: string;
+}
 
 export interface BoardContextValue {
   state: BoardState;
   dispatch: Dispatch<BoardAction>;
   data: BoardData;
-  /** Dock submit → starts a session and streams in the mock prerequisites. */
+  /** false on the live board, true behind `?mock=true`. The verbs below branch
+   *  on this so every component stays unaware of the data source. */
+  mock: boolean;
+  /** Dock submit → mock: stream sample prereqs · supabase: POST /threads. */
   submitQuestion: (raw: string) => void;
-  /** MorphSheet "Create / Build" → the demo's commitCreate (timed simulation). */
-  commitCreate: () => void;
+  /** MorphSheet "Create / Build" → mock: timed sim · supabase: POST generate. */
+  commitCreate: (form: CreateForm) => void;
+  /** A card's "Mark known" / a prereq's checkbox → mock: dispatch · supabase: UPDATE. */
+  markKnown: (concept: Concept) => void;
+  /** A prereq's triage checkbox (gated flow step 2). */
+  prereqToggle: (prereq: SessionPrereq) => void;
+  /** "Open notebook →" → mock: preview sheet · supabase: /missions/[id]. */
+  openNotebook: (concept: Concept) => void;
+  /** A History row → mock: preview sheet · supabase: navigate to its notebook. */
+  openHistory: (item: string) => void;
   /** Sidebar "+" (new topic) focuses the dock input. */
   focusDock: () => void;
   /** Theme lives outside the reducer (demo reads/writes it on the scope). */

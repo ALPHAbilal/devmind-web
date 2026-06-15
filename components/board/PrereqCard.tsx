@@ -12,7 +12,7 @@ import { NB } from "./icons";
 import type { SessionPrereq } from "@/lib/board/types";
 
 export function PrereqCard({ prereq: p }: { prereq: SessionPrereq }) {
-  const { dispatch } = useBoard();
+  const { dispatch, prereqToggle } = useBoard();
   const cls = `card prereq in${p.status === "building" ? " building" : ""}`;
 
   let foot: ReactNode;
@@ -55,7 +55,7 @@ export function PrereqCard({ prereq: p }: { prereq: SessionPrereq }) {
       <div className="ctop">
         <button
           className={`cb ${p.known ? "on" : ""}`}
-          onClick={() => dispatch({ type: "toggleKnow", id: p.id })}
+          onClick={() => prereqToggle(p)}
         >
           ✓
         </button>

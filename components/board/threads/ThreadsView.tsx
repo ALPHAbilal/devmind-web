@@ -36,7 +36,12 @@ export function ThreadsView() {
           />
         </div>
         <div>
-          {groups.length ? (
+          {data.threads.length === 0 ? (
+            <div className="tnores">
+              No threads yet. Ask a question from the board and it starts a thread
+              here — each one tracks the prerequisites it spawned.
+            </div>
+          ) : groups.length ? (
             groups.map(({ b, items }) => (
               <div className="tgrp" key={b.k}>
                 <div className="tgd-wrap">

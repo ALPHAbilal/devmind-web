@@ -5,16 +5,21 @@ import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * The four tables we subscribe to. All are in the `supabase_realtime`
- * publication (see spec/db/001_initial_schema.sql) so no DB-side setup is
- * required at the call site.
+ * The tables we subscribe to. All are in the `supabase_realtime` publication
+ * (see spec/db/001_initial_schema.sql + 005_board_concepts_threads.sql) so no
+ * DB-side setup is required at the call site. The board (Phase 2) subscribes to
+ * `concepts` (column moves), `question_threads` (status), and `thread_concepts`
+ * (prereq cards streaming in during mapping).
  */
 export type RealtimeTable =
   | "notebook_cells"
   | "learning_sessions"
   | "thread_messages"
   | "puzzles"
-  | "missions";
+  | "missions"
+  | "concepts"
+  | "question_threads"
+  | "thread_concepts";
 
 export type RealtimeEventType = "INSERT" | "UPDATE" | "DELETE";
 

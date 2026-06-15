@@ -13,6 +13,9 @@ import { Arrow } from "./icons";
 export function Dock({ inputRef }: { inputRef: RefObject<HTMLInputElement | null> }) {
   const { state, submitQuestion } = useBoard();
   const busy = !!(state.session && state.session.searching);
+  // first-run hint: a brand-new learner whose board has no cards yet
+  const empty =
+    !busy && !state.session && (state.techConcepts[state.tech]?.length ?? 0) === 0;
 
   const submit = () => {
     const el = inputRef.current;
@@ -24,6 +27,12 @@ export function Dock({ inputRef }: { inputRef: RefObject<HTMLInputElement | null
 
   return (
     <div className="dock">
+      {empty && (
+        <div className="dock-hint">
+          Nothing here yet — ask anything you’re stuck on and I’ll map the
+          prerequisites into cards.
+        </div>
+      )}
       <div className={`pill ${busy ? "busy" : ""}`}>
         {busy ? (
           <div className="work">

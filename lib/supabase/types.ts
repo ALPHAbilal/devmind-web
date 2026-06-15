@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      concept_edges: {
+        Row: {
+          concept_id: string
+          created_at: string
+          needs_concept_id: string
+          user_id: string
+        }
+        Insert: {
+          concept_id: string
+          created_at?: string
+          needs_concept_id: string
+          user_id: string
+        }
+        Update: {
+          concept_id?: string
+          created_at?: string
+          needs_concept_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "concept_edges_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concepts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "concept_edges_needs_concept_id_fkey"
+            columns: ["needs_concept_id"]
+            isOneToOne: false
+            referencedRelation: "concepts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       concept_progress: {
         Row: {
           concept_id: string
@@ -43,6 +79,72 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "missions"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      concepts: {
+        Row: {
+          built_from: string | null
+          concept_key: string
+          created_at: string
+          evidence: string | null
+          id: string
+          last_mission_id: string | null
+          name: string
+          review_due_at: string | null
+          review_interval_days: number | null
+          state: Database["public"]["Enums"]["concept_state"]
+          technology: string
+          updated_at: string
+          user_id: string
+          verified_by: Database["public"]["Enums"]["concept_verifier"] | null
+        }
+        Insert: {
+          built_from?: string | null
+          concept_key: string
+          created_at?: string
+          evidence?: string | null
+          id?: string
+          last_mission_id?: string | null
+          name: string
+          review_due_at?: string | null
+          review_interval_days?: number | null
+          state?: Database["public"]["Enums"]["concept_state"]
+          technology: string
+          updated_at?: string
+          user_id: string
+          verified_by?: Database["public"]["Enums"]["concept_verifier"] | null
+        }
+        Update: {
+          built_from?: string | null
+          concept_key?: string
+          created_at?: string
+          evidence?: string | null
+          id?: string
+          last_mission_id?: string | null
+          name?: string
+          review_due_at?: string | null
+          review_interval_days?: number | null
+          state?: Database["public"]["Enums"]["concept_state"]
+          technology?: string
+          updated_at?: string
+          user_id?: string
+          verified_by?: Database["public"]["Enums"]["concept_verifier"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "concepts_last_mission_id_fkey"
+            columns: ["last_mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "concepts_technology_fkey"
+            columns: ["technology"]
+            isOneToOne: false
+            referencedRelation: "technologies"
+            referencedColumns: ["key"]
           },
         ]
       }
@@ -81,6 +183,8 @@ export type Database = {
       }
       learning_sessions: {
         Row: {
+          archive_key: string | null
+          archived_at: string | null
           completed_at: string | null
           container_id: string | null
           id: string
@@ -97,6 +201,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archive_key?: string | null
+          archived_at?: string | null
           completed_at?: string | null
           container_id?: string | null
           id?: string
@@ -113,6 +219,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archive_key?: string | null
+          archived_at?: string | null
           completed_at?: string | null
           container_id?: string | null
           id?: string
@@ -141,11 +249,13 @@ export type Database = {
       missions: {
         Row: {
           completed_at: string | null
+          concept_id: string | null
           created_at: string
           current_checkpoint_id: string | null
           goal: Database["public"]["Enums"]["mission_goal"]
           id: string
           level: Database["public"]["Enums"]["mission_level"]
+          origin_thread_id: string | null
           path_card: string
           spec_json: Json
           started_at: string | null
@@ -158,11 +268,13 @@ export type Database = {
         }
         Insert: {
           completed_at?: string | null
+          concept_id?: string | null
           created_at?: string
           current_checkpoint_id?: string | null
           goal: Database["public"]["Enums"]["mission_goal"]
           id?: string
           level: Database["public"]["Enums"]["mission_level"]
+          origin_thread_id?: string | null
           path_card: string
           spec_json: Json
           started_at?: string | null
@@ -175,11 +287,13 @@ export type Database = {
         }
         Update: {
           completed_at?: string | null
+          concept_id?: string | null
           created_at?: string
           current_checkpoint_id?: string | null
           goal?: Database["public"]["Enums"]["mission_goal"]
           id?: string
           level?: Database["public"]["Enums"]["mission_level"]
+          origin_thread_id?: string | null
           path_card?: string
           spec_json?: Json
           started_at?: string | null
@@ -190,7 +304,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "missions_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concepts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "missions_origin_thread_id_fkey"
+            columns: ["origin_thread_id"]
+            isOneToOne: false
+            referencedRelation: "question_threads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notebook_cells: {
         Row: {
@@ -323,6 +452,152 @@ export type Database = {
           },
         ]
       }
+      question_threads: {
+        Row: {
+          asked_at: string
+          code: Json | null
+          files: Json
+          id: string
+          question_text: string
+          status: Database["public"]["Enums"]["qthread_status"]
+          summary: string | null
+          tag: string | null
+          target_mission_id: string | null
+          technology: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asked_at?: string
+          code?: Json | null
+          files?: Json
+          id?: string
+          question_text: string
+          status?: Database["public"]["Enums"]["qthread_status"]
+          summary?: string | null
+          tag?: string | null
+          target_mission_id?: string | null
+          technology?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asked_at?: string
+          code?: Json | null
+          files?: Json
+          id?: string
+          question_text?: string
+          status?: Database["public"]["Enums"]["qthread_status"]
+          summary?: string | null
+          tag?: string | null
+          target_mission_id?: string | null
+          technology?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_threads_target_mission_id_fkey"
+            columns: ["target_mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_threads_technology_fkey"
+            columns: ["technology"]
+            isOneToOne: false
+            referencedRelation: "technologies"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      tech_sections: {
+        Row: {
+          icon: string | null
+          id: string
+          name: string
+          ord: number
+        }
+        Insert: {
+          icon?: string | null
+          id: string
+          name: string
+          ord?: number
+        }
+        Update: {
+          icon?: string | null
+          id?: string
+          name?: string
+          ord?: number
+        }
+        Relationships: []
+      }
+      technologies: {
+        Row: {
+          key: string
+          label: string
+          mn: string | null
+          ord: number
+          section_id: string
+        }
+        Insert: {
+          key: string
+          label: string
+          mn?: string | null
+          ord?: number
+          section_id: string
+        }
+        Update: {
+          key?: string
+          label?: string
+          mn?: string | null
+          ord?: number
+          section_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technologies_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "tech_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thread_concepts: {
+        Row: {
+          concept_id: string
+          ord: number
+          thread_id: string
+        }
+        Insert: {
+          concept_id: string
+          ord?: number
+          thread_id: string
+        }
+        Update: {
+          concept_id?: string
+          ord?: number
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thread_concepts_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concepts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thread_concepts_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "question_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       thread_messages: {
         Row: {
           content: string
@@ -422,12 +697,26 @@ export type Database = {
     Enums: {
       cell_kind: "markdown" | "code" | "output" | "section" | "divider"
       cell_source: "agent" | "learner" | "backend"
+      concept_state: "gap" | "learning" | "known"
+      concept_verifier: "you" | "agent"
       message_role: "user" | "assistant"
       mission_goal: "build" | "understand" | "interview" | "work"
       mission_level: "beginner" | "intermediate" | "advanced"
-      mission_status: "draft" | "in_progress" | "completed" | "abandoned" | "generating" | "failed"
+      mission_status:
+        | "draft"
+        | "in_progress"
+        | "completed"
+        | "abandoned"
+        | "generating"
+        | "failed"
       puzzle_status: "active" | "completed" | "abandoned"
       puzzle_step: "framing" | "hypothesis" | "try_it" | "fix" | "generalize"
+      qthread_status:
+        | "mapping"
+        | "awaiting_prereqs"
+        | "ready"
+        | "built"
+        | "archived"
       session_status: "active" | "paused" | "completed"
       thread_status: "open" | "closed"
     }
@@ -559,12 +848,28 @@ export const Constants = {
     Enums: {
       cell_kind: ["markdown", "code", "output", "section", "divider"],
       cell_source: ["agent", "learner", "backend"],
+      concept_state: ["gap", "learning", "known"],
+      concept_verifier: ["you", "agent"],
       message_role: ["user", "assistant"],
       mission_goal: ["build", "understand", "interview", "work"],
       mission_level: ["beginner", "intermediate", "advanced"],
-      mission_status: ["draft", "in_progress", "completed", "abandoned", "generating", "failed"],
+      mission_status: [
+        "draft",
+        "in_progress",
+        "completed",
+        "abandoned",
+        "generating",
+        "failed",
+      ],
       puzzle_status: ["active", "completed", "abandoned"],
       puzzle_step: ["framing", "hypothesis", "try_it", "fix", "generalize"],
+      qthread_status: [
+        "mapping",
+        "awaiting_prereqs",
+        "ready",
+        "built",
+        "archived",
+      ],
       session_status: ["active", "paused", "completed"],
       thread_status: ["open", "closed"],
     },

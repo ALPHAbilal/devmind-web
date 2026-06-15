@@ -2,15 +2,35 @@
 
 /**
  * BoardShell — the client root. Owns the reducer (the demo's global `state`),
- * the theme (kept on the `.theme-board` scope, outside the reducer — like the
- * demo), and the timed side effects the demo ran imperatively: the prerequisite
- * "search" stream and the create→building→done simulation. It is the ONLY
- * adapter consumer; everything below reads via BoardContext.
+ * the theme scope, and the data verbs. It is the ONLY adapter/Realtime consumer;
+ * everything below reads via BoardContext, unaware of the data source.
+ *
+ * Two modes, selected by the server (`mock` prop):
+ *  • mock  — seeds from the typed mock board; the dock/build run the demo's timed
+ *            simulation. Reached via `/board?mock=true`. Unchanged from Phase 0.
+ *  • live  — seeds from the SSR `initialData`, subscribes Realtime on
+ *            concepts/question_threads/thread_concepts (RLS-scoped to the user),
+ *            and the verbs hit the DB: ask → POST /threads, create/build → POST
+ *            /missions/generate, mark-known → direct Supabase UPDATE.
  */
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { boardAdapter } from "@/lib/board/adapter";
-import { BoardContext, type BoardContextValue } from "./BoardContext";
-import { boardReducer, initBoardState } from "./boardState";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type Dispatch,
+} from "react";
+import { useRouter } from "next/navigation";
+import type { BoardData } from "@/lib/board/adapter";
+import type { Concept, SessionPrereq } from "@/lib/board/types";
+import type { Tables } from "@/lib/supabase/types";
+import { createClient } from "@/lib/supabase/client";
+import { useRealtimeChannel } from "@/lib/realtime";
+import { rowToConcept, rowToThread, threadConceptsOf } from "@/lib/board/supabaseAdapter";
+import { BoardContext, type BoardContextValue, type CreateForm } from "./BoardContext";
+import { boardReducer, colOf, initBoardState, type BoardAction } from "./boardState";
 import { Sidebar } from "./Sidebar";
 import { EdgeTab } from "./EdgeTab";
 import { TopBar } from "./TopBar";
@@ -22,8 +42,50 @@ import { ThreadsView } from "./threads/ThreadsView";
 import { ThreadView } from "./threads/ThreadView";
 import "./board.css";
 
-export function BoardShell() {
-  const [state, dispatch] = useReducer(boardReducer, boardAdapter, initBoardState);
+type ConceptRow = Tables<"concepts">;
+type ThreadRow = Tables<"question_threads">;
+type ThreadConceptRow = Tables<"thread_concepts">;
+
+interface BoardShellProps {
+  initialData: BoardData;
+  /** Present on the live board; absent in mock mode. Drives the Realtime filters. */
+  userId?: string;
+  mock?: boolean;
+}
+
+/** POST the generator proxy. Returns the new mission id (202) or null. */
+async function postGenerate(body: Record<string, unknown>): Promise<string | null> {
+  try {
+    const res = await fetch("/api/missions/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const j = (await res.json().catch(() => ({}))) as { mission_id?: string };
+    return res.status === 202 && j.mission_id ? j.mission_id : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Owner-scoped concept UPDATE (mark known) — RLS allows the owner. */
+async function markConceptKnown(id: string): Promise<void> {
+  try {
+    const sb = createClient();
+    // @supabase/ssr's 3-generic client narrows update() args to `never` (same
+    // mismatch app/realtime-test documents); cast the payload to satisfy it.
+    await sb
+      .from("concepts")
+      .update({ state: "known", verified_by: "you" } as never)
+      .eq("id", id);
+  } catch {
+    // Realtime/refresh will reconcile; the optimistic move already happened.
+  }
+}
+
+export function BoardShell({ initialData, userId, mock = false }: BoardShellProps) {
+  const [state, dispatch] = useReducer(boardReducer, initialData, initBoardState);
+  const router = useRouter();
 
   const appRef = useRef<HTMLDivElement>(null);
   const dockInputRef = useRef<HTMLInputElement | null>(null);
@@ -41,7 +103,7 @@ export function BoardShell() {
     [],
   );
 
-  // stop any in-flight prerequisite stream on unmount
+  // stop any in-flight mock prerequisite stream on unmount
   useEffect(
     () => () => {
       if (timerRef.current != null) clearTimeout(timerRef.current);
@@ -49,50 +111,156 @@ export function BoardShell() {
     [],
   );
 
-  // Dock submit → start a session and stream the mock prerequisites in over time
-  // (the demo's startSession / tick).
-  const submitQuestion = useCallback((raw: string) => {
-    const v = raw.trim() || "why my React components re-render too much";
-    if (timerRef.current != null) clearTimeout(timerRef.current);
-    dispatch({ type: "startSession", request: v });
-    const prereqs = boardAdapter.samplePrereqs;
-    let i = 0;
-    const tick = () => {
-      if (i >= prereqs.length) {
-        dispatch({ type: "endSearch" });
+  // ── Ask (dock submit) ────────────────────────────────────────────────────
+  const submitQuestion = useCallback(
+    (raw: string) => {
+      const v = raw.trim();
+      if (mock) {
+        const vv = v || "why my React components re-render too much";
+        if (timerRef.current != null) clearTimeout(timerRef.current);
+        dispatch({ type: "startSession", request: vv });
+        const prereqs = initialData.samplePrereqs;
+        let i = 0;
+        const tick = () => {
+          if (i >= prereqs.length) return dispatch({ type: "endSearch" });
+          dispatch({
+            type: "pushPrereq",
+            prereq: { ...prereqs[i], id: String(i), known: false, status: "todo" },
+          });
+          i += 1;
+          timerRef.current = window.setTimeout(tick, 700);
+        };
+        timerRef.current = window.setTimeout(tick, 600);
         return;
       }
-      dispatch({
-        type: "pushPrereq",
-        prereq: { ...prereqs[i], id: i, known: false, status: "todo" },
-      });
-      i += 1;
-      timerRef.current = window.setTimeout(tick, 700);
-    };
-    timerRef.current = window.setTimeout(tick, 600);
-  }, []);
+      // live: POST the thread; prereq cards arrive via Realtime (status='mapping').
+      if (!v) return;
+      dispatch({ type: "startSession", request: v });
+      const technology = stateRef.current.tech;
+      void (async () => {
+        try {
+          const res = await fetch("/api/board/threads", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question_text: v, technology }),
+          });
+          const body = (await res.json().catch(() => ({}))) as { thread_id?: string };
+          if (res.status === 202 && body.thread_id)
+            dispatch({ type: "sessionThread", threadId: body.thread_id });
+          else dispatch({ type: "endSearch" });
+        } catch {
+          dispatch({ type: "endSearch" });
+        }
+      })();
+    },
+    [mock, initialData.samplePrereqs],
+  );
 
-  // MorphSheet "Create / Build" (the demo's commitCreate).
-  const commitCreate = useCallback(() => {
-    const cfg = stateRef.current.sheet;
-    if (!cfg) return;
-    dispatch({ type: "closeSheet" });
-    if (cfg.build) {
-      window.setTimeout(() => dispatch({ type: "openFull", title: cfg.title }), 360);
-      return;
-    }
-    if (cfg.prereqId != null) {
-      const id = cfg.prereqId;
-      window.setTimeout(() => dispatch({ type: "prereqBuilding", id }), 80);
-      window.setTimeout(
-        () => dispatch({ type: "prereqDone", id, newConceptId: `nb${Date.now()}` }),
-        2400,
-      );
-    } else if (cfg.conceptId != null) {
-      const id = cfg.conceptId;
-      window.setTimeout(() => dispatch({ type: "createConceptLearning", id }), 80);
-    }
-  }, []);
+  // ── Create a notebook / Build the target (MorphSheet commit) ─────────────
+  const commitCreate = useCallback(
+    (form: CreateForm) => {
+      const cfg = stateRef.current.sheet;
+      if (!cfg) return;
+      dispatch({ type: "closeSheet" });
+
+      if (mock) {
+        if (cfg.build) {
+          window.setTimeout(() => dispatch({ type: "openFull", title: cfg.title }), 360);
+        } else if (cfg.prereqId != null) {
+          const id = cfg.prereqId;
+          window.setTimeout(() => dispatch({ type: "prereqBuilding", id }), 80);
+          window.setTimeout(
+            () => dispatch({ type: "prereqDone", id, newConceptId: `nb${Date.now()}` }),
+            2400,
+          );
+        } else if (cfg.conceptId != null) {
+          const id = cfg.conceptId;
+          window.setTimeout(() => dispatch({ type: "createConceptLearning", id }), 80);
+        }
+        return;
+      }
+
+      // live: feed the existing generator, stamped with board provenance.
+      const goal = form.goal ?? "build";
+      const constraints = form.note.trim() ? [form.note.trim()] : [];
+      const threadId = stateRef.current.session?.threadId ?? undefined;
+      void (async () => {
+        if (cfg.build) {
+          // step 5: the target notebook for the original question
+          const mid = await postGenerate({
+            topic: cfg.title,
+            goal,
+            constraints,
+            origin_thread_id: threadId,
+            is_thread_target: true,
+          });
+          if (mid) router.push(`/missions/${mid}`);
+          return;
+        }
+        const conceptId = cfg.prereqId ?? cfg.conceptId;
+        if (!conceptId) return;
+        const isPrereq = cfg.prereqId != null;
+        const mid = await postGenerate({
+          topic: cfg.title,
+          goal,
+          constraints,
+          concept_id: conceptId,
+          origin_thread_id: isPrereq ? threadId : undefined,
+        });
+        if (!mid) return;
+        // backend flips the concept gap→learning over Realtime; nudge it now
+        if (isPrereq) dispatch({ type: "prereqBuildingSb", id: conceptId });
+        else dispatch({ type: "createConceptLearning", id: conceptId });
+      })();
+    },
+    [mock, router],
+  );
+
+  // ── Mark known (board card + prereq triage) ──────────────────────────────
+  const markKnown = useCallback(
+    (c: Concept) => {
+      dispatch({ type: "markKnown", id: c.id }); // optimistic
+      if (!mock) void markConceptKnown(c.id); // RLS UPDATE; Realtime confirms
+    },
+    [mock],
+  );
+
+  const prereqToggle = useCallback(
+    (p: SessionPrereq) => {
+      if (mock) {
+        dispatch({ type: "toggleKnow", id: p.id });
+        return;
+      }
+      if (p.known) return; // live triage is one-way (persists)
+      dispatch({ type: "markKnown", id: p.id });
+      void markConceptKnown(p.id);
+    },
+    [mock],
+  );
+
+  // ── Open notebook / History ──────────────────────────────────────────────
+  const openNotebook = useCallback(
+    (c: Concept) => {
+      if (mock) {
+        dispatch({ type: "openSheet", cfg: { mode: "open", title: c.name, conceptId: c.id } });
+        return;
+      }
+      if (c.missionId) router.push(`/missions/${c.missionId}`);
+    },
+    [mock, router],
+  );
+
+  const openHistory = useCallback(
+    (item: string) => {
+      if (mock) {
+        dispatch({ type: "openSheet", cfg: { mode: "open", title: item } });
+        return;
+      }
+      const mid = initialData.historyLinks?.[item];
+      if (mid) router.push(`/missions/${mid}`);
+    },
+    [mock, router, initialData.historyLinks],
+  );
 
   const focusDock = useCallback(() => dockInputRef.current?.focus(), []);
 
@@ -107,12 +275,37 @@ export function BoardShell() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
+  // ── live data overlay: threads + derived ThreadNotes track the reducer ────
+  const conceptById = useMemo(() => {
+    const m = new Map<string, Concept>();
+    for (const k of Object.keys(state.techConcepts))
+      for (const c of state.techConcepts[k]) m.set(c.id, c);
+    return m;
+  }, [state.techConcepts]);
+
+  const data = useMemo<BoardData>(
+    () =>
+      mock
+        ? { ...initialData, threads: state.threads }
+        : {
+            ...initialData,
+            threads: state.threads,
+            threadNotes: threadConceptsOf(state.threadConcepts, conceptById, colOf),
+          },
+    [mock, initialData, state.threads, state.threadConcepts, conceptById],
+  );
+
   const ctx: BoardContextValue = {
     state,
     dispatch,
-    data: boardAdapter,
+    data,
+    mock,
     submitQuestion,
     commitCreate,
+    markKnown,
+    prereqToggle,
+    openNotebook,
+    openHistory,
     focusDock,
     theme,
     toggleTheme,
@@ -122,8 +315,14 @@ export function BoardShell() {
     state.nav === "thread" ? " thread-focus" : ""
   }`;
 
+  const activeThreadId = !mock ? state.session?.threadId ?? null : null;
+
   return (
     <BoardContext.Provider value={ctx}>
+      {!mock && userId && <BoardRealtime userId={userId} dispatch={dispatch} />}
+      {activeThreadId && (
+        <ThreadConceptsSync threadId={activeThreadId} dispatch={dispatch} />
+      )}
       <div className={appClass} ref={appRef}>
         <Sidebar />
         <div className="main">
@@ -143,4 +342,73 @@ export function BoardShell() {
       <FullView />
     </BoardContext.Provider>
   );
+}
+
+/**
+ * Concept + thread subscriptions (live board). RLS scopes both to the signed-in
+ * user, so no extra filtering is needed — concepts power column moves and the
+ * "cards stream in"; question_threads carries status (mapping → awaiting).
+ */
+function BoardRealtime({
+  userId,
+  dispatch,
+}: {
+  userId: string;
+  dispatch: Dispatch<BoardAction>;
+}) {
+  useRealtimeChannel<ConceptRow>(
+    "concepts",
+    { filter: { column: "user_id", value: userId } },
+    (p) => {
+      if (p.eventType === "DELETE" || !p.new) return;
+      const row = p.new;
+      dispatch({
+        type: "rtConcept",
+        tech: row.technology,
+        concept: rowToConcept(row, [], new Date()),
+      });
+    },
+    [userId],
+  );
+
+  useRealtimeChannel<ThreadRow>(
+    "question_threads",
+    { filter: { column: "user_id", value: userId } },
+    (p) => {
+      if (p.eventType === "DELETE" || !p.new) return;
+      const row = p.new;
+      dispatch({ type: "rtThread", thread: rowToThread(row, new Date()), status: row.status });
+    },
+    [userId],
+  );
+
+  return null;
+}
+
+/**
+ * thread_concepts has no user_id, so it's filtered by the active thread and only
+ * mounted while a dock session is live — that's exactly when prereq cards attach
+ * (the demo's tick). Unmounting on session end unsubscribes.
+ */
+function ThreadConceptsSync({
+  threadId,
+  dispatch,
+}: {
+  threadId: string;
+  dispatch: Dispatch<BoardAction>;
+}) {
+  useRealtimeChannel<ThreadConceptRow>(
+    "thread_concepts",
+    { filter: { column: "thread_id", value: threadId } },
+    (p) => {
+      if (p.eventType === "DELETE" || !p.new) return;
+      const row = p.new;
+      dispatch({
+        type: "rtThreadConcept",
+        link: { threadId: row.thread_id, conceptId: row.concept_id, ord: row.ord },
+      });
+    },
+    [threadId],
+  );
+  return null;
 }

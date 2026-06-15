@@ -16,6 +16,7 @@ import type { SheetConfig } from "@/lib/board/types";
 function CreateForm({ cfg }: { cfg: SheetConfig }) {
   const { dispatch, commitCreate, data } = useBoard();
   const [goal, setGoal] = useState<string | null>(null);
+  const [note, setNote] = useState("");
   const build = !!cfg.build;
 
   return (
@@ -53,10 +54,12 @@ function CreateForm({ cfg }: { cfg: SheetConfig }) {
           <textarea
             className="cn-text"
             placeholder="e.g. focus on hooks · use TypeScript · I have a senior interview Friday…"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
           />
         </div>
 
-        <button className="cn-go" onClick={commitCreate}>
+        <button className="cn-go" onClick={() => commitCreate({ goal, note })}>
           {build ? "Build notebook →" : "Create notebook →"}
         </button>
         <div className="cn-note">

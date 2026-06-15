@@ -2,11 +2,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
-  // /board is the Phase-0 board on typed MOCK data — no auth/data deps, like the
-  // existing /design-test and /realtime-test dev surfaces. Skip the session gate
-  // so it renders standalone. (Phase 2 removes this when the board reads live,
-  // owner-scoped data and should be gated like /dashboard.)
-  if (request.nextUrl.pathname === "/board") return NextResponse.next();
+  // The live /board reads owner-scoped data, so it's gated like /dashboard.
+  // The only exception is the mock escape hatch `/board?mock=true` (the typed
+  // Phase-0 board, no auth/data deps — same convention the Wizard uses).
+  if (
+    request.nextUrl.pathname === "/board" &&
+    request.nextUrl.searchParams.get("mock") === "true"
+  ) {
+    return NextResponse.next();
+  }
   return updateSession(request);
 }
 

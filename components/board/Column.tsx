@@ -12,7 +12,7 @@ import type { BoardColumn } from "@/lib/board/types";
 
 export function Column({ col }: { col: BoardColumn }) {
   const { state } = useBoard();
-  let cards = state.techConcepts[state.tech].filter((c) => colOf(c) === col.key);
+  let cards = (state.techConcepts[state.tech] ?? []).filter((c) => colOf(c) === col.key);
   if (state.session && state.view === "session") cards = cards.filter((c) => c.session);
 
   return (

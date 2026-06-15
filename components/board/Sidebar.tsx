@@ -6,14 +6,13 @@
  * to the bottom. Mirrors the demo's `renderSidebar()`. Collapse/expand is driven
  * by `.app.sb-collapsed` (width-only animation → no icon X-delta).
  */
-import { secOf } from "@/lib/board/mock";
 import { useBoard } from "./BoardContext";
 import { SidebarSection } from "./SidebarSection";
 import { Gear, Logo, Threads } from "./icons";
 
 export function Sidebar() {
-  const { state, dispatch, data, focusDock } = useBoard();
-  const activeSec = secOf(state.tech);
+  const { state, dispatch, data, focusDock, openHistory } = useBoard();
+  const activeSec = state.techSec[state.tech] ?? null;
   const navOn = state.nav === "threads" || state.nav === "thread";
 
   return (
@@ -83,11 +82,7 @@ export function Sidebar() {
           active={false}
         >
           {data.history.items.map((t) => (
-            <button
-              key={t}
-              className="tech"
-              onClick={() => dispatch({ type: "openSheet", cfg: { mode: "open", title: t } })}
-            >
+            <button key={t} className="tech" onClick={() => openHistory(t)}>
               <span className="dot" />
               <span className="tnm">{t}</span>
             </button>
