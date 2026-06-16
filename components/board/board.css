@@ -80,9 +80,9 @@
 .theme-board .sec.open > .kids { grid-template-rows: 1fr; opacity: 1; }
 .theme-board .sec.open > .sec-h .chev { transform: rotate(90deg); }
 .theme-board .app.sb-collapsed .kids { grid-template-rows: 0fr; opacity: 0; }
-.theme-board .tech { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; height: 32px; padding-left: 62px; padding-right: 14px; border: none; background: none; cursor: pointer; color: var(--ink-3); } /* padding-left 62px == father .ic cell width → children nest to the right of the father icon, dot at the father .sname start; same rule covers History rows. padding-right is the truncation inset. */
+.theme-board .tech { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; height: 32px; padding-left: 62px; padding-right: 14px; border: none; background: none; cursor: pointer; color: var(--ink-3); } /* padding-left 62px == father .ic cell width → children nest to the right of the father icon, dot at the father .sname start; same rule covers History rows. padding-right is the truncation inset. */
 .theme-board .tech .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; transition: background 0.13s; }
-.theme-board .tech .tnm { flex: 1; min-width: 0; font: 500 12.5px var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: inherit; }
+.theme-board .tech .tnm { flex: 1; min-width: 0; text-align: left; font: 500 12.5px var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: inherit; } /* text-align:left — .tech is a <button> (defaults to center); flex:1 makes the span full-width so without this the label would center away from the dot */
 .theme-board .tech:hover { color: var(--ink); }
 .theme-board .tech:hover .dot { background: var(--ink-2); }
 .theme-board .tech.on { color: var(--ink); font-weight: 600; }
