@@ -50,7 +50,7 @@
 .theme-board .ic svg { width: 18px; height: 18px; }
 
 .theme-board .brandrow { display: flex; align-items: center; height: 30px; margin-bottom: 16px; flex-shrink: 0; padding-right: 16px; }
-.theme-board .brandrow .brand { flex: 1; font: 700 13px var(--mono); letter-spacing: 0.3px; color: var(--ink-2); white-space: nowrap; }
+.theme-board .brandrow .brand { flex: 1; min-width: 0; font: 700 13px var(--mono); letter-spacing: 0.3px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .theme-board .brandrow .newx { width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line); background: none; color: var(--ink-2); font-size: 16px; line-height: 0; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; transition: 0.15s; }
 .theme-board .brandrow .newx:hover { color: var(--ink); border-color: var(--card-bd); }
 
@@ -63,8 +63,8 @@
 .theme-board .app.sb-collapsed .scrollarea { overflow: hidden; } /* rail: no scrollbar */
 
 .theme-board .sec { position: relative; }
-.theme-board .sec-h { display: flex; align-items: center; width: 100%; height: 42px; border: none; background: none; cursor: pointer; padding: 0; color: inherit; border-radius: 9px; }
-.theme-board .sec-h .sname { flex: 1; text-align: left; font: 600 10.5px var(--mono); letter-spacing: 0.9px; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+.theme-board .sec-h { display: flex; align-items: center; width: 100%; min-width: 0; height: 42px; border: none; background: none; cursor: pointer; padding: 0; color: inherit; border-radius: 9px; }
+.theme-board .sec-h .sname { flex: 1; min-width: 0; text-align: left; font: 600 10.5px var(--mono); letter-spacing: 0.9px; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* chev (30px, flex-shrink:0) sits past the label → its inset keeps the ellipsis inside the border */
 .theme-board .sec-h .chev { width: 30px; flex-shrink: 0; display: grid; place-items: center; color: var(--ink-3); transition: transform 0.22s; }
 .theme-board .sec-h .chev svg { width: 13px; height: 13px; }
 .theme-board .sec-h:hover .ic, .theme-board .sec-h:hover .sname { color: var(--ink); } /* affordance only — reveals nothing */
@@ -80,9 +80,9 @@
 .theme-board .sec.open > .kids { grid-template-rows: 1fr; opacity: 1; }
 .theme-board .sec.open > .sec-h .chev { transform: rotate(90deg); }
 .theme-board .app.sb-collapsed .kids { grid-template-rows: 0fr; opacity: 0; }
-.theme-board .tech { display: flex; align-items: center; gap: 10px; width: 100%; height: 32px; padding-left: 24px; border: none; background: none; cursor: pointer; color: var(--ink-3); }
+.theme-board .tech { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; height: 32px; padding-left: 62px; padding-right: 14px; border: none; background: none; cursor: pointer; color: var(--ink-3); } /* padding-left 62px == father .ic cell width → children nest to the right of the father icon, dot at the father .sname start; same rule covers History rows. padding-right is the truncation inset. */
 .theme-board .tech .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; transition: background 0.13s; }
-.theme-board .tech .tnm { font: 500 12.5px var(--sans); white-space: nowrap; color: inherit; }
+.theme-board .tech .tnm { flex: 1; min-width: 0; font: 500 12.5px var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: inherit; }
 .theme-board .tech:hover { color: var(--ink); }
 .theme-board .tech:hover .dot { background: var(--ink-2); }
 .theme-board .tech.on { color: var(--ink); font-weight: 600; }
@@ -281,7 +281,8 @@
 
 /* ───────── Threads (preserves the sidebar; a nav item + two views) ───────── */
 .theme-board .hide { display: none !important; }
-.theme-board .navitem { display: flex; align-items: center; width: 100%; height: 42px; border: none; background: none; cursor: pointer; padding: 0; color: inherit; }
+.theme-board .navitem { display: flex; align-items: center; width: 100%; min-width: 0; height: 42px; border: none; background: none; cursor: pointer; padding: 0 14px 0 0; color: inherit; }
+.theme-board .navitem .sname { flex: 1; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* "Threads" nav label — give it flex so it shrinks + ellipsizes like the rest */
 .theme-board .navitem:hover .ic, .theme-board .navitem:hover .sname { color: var(--ink); }
 .theme-board .navitem.on .ic { color: rgb(var(--holo)); }
 .theme-board .navitem.on .sname { color: var(--ink); }

@@ -64,7 +64,7 @@ export const TECHS: Record<string, Tech> = {
     ],
   },
   sql: {
-    label: "SQL",
+    label: "Structured Query Language and relational databases",
     mn: "Sq",
     concepts: [
       { id: "select", name: "SELECT", state: "known", by: "you", nb: 1 },
@@ -94,7 +94,7 @@ export const HISTORY: HistorySection = {
   id: "hist",
   name: "History",
   icon: "clock",
-  items: ["React reconciliation", "SQL window functions", "Git rebase"],
+  items: ["React reconciliation and the fiber tree diffing algorithm explained in depth", "SQL window functions", "Git rebase"],
 };
 
 export function secOf(tech: string): string | null {
