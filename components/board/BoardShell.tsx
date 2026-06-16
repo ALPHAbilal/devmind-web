@@ -88,7 +88,7 @@ export function BoardShell({ initialData, userId, mock = false }: BoardShellProp
   const router = useRouter();
 
   const appRef = useRef<HTMLDivElement>(null);
-  const dockInputRef = useRef<HTMLInputElement | null>(null);
+  const dockInputRef = useRef<HTMLTextAreaElement | null>(null);
   const timerRef = useRef<number | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
