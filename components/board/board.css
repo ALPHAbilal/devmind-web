@@ -176,6 +176,7 @@
 .theme-board .mk:hover { opacity: 0.8; transform: translateX(2px); }
 .theme-board .mk svg { width: 13px; height: 13px; }
 .theme-board .lock { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--line); font: 500 10px var(--mono); color: var(--ink-3); }
+.theme-board .lock svg { width: 12px; height: 12px; flex-shrink: 0; }
 .theme-board .chk { width: 16px; height: 16px; border-radius: 50%; background: rgb(var(--holo)); color: var(--bg); display: grid; place-items: center; font-size: 9px; flex-shrink: 0; animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 .theme-board .gen { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--line); font: 500 10.5px var(--mono); color: rgb(var(--holo)); }
 .theme-board .spin { width: 12px; height: 12px; border: 2px solid rgba(var(--holo), 0.25); border-top-color: rgb(var(--holo)); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }

@@ -10,7 +10,7 @@
 import type { ReactNode } from "react";
 import { useBoard, stripHtml } from "./BoardContext";
 import { colOf, knownIds, locked } from "./boardState";
-import { NB } from "./icons";
+import { Lock, NB } from "./icons";
 import type { Concept } from "@/lib/board/types";
 
 function Html({ html }: { html: string }) {
@@ -36,7 +36,7 @@ export function ConceptCard({ concept: c }: { concept: Concept }) {
         </div>
         {lk ? (
           <div className="lock">
-            🔒 needs {(c.needs || []).map(nameOf).join(", ")} first
+            <Lock /> needs {(c.needs || []).map(nameOf).join(", ")} first
           </div>
         ) : (
           <button
