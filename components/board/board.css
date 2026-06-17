@@ -40,58 +40,68 @@
 
 .theme-board .body { flex: 1; display: flex; min-height: 0; }
 
-/* ── Sidebar (sectioned rail · father sections → child technologies) ──
-   The father ICON lives in a fixed 62px leading cell == the collapsed rail width.
-   Collapse changes ONLY the sidebar width (248→64) — align-items / justify /
-   left-padding never change — so the icon center stays locked at x=31 (no x-delta). */
-.theme-board .sidebar { width: 248px; flex-shrink: 0; border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 30px 0 16px; overflow: hidden; transition: width 0.32s cubic-bezier(0.4, 0, 0.2, 1); }
-.theme-board .app.sb-collapsed .sidebar { width: 64px; }
-.theme-board .ic { width: 62px; flex-shrink: 0; display: grid; place-items: center; color: var(--ink-2); }
+/* ── Sidebar (Claude-style flat rail) ─────────────────────────────────────────
+   Serif "devmind" wordmark → Home, a search icon (conversation search), then two
+   quiet always-open groups — Technologies (flat, text-only) + History (text-only)
+   — and the gear pinned bottom. Icons sit in a fixed 40px leading cell inside an
+   8px content inset (icon centre locked at x=28); collapse animates ONLY the
+   width, so the brand glyph / search / gear never shift on the x-axis. The
+   collapsed rail keeps just those three — the scrollarea (New topic + both
+   lists) is hidden. */
+.theme-board .sidebar { width: 248px; flex-shrink: 0; border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 26px 0 14px; overflow: hidden; transition: width 0.32s cubic-bezier(0.4, 0, 0.2, 1); }
+.theme-board .app.sb-collapsed .sidebar { width: 56px; }
+.theme-board .ic { width: 40px; flex-shrink: 0; display: grid; place-items: center; color: var(--ink-2); }
 .theme-board .ic svg { width: 18px; height: 18px; }
 
-.theme-board .brandrow { display: flex; align-items: center; height: 30px; margin-bottom: 16px; flex-shrink: 0; padding-right: 16px; }
-.theme-board .brandrow .brand { flex: 1; min-width: 0; font: 700 13px var(--mono); letter-spacing: 0.3px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.theme-board .brandrow .newx { width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line); background: none; color: var(--ink-2); font-size: 16px; line-height: 0; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; transition: 0.15s; }
-.theme-board .brandrow .newx:hover { color: var(--ink); border-color: var(--card-bd); }
+/* brand bar — serif wordmark (→ Home) + search; on the rail the word swaps for a glyph */
+.theme-board .brandrow { display: flex; align-items: center; gap: 6px; height: 36px; margin-bottom: 14px; flex-shrink: 0; padding: 0 10px 0 16px; }
+.theme-board .brand { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; border: none; background: none; padding: 0; cursor: pointer; }
+.theme-board .brandword { min-width: 0; font: 400 24px "Instrument Serif", Georgia, serif; letter-spacing: 0.3px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.15s; }
+.theme-board .brandword b { font-weight: 400; color: var(--ink); }
+.theme-board .brand:hover .brandword { color: var(--ink); }
+.theme-board .brand-ic { display: none; } /* glyph: rail only */
+.theme-board .sbtn { width: 30px; height: 30px; flex-shrink: 0; border: none; background: none; border-radius: 8px; display: grid; place-items: center; cursor: pointer; color: var(--ink-3); transition: color 0.15s, background 0.15s; }
+.theme-board .sbtn:hover { color: var(--ink); background: var(--col-bg); }
+.theme-board .sbtn svg { width: 17px; height: 17px; }
 
-/* scrollable middle: brand pinned top, gear pinned bottom, sections scroll when tall */
-.theme-board .scrollarea { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: rgba(127, 127, 127, 0.4) transparent; }
+/* scrollable middle: New topic + the two groups; gear is pinned outside it */
+.theme-board .scrollarea { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; padding: 0 8px; scrollbar-width: thin; scrollbar-color: rgba(127, 127, 127, 0.4) transparent; }
 .theme-board .scrollarea::-webkit-scrollbar { width: 9px; }
 .theme-board .scrollarea::-webkit-scrollbar-thumb { background: rgba(127, 127, 127, 0.3); border-radius: 9px; border: 2px solid transparent; background-clip: content-box; }
 .theme-board .scrollarea:hover::-webkit-scrollbar-thumb { background: rgba(127, 127, 127, 0.5); background-clip: content-box; }
 .theme-board .scrollarea::-webkit-scrollbar-track { background: transparent; }
-.theme-board .app.sb-collapsed .scrollarea { overflow: hidden; } /* rail: no scrollbar */
 
-.theme-board .sec { position: relative; }
-.theme-board .sec-h { display: flex; align-items: center; width: 100%; min-width: 0; height: 42px; border: none; background: none; cursor: pointer; padding: 0; color: inherit; border-radius: 9px; }
-.theme-board .sec-h .sname { flex: 1; min-width: 0; text-align: left; font: 600 10.5px var(--mono); letter-spacing: 0.9px; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* chev (30px, flex-shrink:0) sits past the label → its inset keeps the ellipsis inside the border */
-.theme-board .sec-h .chev { width: 30px; flex-shrink: 0; display: grid; place-items: center; color: var(--ink-3); transition: transform 0.22s; }
-.theme-board .sec-h .chev svg { width: 13px; height: 13px; }
-.theme-board .sec-h:hover .ic, .theme-board .sec-h:hover .sname { color: var(--ink); } /* affordance only — reveals nothing */
-.theme-board .sec.active > .sec-h .ic { color: rgb(var(--holo)); }
+/* New topic — the only icon + label row */
+.theme-board .navitem { display: flex; align-items: center; width: 100%; min-width: 0; height: 38px; border: none; background: none; cursor: pointer; padding: 0 10px 0 0; color: var(--ink-2); border-radius: 8px; transition: color 0.13s, background 0.13s; }
+.theme-board .navitem .sname { flex: 1; min-width: 0; text-align: left; font: 400 14px var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity 0.15s ease 0.16s; }
+.theme-board .navitem:hover { color: var(--ink); background: var(--col-bg); }
+.theme-board .navitem:hover .ic { color: var(--ink); }
 
-/* labels vanish fast on collapse, fade back in AFTER the width opens (no wrap-flash) */
-.theme-board .brandrow .brand, .theme-board .brandrow .newx, .theme-board .sname, .theme-board .sec-h .chev, .theme-board .tech .tnm { opacity: 1; transition: opacity 0.15s ease 0.16s; }
-.theme-board .app.sb-collapsed .brandrow .brand, .theme-board .app.sb-collapsed .brandrow .newx, .theme-board .app.sb-collapsed .sname, .theme-board .app.sb-collapsed .sec-h .chev, .theme-board .app.sb-collapsed .tech .tnm { opacity: 0; transition: opacity 0.12s ease 0s; }
+/* quiet group label — static, no chevron, sentence case */
+.theme-board .slabel { font: 600 11px var(--sans); letter-spacing: 0.3px; color: var(--ink-3); padding: 0 8px; margin: 16px 0 4px; flex-shrink: 0; }
 
-/* children (technologies) — inline accordion; always hidden on the collapsed rail */
-.theme-board .kids { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.26s ease, opacity 0.2s; }
-.theme-board .kids > .kidsin { overflow: hidden; min-height: 0; }
-.theme-board .sec.open > .kids { grid-template-rows: 1fr; opacity: 1; }
-.theme-board .sec.open > .sec-h .chev { transform: rotate(90deg); }
-.theme-board .app.sb-collapsed .kids { grid-template-rows: 0fr; opacity: 0; }
-.theme-board .tech { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; height: 32px; padding-left: 62px; padding-right: 14px; border: none; background: none; cursor: pointer; color: var(--ink-3); } /* padding-left 62px == father .ic cell width → children nest to the right of the father icon, dot at the father .sname start; same rule covers History rows. padding-right is the truncation inset. */
-.theme-board .tech .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; transition: background 0.13s; }
-.theme-board .tech .tnm { flex: 1; min-width: 0; text-align: left; font: 500 12.5px var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: inherit; } /* text-align:left — .tech is a <button> (defaults to center); flex:1 makes the span full-width so without this the label would center away from the dot */
-.theme-board .tech:hover { color: var(--ink); }
-.theme-board .tech:hover .dot { background: var(--ink-2); }
-.theme-board .tech.on { color: var(--ink); font-weight: 600; }
-.theme-board .tech.on .dot { background: rgb(var(--holo)); }
+/* flat, text-only rows (techs + history) — no dot/icon, ellipsis-truncated */
+.theme-board .litem { display: block; width: 100%; min-width: 0; box-sizing: border-box; text-align: left; padding: 7px 8px; border: none; background: none; cursor: pointer; color: var(--ink-2); font: 400 14px var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 8px; transition: color 0.13s, background 0.13s; }
+.theme-board .litem:hover { color: var(--ink); background: var(--col-bg); }
+.theme-board .litem.on { color: var(--ink); font-weight: 600; } /* active tech */
+.theme-board .litem.hist { color: color-mix(in srgb, var(--amber) 70%, var(--ink-2)); } /* History: warm tint */
+.theme-board .litem.hist:hover { color: var(--amber); background: var(--col-bg); }
 
-.theme-board .divz { height: 1px; background: var(--line); margin: 8px 16px 8px 14px; flex-shrink: 0; }
-.theme-board .side-set { flex-shrink: 0; width: 62px; height: 42px; border: none; background: none; display: grid; place-items: center; cursor: pointer; color: var(--ink-3); }
+/* gear — pinned bottom, sharing the x=28 icon column */
+.theme-board .divz { height: 1px; background: var(--line); margin: 6px 16px; flex-shrink: 0; }
+.theme-board .side-set { flex-shrink: 0; width: 40px; height: 40px; margin-left: 8px; border: none; background: none; display: grid; place-items: center; cursor: pointer; color: var(--ink-3); }
 .theme-board .side-set:hover { color: var(--ink); }
 .theme-board .side-set svg { width: 17px; height: 17px; }
+
+/* collapse → rail: hide the scrollarea (New topic + lists) and stack the brand
+   glyph + search vertically; the gear stays. Brand glyph / search / gear all
+   keep the x=28 centre, so nothing jumps on the x-axis. */
+.theme-board .app.sb-collapsed .scrollarea { overflow: hidden; opacity: 0; pointer-events: none; transition: opacity 0.1s ease 0s; }
+.theme-board .app.sb-collapsed .brandrow { flex-direction: column; align-items: flex-start; gap: 12px; height: auto; padding: 0 8px; margin-bottom: 14px; }
+.theme-board .app.sb-collapsed .brand { flex: none; }
+.theme-board .app.sb-collapsed .brandword { display: none; }
+.theme-board .app.sb-collapsed .brand-ic { display: grid; }
+.theme-board .app.sb-collapsed .sbtn { width: 40px; }
 /* draggable floating edge tab — click to collapse/expand, drag to move it anywhere on the Y axis */
 .theme-board .edge-tab { position: absolute; left: -10px; top: 120px; width: 20px; height: 50px; border-radius: 7px; border: 1px solid var(--line); background: var(--bg); color: var(--ink-3); display: grid; place-items: center; cursor: grab; z-index: 7; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); touch-action: none; transition: color 0.15s, border-color 0.15s; }
 .theme-board .edge-tab:hover { color: var(--ink); border-color: var(--card-bd); }
@@ -279,14 +289,8 @@
 .theme-board .fv-body { flex: 1; overflow-y: auto; padding: 40px 24px 120px; }
 .theme-board .fv-body .nb { max-width: 780px; }
 
-/* ───────── Threads (preserves the sidebar; a nav item + two views) ───────── */
+/* ───────── Threads (preserves the sidebar; reached via the brand-bar search) ── */
 .theme-board .hide { display: none !important; }
-.theme-board .navitem { display: flex; align-items: center; width: 100%; min-width: 0; height: 42px; border: none; background: none; cursor: pointer; padding: 0 14px 0 0; color: inherit; }
-.theme-board .navitem .sname { flex: 1; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* "Threads" nav label — give it flex so it shrinks + ellipsizes like the rest */
-.theme-board .navitem:hover .ic, .theme-board .navitem:hover .sname { color: var(--ink); }
-.theme-board .navitem.on .ic { color: rgb(var(--holo)); }
-.theme-board .navitem.on .sname { color: var(--ink); }
-.theme-board .app.sb-collapsed .navitem .sname { opacity: 0; }
 /* a specific thread hides the sidebar entirely; back lives in the topbar */
 .theme-board .app.thread-focus .sidebar, .theme-board .app.thread-focus .edge-tab { display: none !important; }
 .theme-board .topbar .back { display: inline-flex; align-items: center; gap: 7px; font: 600 12px var(--sans); color: var(--ink-2); background: none; border: 1px solid var(--line); border-radius: 9px; padding: 7px 12px; cursor: pointer; }
