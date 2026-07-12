@@ -32,6 +32,13 @@ interface NotebookContextValue {
   /** mc_id of the current in-progress micro-challenge, derived from session.state_json. */
   currentMicroChallengeId: string | null;
   setCurrentMicroChallengeId: (id: string | null) => void;
+  /** Build stage (the right-side workspace). Open/expand mirror the puzzle
+   *  pattern — view state lives here, the surface reads it. */
+  stageOpen: boolean;
+  stageExpanded: boolean;
+  openStage: () => void;
+  closeStage: () => void;
+  toggleStageExpanded: () => void;
 }
 
 const NotebookContext = createContext<NotebookContextValue | null>(null);
@@ -51,6 +58,18 @@ export function NotebookProvider({
   const [currentMicroChallengeId, setCurrentMicroChallengeId] = useState<
     string | null
   >(null);
+  const [stageOpen, setStageOpen] = useState(false);
+  const [stageExpanded, setStageExpanded] = useState(false);
+
+  const openStage = useCallback(() => setStageOpen(true), []);
+  const closeStage = useCallback(() => {
+    setStageOpen(false);
+    setStageExpanded(false);
+  }, []);
+  const toggleStageExpanded = useCallback(
+    () => setStageExpanded((e) => !e),
+    [],
+  );
   // Tracks the moment thinking started so that pre-existing cells don't
   // race-clear the spinner (e.g. SSR seed events).
   const thinkingSinceRef = useRef<number>(0);
@@ -86,6 +105,11 @@ export function NotebookProvider({
       setPuzzle,
       currentMicroChallengeId,
       setCurrentMicroChallengeId,
+      stageOpen,
+      stageExpanded,
+      openStage,
+      closeStage,
+      toggleStageExpanded,
     }),
     [
       missionId,
@@ -96,6 +120,11 @@ export function NotebookProvider({
       notifyAgentReply,
       puzzle,
       currentMicroChallengeId,
+      stageOpen,
+      stageExpanded,
+      openStage,
+      closeStage,
+      toggleStageExpanded,
     ],
   );
 

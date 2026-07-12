@@ -18,6 +18,7 @@ import { SeamAsk } from "./SeamAsk";
 import { Thread } from "./Thread";
 import { useNotebook, type Puzzle } from "./NotebookProvider";
 import { PuzzlePane } from "@/components/puzzle/PuzzlePane";
+import { BuildStage } from "./build/BuildStage";
 import { SessionControl } from "./SessionControl";
 import type {
   ConceptGraphSpec,
@@ -68,6 +69,8 @@ export function NotebookContent({
     puzzle,
     setPuzzle,
     setCurrentMicroChallengeId,
+    stageOpen,
+    stageExpanded,
   } = useNotebook();
 
   const [cells, setCells] = useState<Cell[]>(initialCells);
@@ -279,7 +282,11 @@ export function NotebookContent({
   }
 
   return (
-    <div className="notebook-layout">
+    <div
+      className={`notebook-layout${stageOpen ? " has-stage" : ""}${
+        stageExpanded ? " stage-expanded" : ""
+      }`}
+    >
       <div className="notebook-content">
       <div
         className="notebook-progress"
@@ -359,6 +366,7 @@ export function NotebookContent({
       </div>
       {puzzle ? <PuzzlePane puzzle={puzzle} /> : null}
       </div>
+      {stageOpen ? <BuildStage cells={orderedCells} /> : null}
     </div>
   );
 }

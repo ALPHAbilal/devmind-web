@@ -1,0 +1,228 @@
+/* ============================================================================
+ * BuildStage — right-side workspace. Theme-token driven (adapts to the
+ * notebook light/dark toggle). Layout has two states, both set on
+ * `.notebook-layout`: `.has-stage` (docked split) and `.stage-expanded` (full).
+ * ========================================================================== */
+
+/* ── Layout states on the notebook row ──────────────────────────────────── */
+.notebook-layout.has-stage .notebook-content {
+  margin-inline: 0; /* stop centering; hand the right half to the stage */
+  max-width: 640px;
+  flex: 1 1 0;
+}
+.notebook-layout.stage-expanded .notebook-content {
+  display: none;
+}
+
+.build-stage {
+  flex: 0 0 46%;
+  min-width: 420px;
+  align-self: flex-start;
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-elevated);
+}
+.notebook-layout.stage-expanded .build-stage {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+/* ── Stage bar ──────────────────────────────────────────────────────────── */
+.build-stage .stage-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px 6px 12px;
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.build-stage .stage-tab {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg-hover);
+}
+.build-stage .stage-spacer {
+  flex: 1;
+}
+.build-stage .stage-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 13px;
+  display: grid;
+  place-items: center;
+  transition: color 0.15s, background 0.15s;
+}
+.build-stage .stage-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* ── Body: file drawer + panel ──────────────────────────────────────────── */
+.build-stage .stage-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.build-stage .file-drawer {
+  width: 168px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-app);
+  overflow-y: auto;
+  padding: 8px 6px;
+}
+.build-stage .files-header {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  padding: 4px 8px 8px;
+}
+.build-stage .files-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 4px 8px;
+}
+.build-stage .file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-family: var(--font-code);
+  color: var(--text-secondary);
+  transition: color 0.13s, background 0.13s;
+}
+.build-stage .file-item:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.build-stage .file-item.active {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  font-weight: 600;
+}
+.build-stage .file-icon {
+  flex-shrink: 0;
+}
+
+.build-stage .stage-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.build-stage .editor-area {
+  flex: 1;
+  min-height: 0;
+}
+.build-stage .editor-empty {
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ── Terminal ───────────────────────────────────────────────────────────── */
+.build-stage .terminal-section {
+  flex-shrink: 0;
+  height: 34%;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-subtle);
+  background: #14181a; /* terminal stays dark in both themes */
+}
+.build-stage .terminal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.build-stage .terminal-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #84967f;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.build-stage .stage-run-btn {
+  border: 1px solid rgba(156, 213, 148, 0.3);
+  background: rgba(156, 213, 148, 0.12);
+  color: #9cd594;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.build-stage .stage-run-btn:hover:not(:disabled) {
+  background: rgba(156, 213, 148, 0.2);
+  color: #b7f1ae;
+}
+.build-stage .stage-run-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.build-stage .terminal-body {
+  flex: 1;
+  margin: 0;
+  overflow: auto;
+  padding: 10px 12px;
+  font-family: var(--font-code);
+  font-size: 12px;
+  line-height: 1.6;
+  color: #e8eaed;
+  white-space: pre-wrap;
+}
+.build-stage .terminal-dim {
+  color: #6b7c66;
+}
+.build-stage .terminal-error {
+  color: #f8a4a0;
+}
+.build-stage .terminal-hint {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: #b9a15f;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Stack the stage under the notebook on narrow screens. */
+@media (max-width: 900px) {
+  .notebook-layout.has-stage {
+    flex-direction: column;
+  }
+  .build-stage {
+    position: static;
+    width: 100%;
+    flex-basis: auto;
+    height: 70vh;
+  }
+}

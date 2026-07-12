@@ -1,3 +1,6 @@
+"use client";
+
+import { useNotebook } from "../NotebookProvider";
 import type { Cell } from "./types";
 
 /**
@@ -12,6 +15,7 @@ import type { Cell } from "./types";
  * backend (puzzle / micro-challenge verification), not the cell content.
  */
 export function ChallengeCell({ cell }: { cell: Cell }) {
+  const { openStage } = useNotebook();
   const lines = cell.content.split("\n");
   const title = (lines[0] ?? "What to try").trim() || "What to try";
 
@@ -49,6 +53,15 @@ export function ChallengeCell({ cell }: { cell: Cell }) {
             ))}
           </ul>
         ) : null}
+      </div>
+      <div className="challenge-footer">
+        <button
+          type="button"
+          className="challenge-start"
+          onClick={openStage}
+        >
+          ✎ Start Building
+        </button>
       </div>
     </div>
   );
