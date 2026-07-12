@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import "./cells.css";
 import { MarkdownCell } from "./MarkdownCell";
 import { OutputCell } from "./OutputCell";
 import { SectionCell } from "./SectionCell";

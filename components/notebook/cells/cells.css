@@ -125,6 +125,34 @@
   padding: 0;
   color: var(--text-primary);
 }
+.cell-markdown table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.cell-markdown th,
+.cell-markdown td {
+  text-align: left;
+  padding: 6px 12px;
+  border: 1px solid var(--border-subtle);
+}
+.cell-markdown th {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.cell-markdown td {
+  color: var(--text-secondary);
+}
+/* GFM task-list checkboxes read as a clean list, not raw inputs. */
+.cell-markdown ul:has(input[type="checkbox"]) {
+  list-style: none;
+  padding-left: 4px;
+}
+.cell-markdown input[type="checkbox"] {
+  margin-right: 8px;
+}
 
 /* ─── Code cell ─────────────────────────────────────────────────────────── */
 .cell-code {
