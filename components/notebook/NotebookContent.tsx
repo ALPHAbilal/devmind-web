@@ -19,10 +19,9 @@ import { Thread } from "./Thread";
 import { useNotebook, type Puzzle } from "./NotebookProvider";
 import { PuzzlePane } from "@/components/puzzle/PuzzlePane";
 import { SessionControl } from "./SessionControl";
-import {
-  ConceptGraph,
-  type ConceptGraphSpec,
-  type CheckpointLite,
+import type {
+  ConceptGraphSpec,
+  CheckpointLite,
 } from "@/components/sidebar/ConceptGraph";
 import type { Tables } from "@/lib/supabase/types";
 import "./notebook-content.css";
@@ -61,8 +60,6 @@ export function NotebookContent({
   currentCheckpointId,
   initialCells,
   initialState,
-  conceptGraph,
-  checkpoints,
   missionTitle,
 }: NotebookContentProps) {
   const {
@@ -197,17 +194,6 @@ export function NotebookContent({
     () => [...cells].sort((a, b) => a.ord - b.ord),
     [cells],
   );
-
-  // Live current checkpoint: prefer the session's state_json (advances via
-  // Realtime), fall back to the SSR-seeded mission prop. Feeds ConceptGraph
-  // coloring without a second subscription.
-  const liveCheckpointId = useMemo(() => {
-    const state = session?.state_json as
-      | { current_checkpoint_id?: string | null }
-      | null
-      | undefined;
-    return state?.current_checkpoint_id ?? currentCheckpointId;
-  }, [session?.state_json, currentCheckpointId]);
 
   // 5.4-A persists `bootstrap_complete` to session.state_json once the agent has
   // finished writing the lesson. Derived the same way as liveCheckpointId.
@@ -373,13 +359,6 @@ export function NotebookContent({
       </div>
       {puzzle ? <PuzzlePane puzzle={puzzle} /> : null}
       </div>
-      {conceptGraph ? (
-        <ConceptGraph
-          graph={conceptGraph}
-          checkpoints={checkpoints}
-          currentCheckpointId={liveCheckpointId}
-        />
-      ) : null}
     </div>
   );
 }

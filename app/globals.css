@@ -139,47 +139,51 @@ a {
  * IDE-like forest. UI: Segoe UI. Code: Cascadia Code.
  * Used on: notebook, puzzle, chat surfaces.
  * ========================================================================== */
+/* Re-themed onto the board's monochrome white/dark palette (was forest green).
+ * Token *values* remap so all notebook component CSS recolors at once; the
+ * component selectors are unchanged. Code cells keep a dark surface (see the
+ * .cell-code override in cells/cells.css) so syntax colors stay readable. */
 .theme-notebook {
-  --bg-deepest: #1a2418;
-  --bg-app: #303f2d;
-  --bg-surface: #3b4b38;
-  --bg-card: #424940;
-  --bg-elevated: #52634f;
-  --bg-hover: #5a6b56;
+  --bg-deepest: #eaece7;
+  --bg-app: #f6f7f4;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-elevated: #e7e9e3;
+  --bg-hover: #e4e7e0;
 
-  --text-primary: #e8eaed;
-  --text-secondary: #baccb3;
-  --text-muted: #84967f;
-  --text-disabled: #6b7c66;
+  --text-primary: #1a1e19;
+  --text-secondary: #5b6157;
+  --text-muted: #9aa094;
+  --text-disabled: #b3b8ab;
 
-  --accent-green: #9cd594;
-  --accent-green-bright: #b7f1ae;
-  --accent-green-dim: #679e62;
-  --accent-teal: #a0cfd4;
-  --accent-teal-dim: #6b989d;
-  --accent-yellow: #fbbf24;
-  --accent-pink: #f472b6;
-  --accent-red: #de3730;
-  --accent-purple: #a78bfa;
+  --accent-green: #4e8a49;
+  --accent-green-bright: #3a7136;
+  --accent-green-dim: #7faa79;
+  --accent-teal: #4d8a90;
+  --accent-teal-dim: #7fa9ad;
+  --accent-yellow: #b9822f;
+  --accent-pink: #c85f9c;
+  --accent-red: #c0392b;
+  --accent-purple: #7c5cd6;
 
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-medium: rgba(255, 255, 255, 0.14);
-  --border-strong: rgba(255, 255, 255, 0.22);
+  --border-subtle: rgba(20, 30, 15, 0.08);
+  --border-medium: rgba(20, 30, 15, 0.14);
+  --border-strong: rgba(20, 30, 15, 0.22);
 
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
 
-  --font-ui: "Segoe UI", Tahoma, sans-serif;
+  --font-ui: "Inter", "Segoe UI", Tahoma, sans-serif;
   --font-code: "Cascadia Code", "JetBrains Mono", "SF Mono", "Consolas",
     monospace;
 
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
 
-  --shadow-card: 0 1px 6px rgba(0, 0, 0, 0.2);
-  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-glow-green: 0 0 20px rgba(156, 213, 148, 0.15);
+  --shadow-card: 0 1px 6px rgba(20, 30, 15, 0.08);
+  --shadow-elevated: 0 4px 16px rgba(20, 30, 15, 0.12);
+  --shadow-glow-green: 0 0 20px rgba(78, 138, 73, 0.12);
 
   background: var(--bg-deepest);
   color: var(--text-primary);
@@ -187,8 +191,8 @@ a {
 }
 
 .theme-notebook ::selection {
-  background: rgba(156, 213, 148, 0.3);
-  color: #fff;
+  background: rgba(78, 138, 73, 0.22);
+  color: #1a1e19;
 }
 
 .theme-notebook ::-webkit-scrollbar-thumb {

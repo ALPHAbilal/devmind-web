@@ -424,3 +424,41 @@
   border-radius: 4px;
   background: rgba(251, 191, 36, 0.06);
 }
+
+/* ─── Dark code surface on the white board theme ────────────────────────────
+ * The theme is now light, but the syntax-token colors above are tuned for a
+ * dark editor. Keep code blocks dark (a code panel on a white page) so they
+ * stay readable. Only the code cell's own surfaces are overridden. */
+.cell-code {
+  background: #1a2418;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.cell-code:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.cell-code .code-header {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.cell-code .code-lang {
+  color: #84967f;
+}
+.cell-code .code-body {
+  color: #e8eaed;
+}
+.cell-code .code-action-btn {
+  color: #84967f;
+}
+.cell-code .code-action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8eaed;
+}
+.cell-code .code-action-btn.run-btn {
+  background: rgba(156, 213, 148, 0.12);
+  border-color: rgba(156, 213, 148, 0.3);
+  color: #9cd594;
+}
+.cell-code .code-action-btn.run-btn:hover:not(:disabled) {
+  background: rgba(156, 213, 148, 0.2);
+  color: #b7f1ae;
+}
