@@ -37,23 +37,47 @@ export default async function MissionPage({
     redirect(`/login?next=/missions/${id}`);
   }
 
-  const [cellsRes, sessionRes, missionRes] = await Promise.all([
-    supabase
-      .from("notebook_cells")
-      .select("*")
-      .eq("mission_id", id)
-      .order("ord", { ascending: true }),
-    supabase
-      .from("learning_sessions")
-      .select("*")
-      .eq("mission_id", id)
-      .maybeSingle(),
-    supabase
-      .from("missions")
-      .select("current_checkpoint_id, spec_json")
-      .eq("id", id)
-      .maybeSingle(),
-  ]);
+  const [cellsRes, sessionRes, missionRes, techsRes, historyRes] =
+    await Promise.all([
+      supabase
+        .from("notebook_cells")
+        .select("*")
+        .eq("mission_id", id)
+        .order("ord", { ascending: true }),
+      supabase
+        .from("learning_sessions")
+        .select("*")
+        .eq("mission_id", id)
+        .maybeSingle(),
+      supabase
+        .from("missions")
+        .select("current_checkpoint_id, spec_json")
+        .eq("id", id)
+        .maybeSingle(),
+      // Same GLOBAL taxonomy + user history the board sidebar shows.
+      supabase
+        .from("technologies")
+        .select("key, label")
+        .order("ord", { ascending: true }),
+      supabase
+        .from("missions")
+        .select("id, title")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(8),
+    ]);
+
+  const techs = ((techsRes.data ?? []) as Array<{
+    key: string;
+    label: string;
+  }>).map((t) => ({ key: t.key, label: t.label }));
+
+  const history = ((historyRes.data ?? []) as Array<{
+    id: string;
+    title: string | null;
+  }>)
+    .filter((m) => m.title && m.title.trim())
+    .map((m) => ({ label: m.title as string, missionId: m.id }));
 
   const initialCells = (cellsRes.data ?? []) as Cell[];
   const initialState = (sessionRes.data ?? null) as LearningSessionRow | null;
@@ -70,9 +94,10 @@ export default async function MissionPage({
 
   return (
     <AppShell
-      userEmail={user.email ?? "user"}
       missionId={id}
       initialSessionActive={initialSessionActive}
+      techs={techs}
+      history={history}
     >
       <NotebookContent
         missionId={id}
