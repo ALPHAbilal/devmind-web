@@ -7,10 +7,25 @@
  * and its data (technologies + history) is fed as props from the mission page.
  * The old icon-rail + slide-over panels are gone.
  */
-import { useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevLeft, Gear, Logo, Plus, Search } from "@/components/board/icons";
+
+type ThemeMode = "light" | "dark";
+const THEME_KEY = "nb-theme";
+
+/** Set the notebook theme on the .theme-notebook root and remember it. */
+function applyTheme(mode: ThemeMode) {
+  document
+    .querySelector(".theme-notebook")
+    ?.setAttribute("data-theme", mode);
+  try {
+    localStorage.setItem(THEME_KEY, mode);
+  } catch {
+    /* private mode — theme just won't persist */
+  }
+}
 
 export interface NotebookSidebarTech {
   key: string;
@@ -29,6 +44,27 @@ interface NotebookSidebarProps {
 export function NotebookSidebar({ techs, history }: NotebookSidebarProps) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [theme, setTheme] = useState<ThemeMode>("light");
+
+  // Reconcile with the last saved theme on mount (SSR defaults to light).
+  useEffect(() => {
+    let saved: ThemeMode | null = null;
+    try {
+      saved = localStorage.getItem(THEME_KEY) as ThemeMode | null;
+    } catch {
+      /* ignore */
+    }
+    if (saved === "light" || saved === "dark") {
+      setTheme(saved);
+      applyTheme(saved);
+    }
+  }, []);
+
+  function toggleTheme() {
+    const next: ThemeMode = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    applyTheme(next);
+  }
 
   // Edge-tab pointer logic (ported from board/EdgeTab): click toggles collapse,
   // drag moves it vertically. Position is imperative to avoid re-render churn.
@@ -123,9 +159,19 @@ export function NotebookSidebar({ techs, history }: NotebookSidebarProps) {
         </div>
 
         <div className="divz" />
-        <button className="side-set" title="Settings">
-          <Gear />
-        </button>
+        <div className="side-footer">
+          <button
+            className="side-set"
+            onClick={toggleTheme}
+            title={theme === "light" ? "Switch to dark" : "Switch to light"}
+            aria-label="Toggle theme"
+          >
+            {theme === "light" ? <MoonIcon /> : <SunIcon />}
+          </button>
+          <button className="side-set" title="Settings">
+            <Gear />
+          </button>
+        </div>
       </aside>
 
       <button
@@ -140,5 +186,29 @@ export function NotebookSidebar({ techs, history }: NotebookSidebarProps) {
         <ChevLeft />
       </button>
     </div>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path
+        d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="4" />
+      <path
+        d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

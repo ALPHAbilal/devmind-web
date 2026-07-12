@@ -30,7 +30,7 @@ export function AppShell({
   children,
 }: AppShellProps) {
   return (
-    <div className="theme-notebook app-shell">
+    <div className="theme-notebook app-shell" data-theme="light">
       <div className="app-shell-body">
         <NotebookSidebar techs={techs} history={history} />
 

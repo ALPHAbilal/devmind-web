@@ -139,37 +139,11 @@ a {
  * IDE-like forest. UI: Segoe UI. Code: Cascadia Code.
  * Used on: notebook, puzzle, chat surfaces.
  * ========================================================================== */
-/* Re-themed onto the board's monochrome white/dark palette (was forest green).
- * Token *values* remap so all notebook component CSS recolors at once; the
- * component selectors are unchanged. Code cells keep a dark surface (see the
- * .cell-code override in cells/cells.css) so syntax colors stay readable. */
+/* Board-style monochrome, now with a light/dark toggle (data-theme, mirrors
+ * `.theme-board`). Non-color tokens live on the base; the color tokens live in
+ * the two [data-theme] blocks. A missing/legacy attribute falls back to light.
+ * Code cells keep a dark surface (see cells/cells.css) in both themes. */
 .theme-notebook {
-  --bg-deepest: #eaece7;
-  --bg-app: #f6f7f4;
-  --bg-surface: #ffffff;
-  --bg-card: #ffffff;
-  --bg-elevated: #e7e9e3;
-  --bg-hover: #e4e7e0;
-
-  --text-primary: #1a1e19;
-  --text-secondary: #5b6157;
-  --text-muted: #9aa094;
-  --text-disabled: #b3b8ab;
-
-  --accent-green: #4e8a49;
-  --accent-green-bright: #3a7136;
-  --accent-green-dim: #7faa79;
-  --accent-teal: #4d8a90;
-  --accent-teal-dim: #7fa9ad;
-  --accent-yellow: #b9822f;
-  --accent-pink: #c85f9c;
-  --accent-red: #c0392b;
-  --accent-purple: #7c5cd6;
-
-  --border-subtle: rgba(20, 30, 15, 0.08);
-  --border-medium: rgba(20, 30, 15, 0.14);
-  --border-strong: rgba(20, 30, 15, 0.22);
-
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -181,18 +155,83 @@ a {
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
 
-  --shadow-card: 0 1px 6px rgba(20, 30, 15, 0.08);
-  --shadow-elevated: 0 4px 16px rgba(20, 30, 15, 0.12);
-  --shadow-glow-green: 0 0 20px rgba(78, 138, 73, 0.12);
-
   background: var(--bg-deepest);
   color: var(--text-primary);
   font-family: var(--font-ui);
 }
 
+/* ── Light (default) ──────────────────────────────────────────────────────
+ * Text tones are deliberately dark for contrast against the light surfaces. */
+.theme-notebook,
+.theme-notebook[data-theme="light"] {
+  --bg-deepest: #eaece7;
+  --bg-app: #f2f4ef;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-elevated: #e2e5de;
+  --bg-hover: #e4e7e0;
+
+  --text-primary: #14180f; /* near-black on light */
+  --text-secondary: #454b40; /* body copy — high contrast */
+  --text-muted: #6b7266;
+  --text-disabled: #9aa094;
+
+  --accent-green: #3f7a3a;
+  --accent-green-bright: #2f6c2b;
+  --accent-green-dim: #5f8f59;
+  --accent-teal: #2f7d84;
+  --accent-teal-dim: #5a959b;
+  --accent-yellow: #a9711f;
+  --accent-pink: #b64f8c;
+  --accent-red: #b0342a;
+  --accent-purple: #6d4fc9;
+
+  --border-subtle: rgba(20, 30, 15, 0.1);
+  --border-medium: rgba(20, 30, 15, 0.16);
+  --border-strong: rgba(20, 30, 15, 0.26);
+
+  --shadow-card: 0 1px 6px rgba(20, 30, 15, 0.08);
+  --shadow-elevated: 0 4px 16px rgba(20, 30, 15, 0.12);
+  --shadow-glow-green: 0 0 20px rgba(63, 122, 58, 0.12);
+}
+
+/* ── Dark ─────────────────────────────────────────────────────────────────
+ * Light text on dark surfaces; accents brighten so they read on the dark. */
+.theme-notebook[data-theme="dark"] {
+  --bg-deepest: #0e100e;
+  --bg-app: #161a15;
+  --bg-surface: #1b201a;
+  --bg-card: #1b201a;
+  --bg-elevated: #2a302a;
+  --bg-hover: #242a23;
+
+  --text-primary: #eaefe8; /* near-white on dark */
+  --text-secondary: #b8c1b2; /* body copy — high contrast */
+  --text-muted: #838d7e;
+  --text-disabled: #5c655a;
+
+  --accent-green: #9cd594;
+  --accent-green-bright: #b7f1ae;
+  --accent-green-dim: #679e62;
+  --accent-teal: #a0cfd4;
+  --accent-teal-dim: #6b989d;
+  --accent-yellow: #fbbf24;
+  --accent-pink: #f472b6;
+  --accent-red: #f2726b;
+  --accent-purple: #a78bfa;
+
+  --border-subtle: rgba(255, 255, 255, 0.09);
+  --border-medium: rgba(255, 255, 255, 0.16);
+  --border-strong: rgba(255, 255, 255, 0.26);
+
+  --shadow-card: 0 1px 6px rgba(0, 0, 0, 0.35);
+  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-glow-green: 0 0 20px rgba(156, 213, 148, 0.15);
+}
+
 .theme-notebook ::selection {
-  background: rgba(78, 138, 73, 0.22);
-  color: #1a1e19;
+  background: rgba(63, 122, 58, 0.24);
+  color: inherit;
 }
 
 .theme-notebook ::-webkit-scrollbar-thumb {
