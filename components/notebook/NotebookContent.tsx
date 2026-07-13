@@ -71,6 +71,8 @@ export function NotebookContent({
     setCurrentMicroChallengeId,
     stageOpen,
     stageExpanded,
+    openStage,
+    closeStage,
   } = useNotebook();
 
   const [cells, setCells] = useState<Cell[]>(initialCells);
@@ -305,6 +307,15 @@ export function NotebookContent({
           missionId={missionId}
           status={session?.status ?? null}
         />
+        <button
+          type="button"
+          className={`workspace-toggle${stageOpen ? " active" : ""}`}
+          onClick={() => (stageOpen ? closeStage() : openStage())}
+          aria-pressed={stageOpen}
+          title={stageOpen ? "Close workspace" : "Open workspace"}
+        >
+          ⧉ Workspace
+        </button>
       </div>
 
       <div className="notebook-cells" ref={cellsContainerRef}>
