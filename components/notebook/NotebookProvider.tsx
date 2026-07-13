@@ -39,6 +39,10 @@ interface NotebookContextValue {
   openStage: () => void;
   closeStage: () => void;
   toggleStageExpanded: () => void;
+  /** Branch lessons: whether the vein markers (⑂ anchors) are visible. The
+   *  toggle lives in the notebook top bar; BranchController renders markers. */
+  branchesOn: boolean;
+  toggleBranches: () => void;
 }
 
 const NotebookContext = createContext<NotebookContextValue | null>(null);
@@ -70,6 +74,8 @@ export function NotebookProvider({
     () => setStageExpanded((e) => !e),
     [],
   );
+  const [branchesOn, setBranchesOn] = useState(false);
+  const toggleBranches = useCallback(() => setBranchesOn((b) => !b), []);
   // Tracks the moment thinking started so that pre-existing cells don't
   // race-clear the spinner (e.g. SSR seed events).
   const thinkingSinceRef = useRef<number>(0);
@@ -110,6 +116,8 @@ export function NotebookProvider({
       openStage,
       closeStage,
       toggleStageExpanded,
+      branchesOn,
+      toggleBranches,
     }),
     [
       missionId,
@@ -125,6 +133,8 @@ export function NotebookProvider({
       openStage,
       closeStage,
       toggleStageExpanded,
+      branchesOn,
+      toggleBranches,
     ],
   );
 

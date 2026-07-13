@@ -246,6 +246,58 @@ export type Database = {
           },
         ]
       }
+      mission_highlights: {
+        Row: {
+          cell_id: string
+          child_mission_id: string | null
+          created_at: string
+          id: string
+          parent_mission_id: string
+          selected_text: string
+          user_id: string
+        }
+        Insert: {
+          cell_id: string
+          child_mission_id?: string | null
+          created_at?: string
+          id?: string
+          parent_mission_id: string
+          selected_text: string
+          user_id?: string
+        }
+        Update: {
+          cell_id?: string
+          child_mission_id?: string | null
+          created_at?: string
+          id?: string
+          parent_mission_id?: string
+          selected_text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_highlights_cell_id_fkey"
+            columns: ["cell_id"]
+            isOneToOne: false
+            referencedRelation: "notebook_cells"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_highlights_child_mission_id_fkey"
+            columns: ["child_mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_highlights_parent_mission_id_fkey"
+            columns: ["parent_mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       missions: {
         Row: {
           completed_at: string | null
@@ -256,6 +308,7 @@ export type Database = {
           id: string
           level: Database["public"]["Enums"]["mission_level"]
           origin_thread_id: string | null
+          parent_mission_id: string | null
           path_card: string
           spec_json: Json
           started_at: string | null
@@ -275,6 +328,7 @@ export type Database = {
           id?: string
           level: Database["public"]["Enums"]["mission_level"]
           origin_thread_id?: string | null
+          parent_mission_id?: string | null
           path_card: string
           spec_json: Json
           started_at?: string | null
@@ -294,6 +348,7 @@ export type Database = {
           id?: string
           level?: Database["public"]["Enums"]["mission_level"]
           origin_thread_id?: string | null
+          parent_mission_id?: string | null
           path_card?: string
           spec_json?: Json
           started_at?: string | null
@@ -317,6 +372,13 @@ export type Database = {
             columns: ["origin_thread_id"]
             isOneToOne: false
             referencedRelation: "question_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "missions_parent_mission_id_fkey"
+            columns: ["parent_mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
             referencedColumns: ["id"]
           },
         ]

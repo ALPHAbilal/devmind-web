@@ -37,7 +37,7 @@ export default async function MissionPage({
     redirect(`/login?next=/missions/${id}`);
   }
 
-  const [cellsRes, sessionRes, missionRes, techsRes, historyRes] =
+  const [cellsRes, sessionRes, missionRes, techsRes, historyRes, hlRes, kidsRes] =
     await Promise.all([
       supabase
         .from("notebook_cells")
@@ -51,7 +51,7 @@ export default async function MissionPage({
         .maybeSingle(),
       supabase
         .from("missions")
-        .select("current_checkpoint_id, spec_json")
+        .select("current_checkpoint_id, spec_json, parent_mission_id")
         .eq("id", id)
         .maybeSingle(),
       // Same GLOBAL taxonomy + user history the board sidebar shows.
@@ -65,6 +65,16 @@ export default async function MissionPage({
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false })
         .limit(8),
+      // Branch lessons: anchors in this notebook + the children they created.
+      supabase
+        .from("mission_highlights")
+        .select("id, cell_id, selected_text, child_mission_id")
+        .eq("parent_mission_id", id)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("missions")
+        .select("id, title, status")
+        .eq("parent_mission_id", id),
     ]);
 
   const techs = ((techsRes.data ?? []) as Array<{
@@ -83,9 +93,33 @@ export default async function MissionPage({
   const initialState = (sessionRes.data ?? null) as LearningSessionRow | null;
   const missionRow = (missionRes.data ?? null) as Pick<
     MissionRow,
-    "current_checkpoint_id" | "spec_json"
+    "current_checkpoint_id" | "spec_json" | "parent_mission_id"
   > | null;
   const currentCheckpointId = missionRow?.current_checkpoint_id ?? null;
+
+  const initialHighlights = ((hlRes.data ?? []) as Array<{
+    id: string;
+    cell_id: string;
+    selected_text: string;
+    child_mission_id: string | null;
+  }>);
+  const initialBranchChildren = ((kidsRes.data ?? []) as Array<{
+    id: string;
+    title: string;
+    status: string;
+  }>);
+
+  // Child notebook → fetch the parent's title for the back-crumb.
+  let parentMission: { id: string; title: string } | null = null;
+  if (missionRow?.parent_mission_id) {
+    const { data: parentData } = await supabase
+      .from("missions")
+      .select("id, title")
+      .eq("id", missionRow.parent_mission_id)
+      .maybeSingle();
+    const p = (parentData ?? null) as { id: string; title: string } | null;
+    if (p) parentMission = { id: p.id, title: p.title };
+  }
 
   const { conceptGraph, checkpoints } = extractGraph(missionRow?.spec_json);
   const missionTitle = extractTitle(missionRow?.spec_json);
@@ -107,6 +141,9 @@ export default async function MissionPage({
         conceptGraph={conceptGraph}
         checkpoints={checkpoints}
         missionTitle={missionTitle}
+        initialHighlights={initialHighlights}
+        initialBranchChildren={initialBranchChildren}
+        parentMission={parentMission}
       />
     </AppShell>
   );
