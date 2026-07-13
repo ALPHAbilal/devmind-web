@@ -46,10 +46,16 @@
     0 8px 32px rgba(0, 0, 0, 0.4),
     0 2px 8px rgba(0, 0, 0, 0.2);
 }
-.notebook-layout.stage-expanded ~ .build-stage,
+/* Expanded: fill everything RIGHT of the left sidebar (248px, 48px when
+ * collapsed) — never overlap it. */
 .notebook-layout.stage-expanded .build-stage {
-  left: 8px;
+  left: 256px;
   width: auto;
+}
+.app-shell:has(.nb-sidebar.sb-collapsed)
+  .notebook-layout.stage-expanded
+  .build-stage {
+  left: 56px;
 }
 
 /* ── Stage bar (demo values) ────────────────────────────────────────────── */
@@ -184,15 +190,23 @@
   color: var(--accent-green-bright);
 }
 .build-stage .file-item.folder {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-weight: 500;
-  cursor: default;
 }
-.build-stage .file-icon {
-  font-size: 14px;
-  width: 18px;
-  text-align: center;
+.build-stage .tree-icon {
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
+  opacity: 0.85;
+}
+.build-stage .tree-chevron {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+.build-stage .tree-chevron.open {
+  transform: rotate(90deg);
 }
 
 /* ── Editor panel ───────────────────────────────────────────────────────── */

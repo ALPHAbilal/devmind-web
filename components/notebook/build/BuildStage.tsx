@@ -36,17 +36,58 @@ const MONACO_LANG: Record<string, string> = {
   javascript: "javascript",
 };
 
-const FILE_ICON: Record<string, string> = {
-  py: "🐍",
-  html: "📄",
-  sql: "🗄️",
-  css: "🎨",
-  json: "⚙️",
-};
+/* VS Code-style monochrome file/folder icons (stroke inherits text color). */
+function FileIcon() {
+  return (
+    <svg className="tree-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M4 1.5h5L12.5 5v9a.5.5 0 0 1-.5.5H4a.5.5 0 0 1-.5-.5v-12a.5.5 0 0 1 .5-.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.1"
+      />
+      <path d="M9 1.5V5h3.5" fill="none" stroke="currentColor" strokeWidth="1.1" />
+    </svg>
+  );
+}
 
-function iconFor(name: string): string {
-  const ext = name.split(".").pop() ?? "";
-  return FILE_ICON[ext] ?? "📄";
+function FolderIcon({ open }: { open: boolean }) {
+  return (
+    <svg className="tree-icon" viewBox="0 0 16 16" aria-hidden="true">
+      {open ? (
+        <path
+          d="M1.5 4a1 1 0 0 1 1-1h3l1.5 1.5h6a1 1 0 0 1 1 1V6h-11l-1.3 6H2.5a1 1 0 0 1-1-1V4Zm2.3 3h10.7l-1.2 5.4a1 1 0 0 1-1 .6H2.6L3.8 7Z"
+          fill="currentColor"
+        />
+      ) : (
+        <path
+          d="M1.5 4a1 1 0 0 1 1-1h3L7 4.5h6.5a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4Z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.1"
+        />
+      )}
+    </svg>
+  );
+}
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={`tree-chevron${open ? " open" : ""}`}
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+    >
+      <path
+        d="M6 4l4 4-4 4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 interface StageFile {
@@ -64,6 +105,8 @@ interface TreeRow {
   kind: "folder" | "file";
   label: string;
   file?: StageFile;
+  /** Folder paths above this row — used to hide rows under collapsed folders. */
+  ancestors: string[];
 }
 
 function buildTree(files: StageFile[]): TreeRow[] {
@@ -78,12 +121,20 @@ function buildTree(files: StageFile[]): TreeRow[] {
   for (const f of grouped) {
     const parts = f.name.split("/").filter(Boolean);
     let prefix = "";
+    const ancestors: string[] = [];
     for (let i = 0; i < parts.length - 1; i++) {
       prefix = prefix ? `${prefix}/${parts[i]}` : parts[i];
       if (!seenFolders.has(prefix)) {
         seenFolders.add(prefix);
-        rows.push({ key: prefix, depth: i, kind: "folder", label: parts[i] });
+        rows.push({
+          key: prefix,
+          depth: i,
+          kind: "folder",
+          label: parts[i],
+          ancestors: [...ancestors],
+        });
       }
+      ancestors.push(prefix);
     }
     rows.push({
       key: f.cellId,
@@ -91,6 +142,7 @@ function buildTree(files: StageFile[]): TreeRow[] {
       kind: "file",
       label: parts[parts.length - 1] ?? f.name,
       file: f,
+      ancestors,
     });
   }
   return rows;
@@ -122,6 +174,21 @@ export function BuildStage({ cells }: { cells: Cell[] }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filesOpen, setFilesOpen] = useState(false);
   const tree = useMemo(() => buildTree(files), [files]);
+
+  // Collapsed folder paths (VS Code style — folders start open).
+  const [collapsedDirs, setCollapsedDirs] = useState<Set<string>>(new Set());
+  const toggleDir = useCallback((path: string) => {
+    setCollapsedDirs((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }, []);
+  const visibleTree = useMemo(
+    () => tree.filter((r) => !r.ancestors.some((a) => collapsedDirs.has(a))),
+    [tree, collapsedDirs],
+  );
   const activeFile = useMemo(
     () => files.find((f) => f.cellId === activeId) ?? files[0] ?? null,
     [files, activeId],
@@ -230,18 +297,20 @@ export function BuildStage({ cells }: { cells: Cell[] }) {
                 No files yet — they appear here as the agent writes code cells.
               </div>
             ) : (
-              tree.map((row) =>
+              visibleTree.map((row) =>
                 row.kind === "folder" ? (
-                  <div
+                  <button
                     key={row.key}
+                    type="button"
                     className="file-item folder"
-                    style={{ paddingLeft: 8 + row.depth * 16 }}
+                    style={{ paddingLeft: 4 + row.depth * 14 }}
+                    onClick={() => toggleDir(row.key)}
+                    aria-expanded={!collapsedDirs.has(row.key)}
                   >
-                    <span className="file-icon" aria-hidden="true">
-                      📁
-                    </span>
+                    <Chevron open={!collapsedDirs.has(row.key)} />
+                    <FolderIcon open={!collapsedDirs.has(row.key)} />
                     {row.label}
-                  </div>
+                  </button>
                 ) : (
                   <button
                     key={row.key}
@@ -249,15 +318,13 @@ export function BuildStage({ cells }: { cells: Cell[] }) {
                     className={`file-item${
                       activeFile?.cellId === row.file!.cellId ? " active" : ""
                     }`}
-                    style={{ paddingLeft: 8 + row.depth * 16 }}
+                    style={{ paddingLeft: 20 + row.depth * 14 }}
                     onClick={() => {
                       setActiveId(row.file!.cellId);
                       setFilesOpen(false);
                     }}
                   >
-                    <span className="file-icon" aria-hidden="true">
-                      {iconFor(row.label)}
-                    </span>
+                    <FileIcon />
                     {row.label}
                   </button>
                 ),
