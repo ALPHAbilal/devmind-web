@@ -56,6 +56,46 @@ interface StageFile {
   content: string;
 }
 
+/** Flattened explorer row. Folders come from `/` segments in attached_file
+ *  paths (e.g. `templates/index.html` → folder `templates` + file). */
+interface TreeRow {
+  key: string;
+  depth: number;
+  kind: "folder" | "file";
+  label: string;
+  file?: StageFile;
+}
+
+function buildTree(files: StageFile[]): TreeRow[] {
+  const rows: TreeRow[] = [];
+  const seenFolders = new Set<string>();
+  // Group siblings by directory (stable), so a folder's files sit under it.
+  const grouped = [...files].sort((a, b) => {
+    const da = a.name.slice(0, a.name.lastIndexOf("/") + 1);
+    const db = b.name.slice(0, b.name.lastIndexOf("/") + 1);
+    return da.localeCompare(db);
+  });
+  for (const f of grouped) {
+    const parts = f.name.split("/").filter(Boolean);
+    let prefix = "";
+    for (let i = 0; i < parts.length - 1; i++) {
+      prefix = prefix ? `${prefix}/${parts[i]}` : parts[i];
+      if (!seenFolders.has(prefix)) {
+        seenFolders.add(prefix);
+        rows.push({ key: prefix, depth: i, kind: "folder", label: parts[i] });
+      }
+    }
+    rows.push({
+      key: f.cellId,
+      depth: parts.length - 1,
+      kind: "file",
+      label: parts[parts.length - 1] ?? f.name,
+      file: f,
+    });
+  }
+  return rows;
+}
+
 export function BuildStage({ cells }: { cells: Cell[] }) {
   const {
     missionId,
@@ -80,6 +120,8 @@ export function BuildStage({ cells }: { cells: Cell[] }) {
   );
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [filesOpen, setFilesOpen] = useState(false);
+  const tree = useMemo(() => buildTree(files), [files]);
   const activeFile = useMemo(
     () => files.find((f) => f.cellId === activeId) ?? files[0] ?? null,
     [files, activeId],
@@ -150,7 +192,16 @@ export function BuildStage({ cells }: { cells: Cell[] }) {
       aria-label="Build workspace"
     >
       <div className="stage-bar">
-        <span className="stage-tab active">▶ Code</span>
+        <button
+          type="button"
+          className={`stage-tab stage-tab-files${filesOpen ? " active" : ""}`}
+          onClick={() => setFilesOpen((o) => !o)}
+          title="Files"
+          aria-expanded={filesOpen}
+        >
+          ☰
+        </button>
+        <span className="stage-tab active">✎ Code</span>
         <div className="stage-spacer" />
         <button
           type="button"
@@ -171,27 +222,48 @@ export function BuildStage({ cells }: { cells: Cell[] }) {
       </div>
 
       <div className="stage-body">
-        <div className="file-drawer">
-          <div className="files-header">Files</div>
-          {files.length === 0 ? (
-            <div className="files-empty">No code files yet.</div>
-          ) : (
-            files.map((f) => (
-              <button
-                key={f.cellId}
-                type="button"
-                className={`file-item${
-                  activeFile?.cellId === f.cellId ? " active" : ""
-                }`}
-                onClick={() => setActiveId(f.cellId)}
-              >
-                <span className="file-icon" aria-hidden="true">
-                  {iconFor(f.name)}
-                </span>
-                {f.name}
-              </button>
-            ))
-          )}
+        <div className={`file-drawer${filesOpen ? " open" : ""}`}>
+          <div className="files-header">Explorer</div>
+          <div className="file-tree">
+            {tree.length === 0 ? (
+              <div className="files-empty">
+                No files yet — they appear here as the agent writes code cells.
+              </div>
+            ) : (
+              tree.map((row) =>
+                row.kind === "folder" ? (
+                  <div
+                    key={row.key}
+                    className="file-item folder"
+                    style={{ paddingLeft: 8 + row.depth * 16 }}
+                  >
+                    <span className="file-icon" aria-hidden="true">
+                      📁
+                    </span>
+                    {row.label}
+                  </div>
+                ) : (
+                  <button
+                    key={row.key}
+                    type="button"
+                    className={`file-item${
+                      activeFile?.cellId === row.file!.cellId ? " active" : ""
+                    }`}
+                    style={{ paddingLeft: 8 + row.depth * 16 }}
+                    onClick={() => {
+                      setActiveId(row.file!.cellId);
+                      setFilesOpen(false);
+                    }}
+                  >
+                    <span className="file-icon" aria-hidden="true">
+                      {iconFor(row.label)}
+                    </span>
+                    {row.label}
+                  </button>
+                ),
+              )
+            )}
+          </div>
         </div>
 
         <div className="stage-panel">
