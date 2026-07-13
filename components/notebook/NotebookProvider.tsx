@@ -140,3 +140,11 @@ export function useNotebook(): NotebookContextValue {
   }
   return ctx;
 }
+
+/** Non-throwing variant — returns null when rendered outside a provider (e.g.
+ *  the design-test harness). Cells that only *optionally* need notebook state
+ *  (like ChallengeCell's Start-Building button) use this so they stay
+ *  renderable in isolation. */
+export function useNotebookOptional(): NotebookContextValue | null {
+  return useContext(NotebookContext);
+}
