@@ -58,160 +58,139 @@
   background-color: rgba(226, 133, 128, 0.3);
 }
 
-/* ── Legend — one chip per mini notebook, floats top-right of the column.
- * Click chip = filter to that lesson's tints; → opens it. ────────────────── */
-.branch-legend {
-  position: absolute;
-  top: 34px;
-  right: 0;
-  z-index: 40;
+/* ── Branch panel — right-side surface, same family as .build-stage ─────── */
+.branch-panel {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: 320px;
+  z-index: 44; /* above the build stage (30), below the tray-era z-50 widgets */
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-  font-family: var(--font-ui);
-}
-.legend-chip {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-  border-radius: 15px;
-  padding: 2px 4px 2px 4px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
-  transition: opacity 0.15s, border-color 0.15s;
-}
-.legend-chip.dim {
-  opacity: 0.45;
-}
-.legend-chip.active {
-  border-color: var(--border-strong);
-}
-.legend-filter {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border: none;
-  background: none;
-  color: var(--text-secondary);
-  font-family: var(--font-ui);
-  font-size: 12px;
-  cursor: pointer;
-  padding: 3px 4px 3px 6px;
-  border-radius: 12px;
-  max-width: 260px;
-  white-space: nowrap;
+  background: var(--bg-app);
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+  font-family: var(--font-ui);
 }
-.legend-filter:hover {
-  color: var(--text-primary);
+/* Notebook keeps scrolling in the remaining space (same trick as the stage). */
+.app-shell-content:has(.branch-panel) {
+  padding-right: calc(320px + 24px);
 }
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.legend-c0 .legend-dot { background: rgba(99, 190, 93, 0.75); }
-.legend-c1 .legend-dot { background: rgba(96, 187, 196, 0.75); }
-.legend-c2 .legend-dot { background: rgba(233, 196, 76, 0.8); }
-.legend-c3 .legend-dot { background: rgba(226, 133, 128, 0.75); }
-.legend-draft {
-  font-size: 11px;
-}
-.legend-open {
-  border: none;
-  background: none;
-  color: var(--text-muted);
-  font-size: 13px;
-  cursor: pointer;
-  padding: 3px 8px;
-  border-radius: 12px;
-  transition: color 0.13s, background 0.13s;
-}
-.legend-open:hover {
-  color: var(--text-primary);
-  background: var(--bg-hover);
+.app-shell-main:has(.branch-panel) .chat-bar {
+  left: calc(50% - 160px);
 }
 
-/* ── Collect tray ───────────────────────────────────────────────────────── */
-.branch-tray {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 88px; /* clears the floating chat bar */
-  width: min(680px, calc(100vw - 48px));
-  background: var(--bg-surface);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-  padding: 12px 14px;
-  z-index: 50;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  font-family: var(--font-ui);
-}
-.branch-tray-head {
+.branch-panel-bar {
+  flex-shrink: 0;
+  height: 38px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  padding: 0 8px 0 14px;
+  border-bottom: 1px solid var(--border-subtle);
 }
-.branch-tray-title {
-  font-size: 13px;
+.branch-panel-title {
+  flex: 1;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: 0.01em;
 }
-.branch-tray-hint {
-  font-size: 11px;
-  color: var(--text-muted);
-  flex: 1;
-}
-.branch-tray-close {
+.branch-panel-close {
   border: none;
   background: none;
   color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
-  padding: 4px 6px;
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
+  display: grid;
+  place-items: center;
+  transition: color 0.15s, background 0.15s;
 }
-.branch-tray-close:hover {
+.branch-panel-close:hover {
   color: var(--text-primary);
   background: var(--bg-hover);
 }
-.branch-chips {
+.branch-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: 18px;
 }
-.branch-chip {
-  display: inline-flex;
+.branch-section-head {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  display: flex;
   align-items: center;
-  gap: 2px;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-hover);
-  border-radius: 14px;
-  padding: 2px 4px 2px 10px;
-  max-width: 100%;
+  gap: 8px;
+  margin-bottom: 10px;
 }
-.branch-chip-jump {
+.branch-showall {
+  border: none;
+  background: none;
+  color: var(--accent-teal);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* New branch lesson (collect mode) */
+.branch-new-hint {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0 0 10px;
+}
+.branch-picks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.branch-pick {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+}
+.branch-pick-jump {
+  flex: 1;
+  min-width: 0;
   border: none;
   background: none;
   color: var(--text-secondary);
-  font-size: 12px;
   font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: left;
   cursor: pointer;
-  padding: 2px 0;
-  white-space: nowrap;
+  padding: 2px 4px;
+  border-radius: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.branch-chip-jump:hover {
+.branch-pick-jump:hover {
   color: var(--accent-green-bright);
 }
-.branch-chip-x {
+.branch-pick-x {
   border: none;
   background: none;
   color: var(--text-muted);
@@ -219,28 +198,135 @@
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 50%;
+  flex-shrink: 0;
 }
-.branch-chip-x:hover {
+.branch-pick-x:hover {
   color: var(--text-primary);
 }
-.branch-tray-row {
-  display: flex;
-  gap: 8px;
-}
-.branch-tray-row input {
-  flex: 1;
+.branch-note {
+  width: 100%;
+  resize: vertical;
   border: 1px solid var(--border-medium);
-  background: var(--bg-app);
+  background: var(--bg-surface);
   color: var(--text-primary);
   font-family: var(--font-ui);
-  font-size: 13px;
-  padding: 8px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
   outline: none;
+  margin-bottom: 10px;
 }
-.branch-tray-row input:focus {
+.branch-note:focus {
   border-color: var(--accent-green);
 }
+.branch-new-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.branch-cancel {
+  border: 1px solid var(--border-medium);
+  background: none;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.branch-cancel:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* Existing mini notebooks list */
+.branch-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  transition: opacity 0.15s, background 0.15s;
+}
+.branch-row:hover {
+  background: var(--bg-hover);
+}
+.branch-row.active {
+  background: var(--bg-surface);
+  outline: 1px solid var(--border-strong);
+}
+.branch-row.dim {
+  opacity: 0.45;
+}
+.branch-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 6px 6px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+}
+.branch-row-main:hover {
+  color: var(--text-primary);
+}
+.branch-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.legend-c0 .legend-dot { background: rgba(99, 190, 93, 0.8); }
+.legend-c1 .legend-dot { background: rgba(96, 187, 196, 0.8); }
+.legend-c2 .legend-dot { background: rgba(233, 196, 76, 0.85); }
+.legend-c3 .legend-dot { background: rgba(226, 133, 128, 0.8); }
+.legend-draft {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.legend-open {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  transition: color 0.13s, background 0.13s;
+}
+.legend-open:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.branch-list-hint,
+.branch-empty {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  margin: 10px 0 0;
+}
+.branch-empty {
+  margin: 0;
+}
+
 .branch-generate {
   border: 1px solid var(--accent-green);
   background: var(--bg-hover);

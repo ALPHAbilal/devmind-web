@@ -74,7 +74,7 @@ export function BranchController({
   onCreated: (child: BranchChild, created: BranchHighlight[]) => void;
 }) {
   const router = useRouter();
-  const { missionId, branchesOn } = useNotebook();
+  const { missionId, branchesOn, toggleBranches } = useNotebook();
 
   const layerRef = useRef<HTMLDivElement>(null);
 
@@ -310,108 +310,161 @@ export function BranchController({
         </div>
       ) : null}
 
-      {/* Legend — one chip per mini notebook; click filters to that one. */}
-      {branchesOn && childIds.length > 0 ? (
-        <div className="branch-legend" role="group" aria-label="Branch lessons">
-          {childIds.map((cid) => {
-            const child = childrenById[cid];
-            const active = filterChild === cid;
-            return (
-              <div
-                key={cid}
-                className={`legend-chip legend-c${colorByChild[cid]}${
-                  active ? " active" : ""
-                }${filterChild && !active ? " dim" : ""}`}
-              >
-                <button
-                  type="button"
-                  className="legend-filter"
-                  onClick={() => setFilterChild(active ? null : cid)}
-                  title={active ? "Show all" : "Show only this lesson"}
-                >
-                  <span className="legend-dot" aria-hidden="true" />
-                  {child?.title ?? "Branch lesson"}
-                  {child?.status === "draft" ? (
-                    <span className="legend-draft">✍️</span>
-                  ) : null}
-                </button>
-                <button
-                  type="button"
-                  className="legend-open"
-                  onClick={() => router.push(`/missions/${cid}`)}
-                  title="Open lesson"
-                >
-                  →
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
-
-      {/* Collect tray */}
-      {collecting ? (
-        <div
-          className="branch-tray"
-          role="dialog"
-          aria-label="New branch lesson"
+      {/* Branch panel — right-side surface (same family as the build stage).
+          Open while browsing lessons (branchesOn) or while collecting. */}
+      {branchesOn || collecting ? (
+        <aside
+          className="branch-panel"
+          role="complementary"
+          aria-label="Branch lessons"
         >
-          <div className="branch-tray-head">
-            <span className="branch-tray-title">⑂ New branch lesson</span>
-            <span className="branch-tray-hint">
-              highlight more text anywhere to add it
-            </span>
+          <div className="branch-panel-bar">
+            <span className="branch-panel-title">⑂ Branch lessons</span>
             <button
               type="button"
-              className="branch-tray-close"
-              onClick={cancelCollect}
-              aria-label="Cancel"
+              className="branch-panel-close"
+              onClick={() => {
+                if (collecting) cancelCollect();
+                if (branchesOn) toggleBranches();
+              }}
+              aria-label="Close"
             >
               ✕
             </button>
           </div>
-          <div className="branch-chips">
-            {picks.map((p, i) => (
-              <span className="branch-chip" key={`${p.cellId}-${i}`}>
-                <button
-                  type="button"
-                  className="branch-chip-jump"
-                  onClick={() => jumpToCell(p.cellId)}
-                  title="Jump to highlight"
-                >
-                  “{truncate(p.text, 32)}”
-                </button>
-                <button
-                  type="button"
-                  className="branch-chip-x"
-                  onClick={() =>
-                    setPicks((prev) => prev.filter((_, j) => j !== i))
-                  }
-                  aria-label="Remove highlight"
-                >
-                  ✕
-                </button>
-              </span>
-            ))}
+
+          <div className="branch-panel-body">
+            {/* New branch lesson (collect mode) */}
+            {collecting ? (
+              <section className="branch-new">
+                <div className="branch-section-head">New branch lesson</div>
+                <p className="branch-new-hint">
+                  Highlight more text anywhere in the notebook — every pick is
+                  added here.
+                </p>
+                <div className="branch-picks">
+                  {picks.map((p, i) => (
+                    <div className="branch-pick" key={`${p.cellId}-${i}`}>
+                      <button
+                        type="button"
+                        className="branch-pick-jump"
+                        onClick={() => jumpToCell(p.cellId)}
+                        title="Jump to highlight"
+                      >
+                        “{truncate(p.text, 60)}”
+                      </button>
+                      <button
+                        type="button"
+                        className="branch-pick-x"
+                        onClick={() =>
+                          setPicks((prev) => prev.filter((_, j) => j !== i))
+                        }
+                        aria-label="Remove highlight"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <textarea
+                  className="branch-note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={2}
+                  placeholder="What do you want to understand about these? (optional)"
+                />
+                <div className="branch-new-actions">
+                  <button
+                    type="button"
+                    className="branch-cancel"
+                    onClick={cancelCollect}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="branch-generate"
+                    onClick={() => void generate()}
+                    disabled={picks.length === 0 || generating}
+                  >
+                    {generating ? "Creating…" : "Generate lesson"}
+                  </button>
+                </div>
+                {genError ? (
+                  <div className="branch-error">{genError}</div>
+                ) : null}
+              </section>
+            ) : null}
+
+            {/* Existing mini notebooks */}
+            {childIds.length > 0 ? (
+              <section className="branch-list">
+                <div className="branch-section-head">
+                  In this notebook
+                  {filterChild ? (
+                    <button
+                      type="button"
+                      className="branch-showall"
+                      onClick={() => setFilterChild(null)}
+                    >
+                      show all
+                    </button>
+                  ) : null}
+                </div>
+                {childIds.map((cid) => {
+                  const child = childrenById[cid];
+                  const active = filterChild === cid;
+                  return (
+                    <div
+                      key={cid}
+                      className={`branch-row legend-c${colorByChild[cid]}${
+                        active ? " active" : ""
+                      }${filterChild && !active ? " dim" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        className="branch-row-main"
+                        onClick={() => setFilterChild(active ? null : cid)}
+                        title={
+                          active
+                            ? "Show all highlights"
+                            : "Show only this lesson's highlights"
+                        }
+                      >
+                        <span className="legend-dot" aria-hidden="true" />
+                        <span className="branch-row-title">
+                          {child?.title ?? "Branch lesson"}
+                        </span>
+                        {child?.status === "draft" ? (
+                          <span className="legend-draft" title="Not written yet">
+                            ✍️
+                          </span>
+                        ) : null}
+                      </button>
+                      <button
+                        type="button"
+                        className="legend-open"
+                        onClick={() => router.push(`/missions/${cid}`)}
+                        title="Open lesson"
+                      >
+                        →
+                      </button>
+                    </div>
+                  );
+                })}
+                <p className="branch-list-hint">
+                  Click a lesson to spotlight its highlights; click tinted text
+                  to open its lesson.
+                </p>
+              </section>
+            ) : !collecting ? (
+              <p className="branch-empty">
+                No branch lessons yet. Highlight any text in the notebook and
+                choose “⑂ Branch lesson” to grow one.
+              </p>
+            ) : null}
           </div>
-          <div className="branch-tray-row">
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="What do you want to understand about these? (optional)"
-            />
-            <button
-              type="button"
-              className="branch-generate"
-              onClick={() => void generate()}
-              disabled={picks.length === 0 || generating}
-            >
-              {generating ? "Creating…" : "Generate"}
-            </button>
-          </div>
-          {genError ? <div className="branch-error">{genError}</div> : null}
-        </div>
+        </aside>
       ) : null}
     </div>
   );
