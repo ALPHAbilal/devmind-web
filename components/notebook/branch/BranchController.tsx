@@ -8,14 +8,17 @@
  *      collect mode, "+ Add highlight" appends while collecting.
  *   2. Collect tray — bottom bar listing picked highlights (scattered picks
  *      are fine — each chip can jump to its cell), an intent note, Generate.
- *   3. Vein markers — when `branchesOn` (top-bar toggle), a ⑂ anchor appears
- *      at every stored highlight. Anchors of the same child share a color;
- *      hovering shows the child + ALL its sibling anchors with jump links.
+ *   3. Branch tints — when `branchesOn` (top-bar toggle), every stored
+ *      highlight is tinted like a transparent highlighter directly over the
+ *      text (CSS Custom Highlight API — no DOM mutation). One mini notebook =
+ *      one unified color; overlaps blend. A small legend lists the mini
+ *      notebooks; clicking a legend chip filters the tints to that one child.
+ *      Clicking tinted text opens its mini notebook.
  *
- * Anchoring strategy: highlights are stored as (cell_id, selected_text). At
- * render time we re-find the text inside the cell's DOM (single text node —
- * covers typical short highlights); if not found (edited cell, Monaco
- * virtualization) the marker falls back to the cell's top-right corner.
+ * Anchoring: highlights are stored as (cell_id, selected_text) and re-found
+ * in the cell's DOM at render time (single text node — covers typical short
+ * highlights). Text that can't be re-found (edited cell, Monaco
+ * virtualization) simply doesn't tint; it still shows in the legend.
  */
 import {
   useCallback,
@@ -46,15 +49,20 @@ interface Pick {
   text: string;
 }
 
-interface Marker {
-  highlightId: string;
-  childId: string;
-  top: number;
-  left: number;
-  colorIdx: number;
-}
+const MAX_COLORS = 4; // ::highlight(devmind-branch-0…3) + .legend-c0…c3
 
-const MAX_COLORS = 4; // .vein-c0 … .vein-c3 in branch.css
+/* Minimal typings for the CSS Custom Highlight API (not yet in TS lib.dom). */
+interface HighlightRegistry {
+  set(name: string, highlight: unknown): void;
+  delete(name: string): boolean;
+}
+declare const Highlight: { new (...ranges: Range[]): unknown };
+function highlightRegistry(): HighlightRegistry | null {
+  const css = globalThis.CSS as unknown as
+    | { highlights?: HighlightRegistry }
+    | undefined;
+  return css?.highlights ?? null;
+}
 
 export function BranchController({
   highlights,
@@ -78,8 +86,6 @@ export function BranchController({
     text: string;
   } | null>(null);
   const [collecting, setCollecting] = useState(false);
-  const collectingRef = useRef(collecting);
-  collectingRef.current = collecting;
 
   useEffect(() => {
     function onMouseUp() {
@@ -177,7 +183,11 @@ export function BranchController({
         setGenError(data?.error?.message ?? `Failed (${res.status})`);
         return;
       }
-      const child = data.child_mission as { id: string; title: string; status: string };
+      const child = data.child_mission as {
+        id: string;
+        title: string;
+        status: string;
+      };
       onCreated(
         { id: child.id, title: child.title, status: child.status },
         (data.highlights as BranchHighlight[]) ?? [],
@@ -190,141 +200,162 @@ export function BranchController({
     }
   }, [picks, note, generating, missionId, onCreated, cancelCollect]);
 
-  // ── 3. Vein markers ──────────────────────────────────────────────────────
+  // ── 3. Branch tints ──────────────────────────────────────────────────────
   const anchored = useMemo(
     () => highlights.filter((h) => h.child_mission_id),
     [highlights],
   );
-  const colorByChild = useMemo(() => {
-    const map: Record<string, number> = {};
-    let i = 0;
+  const childIds = useMemo(() => {
+    const seen: string[] = [];
     for (const h of anchored) {
       const cid = h.child_mission_id as string;
-      if (!(cid in map)) map[cid] = i++ % MAX_COLORS;
+      if (!seen.includes(cid)) seen.push(cid);
     }
-    return map;
+    return seen;
   }, [anchored]);
+  const colorByChild = useMemo(
+    () =>
+      Object.fromEntries(childIds.map((cid, i) => [cid, i % MAX_COLORS])),
+    [childIds],
+  );
 
-  const [markers, setMarkers] = useState<Marker[]>([]);
-  const [hovered, setHovered] = useState<string | null>(null); // child id
+  /** null = show all mini notebooks; otherwise only that child's tints. */
+  const [filterChild, setFilterChild] = useState<string | null>(null);
 
-  const layoutMarkers = useCallback(() => {
-    const layer = layerRef.current;
-    if (!layer || !branchesOn) {
-      setMarkers([]);
-      return;
-    }
-    const layerRect = layer.getBoundingClientRect();
-    const host = layer.parentElement as HTMLElement;
-    const next: Marker[] = [];
+  // Live ranges currently painted, so clicks can be resolved to a child.
+  const paintedRef = useRef<Array<{ range: Range; childId: string }>>([]);
+
+  const paintTints = useCallback(() => {
+    const registry = highlightRegistry();
+    if (!registry) return; // very old browser — legend still works
+    for (let i = 0; i < MAX_COLORS; i++) registry.delete(`devmind-branch-${i}`);
+    paintedRef.current = [];
+    if (!branchesOn) return;
+
+    const host = layerRef.current?.parentElement;
+    if (!host) return;
+    const byColor: Range[][] = Array.from({ length: MAX_COLORS }, () => []);
     for (const h of anchored) {
+      const cid = h.child_mission_id as string;
+      if (filterChild && cid !== filterChild) continue;
       const cellEl = host.querySelector<HTMLElement>(
         `[data-cell-id="${h.cell_id}"]`,
       );
       if (!cellEl) continue;
-      const rect = findTextRect(cellEl, h.selected_text) ?? cellEl.getBoundingClientRect();
-      next.push({
-        highlightId: h.id,
-        childId: h.child_mission_id as string,
-        top: rect.top - layerRect.top,
-        left: rect.right - layerRect.left + 6,
-        colorIdx: colorByChild[h.child_mission_id as string] ?? 0,
-      });
+      const range = findTextRange(cellEl, h.selected_text);
+      if (!range) continue;
+      byColor[colorByChild[cid] ?? 0].push(range);
+      paintedRef.current.push({ range, childId: cid });
     }
-    setMarkers(next);
-  }, [anchored, branchesOn, colorByChild]);
+    byColor.forEach((ranges, i) => {
+      if (ranges.length) {
+        registry.set(`devmind-branch-${i}`, new Highlight(...ranges));
+      }
+    });
+  }, [anchored, branchesOn, filterChild, colorByChild]);
 
   useEffect(() => {
-    layoutMarkers();
-    if (!branchesOn) return;
-    // Re-measure after fonts/Monaco settle, and on resize.
-    const t = setTimeout(layoutMarkers, 400);
-    window.addEventListener("resize", layoutMarkers);
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener("resize", layoutMarkers);
-    };
-  }, [layoutMarkers, branchesOn]);
+    paintTints();
+    // Re-paint after fonts/Monaco settle; ranges are live but cells re-render.
+    const t = setTimeout(paintTints, 400);
+    return () => clearTimeout(t);
+  }, [paintTints]);
 
-  const hoveredChild = hovered ? childrenById[hovered] : null;
-  const hoveredSiblings = useMemo(
-    () => (hovered ? anchored.filter((h) => h.child_mission_id === hovered) : []),
-    [hovered, anchored],
+  // Cleanup on unmount.
+  useEffect(
+    () => () => {
+      const registry = highlightRegistry();
+      if (registry) {
+        for (let i = 0; i < MAX_COLORS; i++) {
+          registry.delete(`devmind-branch-${i}`);
+        }
+      }
+    },
+    [],
   );
-  const hoveredMarker = useMemo(
-    () => markers.find((m) => m.childId === hovered) ?? null,
-    [markers, hovered],
-  );
+
+  // Clicking tinted text opens its mini notebook.
+  useEffect(() => {
+    if (!branchesOn) return;
+    function onClick(e: MouseEvent) {
+      if (paintedRef.current.length === 0) return;
+      const doc = document as Document & {
+        caretRangeFromPoint?: (x: number, y: number) => Range | null;
+      };
+      const caret = doc.caretRangeFromPoint?.(e.clientX, e.clientY);
+      if (!caret) return;
+      for (const p of paintedRef.current) {
+        if (p.range.isPointInRange(caret.startContainer, caret.startOffset)) {
+          router.push(`/missions/${p.childId}`);
+          return;
+        }
+      }
+    }
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [branchesOn, router]);
 
   return (
-    <div className="branch-layer" ref={layerRef} aria-hidden={false}>
+    <div className="branch-layer" ref={layerRef}>
       {/* Selection pill */}
       {pill ? (
         <div className="branch-pill" style={{ top: pill.top, left: pill.left }}>
-          <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={addPick}>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={addPick}
+          >
             {collecting ? "+ Add highlight" : "⑂ Branch lesson"}
           </button>
         </div>
       ) : null}
 
-      {/* Vein markers */}
-      {markers.map((m) => (
-        <button
-          key={m.highlightId}
-          type="button"
-          className={`vein-marker vein-c${m.colorIdx}${
-            hovered === m.childId ? " lit" : ""
-          }`}
-          style={{ top: m.top, left: m.left }}
-          onMouseEnter={() => setHovered(m.childId)}
-          onMouseLeave={() => setHovered(null)}
-          onClick={() => router.push(`/missions/${m.childId}`)}
-          aria-label="Open branch lesson"
-        >
-          ⑂
-        </button>
-      ))}
-
-      {/* Marker tooltip — one per hovered child, near its first marker */}
-      {hoveredChild && hoveredMarker ? (
-        <div
-          className="vein-tip"
-          style={{ top: hoveredMarker.top + 24, left: hoveredMarker.left }}
-          onMouseEnter={() => setHovered(hoveredChild.id)}
-          onMouseLeave={() => setHovered(null)}
-        >
-          <div className="vein-tip-title">
-            ⑂ {hoveredChild.title}
-            {hoveredChild.status === "draft" ? (
-              <span className="vein-tip-status">✍️ not written yet</span>
-            ) : null}
-          </div>
-          <div className="vein-tip-sub">
-            {hoveredSiblings.length} highlight
-            {hoveredSiblings.length > 1 ? "s" : ""} feed this lesson:
-          </div>
-          <ul className="vein-tip-list">
-            {hoveredSiblings.map((h) => (
-              <li key={h.id}>
-                <button type="button" onClick={() => jumpToCell(h.cell_id)}>
-                  “{truncate(h.selected_text, 40)}”
+      {/* Legend — one chip per mini notebook; click filters to that one. */}
+      {branchesOn && childIds.length > 0 ? (
+        <div className="branch-legend" role="group" aria-label="Branch lessons">
+          {childIds.map((cid) => {
+            const child = childrenById[cid];
+            const active = filterChild === cid;
+            return (
+              <div
+                key={cid}
+                className={`legend-chip legend-c${colorByChild[cid]}${
+                  active ? " active" : ""
+                }${filterChild && !active ? " dim" : ""}`}
+              >
+                <button
+                  type="button"
+                  className="legend-filter"
+                  onClick={() => setFilterChild(active ? null : cid)}
+                  title={active ? "Show all" : "Show only this lesson"}
+                >
+                  <span className="legend-dot" aria-hidden="true" />
+                  {child?.title ?? "Branch lesson"}
+                  {child?.status === "draft" ? (
+                    <span className="legend-draft">✍️</span>
+                  ) : null}
                 </button>
-              </li>
-            ))}
-          </ul>
-          <button
-            type="button"
-            className="vein-tip-open"
-            onClick={() => router.push(`/missions/${hoveredChild.id}`)}
-          >
-            Open lesson →
-          </button>
+                <button
+                  type="button"
+                  className="legend-open"
+                  onClick={() => router.push(`/missions/${cid}`)}
+                  title="Open lesson"
+                >
+                  →
+                </button>
+              </div>
+            );
+          })}
         </div>
       ) : null}
 
       {/* Collect tray */}
       {collecting ? (
-        <div className="branch-tray" role="dialog" aria-label="New branch lesson">
+        <div
+          className="branch-tray"
+          role="dialog"
+          aria-label="New branch lesson"
+        >
           <div className="branch-tray-head">
             <span className="branch-tray-title">⑂ New branch lesson</span>
             <span className="branch-tray-hint">
@@ -386,9 +417,9 @@ export function BranchController({
   );
 }
 
-/** Find the bounding rect of `needle` inside `root`'s text nodes. Single-node
- * matches only — multi-node spans fall back to the cell rect upstream. */
-function findTextRect(root: HTMLElement, needle: string): DOMRect | null {
+/** Find a live Range for `needle` inside `root`'s text nodes. Single-node
+ * matches only — text that can't be re-found simply doesn't tint. */
+function findTextRange(root: HTMLElement, needle: string): Range | null {
   const target = needle.trim();
   if (!target) return null;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -399,7 +430,7 @@ function findTextRect(root: HTMLElement, needle: string): DOMRect | null {
       const range = document.createRange();
       range.setStart(node, idx);
       range.setEnd(node, idx + target.length);
-      return range.getBoundingClientRect();
+      return range;
     }
   }
   return null;

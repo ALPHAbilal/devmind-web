@@ -42,104 +42,97 @@
   border-color: var(--accent-green);
 }
 
-/* ── Vein markers ───────────────────────────────────────────────────────── */
-.vein-marker {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 1px solid var(--border-medium);
-  background: var(--bg-surface);
-  font-size: 12px;
-  line-height: 1;
-  cursor: pointer;
-  z-index: 30;
-  transition: transform 0.15s, box-shadow 0.15s;
+/* ── Branch tints — transparent highlighter over the text itself. One mini
+ * notebook = one color; overlapping tints blend naturally. Alphas chosen to
+ * read on both light and dark themes. ─────────────────────────────────────── */
+::highlight(devmind-branch-0) {
+  background-color: rgba(99, 190, 93, 0.3);
 }
-.vein-marker:hover,
-.vein-marker.lit {
-  transform: scale(1.2);
-  box-shadow: 0 0 0 3px var(--bg-hover), 0 2px 10px rgba(0, 0, 0, 0.25);
-  z-index: 35;
+::highlight(devmind-branch-1) {
+  background-color: rgba(96, 187, 196, 0.3);
 }
-/* Same child = same color, even when anchors are far apart. */
-.vein-c0 { color: var(--accent-green-bright); border-color: var(--accent-green); }
-.vein-c1 { color: var(--accent-teal); border-color: var(--accent-teal); }
-.vein-c2 { color: var(--accent-yellow); border-color: var(--accent-yellow); }
-.vein-c3 { color: var(--accent-red, #d47b76); border-color: var(--accent-red, #d47b76); }
+::highlight(devmind-branch-2) {
+  background-color: rgba(233, 196, 76, 0.32);
+}
+::highlight(devmind-branch-3) {
+  background-color: rgba(226, 133, 128, 0.3);
+}
 
-/* ── Marker tooltip ─────────────────────────────────────────────────────── */
-.vein-tip {
+/* ── Legend — one chip per mini notebook, floats top-right of the column.
+ * Click chip = filter to that lesson's tints; → opens it. ────────────────── */
+.branch-legend {
   position: absolute;
-  z-index: 45;
-  width: 280px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
-  padding: 12px 14px;
-  font-family: var(--font-ui);
-}
-.vein-tip-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.vein-tip-status {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-.vein-tip-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin: 8px 0 4px;
-}
-.vein-tip-list {
-  list-style: none;
-  margin: 0 0 10px;
-  padding: 0;
+  top: 34px;
+  right: 0;
+  z-index: 40;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: flex-end;
+  gap: 6px;
+  font-family: var(--font-ui);
 }
-.vein-tip-list button {
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  border-radius: 15px;
+  padding: 2px 4px 2px 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  transition: opacity 0.15s, border-color 0.15s;
+}
+.legend-chip.dim {
+  opacity: 0.45;
+}
+.legend-chip.active {
+  border-color: var(--border-strong);
+}
+.legend-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   border: none;
   background: none;
   color: var(--text-secondary);
-  font-size: 12px;
   font-family: var(--font-ui);
+  font-size: 12px;
   cursor: pointer;
-  padding: 3px 6px;
-  border-radius: 6px;
-  text-align: left;
-  width: 100%;
+  padding: 3px 4px 3px 6px;
+  border-radius: 12px;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.legend-filter:hover {
+  color: var(--text-primary);
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.legend-c0 .legend-dot { background: rgba(99, 190, 93, 0.75); }
+.legend-c1 .legend-dot { background: rgba(96, 187, 196, 0.75); }
+.legend-c2 .legend-dot { background: rgba(233, 196, 76, 0.8); }
+.legend-c3 .legend-dot { background: rgba(226, 133, 128, 0.75); }
+.legend-draft {
+  font-size: 11px;
+}
+.legend-open {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 12px;
   transition: color 0.13s, background 0.13s;
 }
-.vein-tip-list button:hover {
+.legend-open:hover {
   color: var(--text-primary);
   background: var(--bg-hover);
-}
-.vein-tip-open {
-  border: 1px solid var(--accent-green);
-  background: var(--bg-hover);
-  color: var(--accent-green-bright);
-  font-size: 12px;
-  font-weight: 600;
-  font-family: var(--font-ui);
-  padding: 5px 12px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.vein-tip-open:hover {
-  background: var(--bg-surface);
 }
 
 /* ── Collect tray ───────────────────────────────────────────────────────── */
