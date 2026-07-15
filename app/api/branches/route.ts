@@ -174,7 +174,7 @@ export async function POST(req: Request) {
     const { data: updData, error: updErr } = await supabase
       .from("mission_highlights")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ child_mission_id: child.id } as any)
+      .update({ child_mission_id: child.id } as never)
       .eq("session_id", sessionId)
       .select("*");
     if (updErr) {
@@ -193,7 +193,7 @@ export async function POST(req: Request) {
         note: note || null,
         updated_at: new Date().toISOString(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any)
+      } as never)
       .eq("id", sessionId);
   } else {
     const { data: hlData, error: hlErr } = await supabase

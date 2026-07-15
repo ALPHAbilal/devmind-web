@@ -188,10 +188,15 @@ function CanvasInner({
   );
 
   /* ── exchange flow (agent seam) ────────────────────────────────────────── */
+  // seq counter lives in a ref so two turns persisted in the same handler
+  // (user reply + agent answer) can't collide on unique(session_id, seq).
+  const seqRef = useRef<Map<string, number>>(
+    new Map(initialRoads.map((r) => [r.session.id, r.turns.length])),
+  );
   const persistTurn = useCallback(
     async (sessionId: string, role: "agent" | "user", summary: string, full: string) => {
-      const road = roadMap.get(sessionId);
-      const seq = (road?.turns.length ?? 0) + 1;
+      const seq = (seqRef.current.get(sessionId) ?? 0) + 1;
+      seqRef.current.set(sessionId, seq);
       const { data } = await supabase
         .from("branch_session_turns")
         .insert({
@@ -223,7 +228,7 @@ function CanvasInner({
       });
       return turn;
     },
-    [supabase, roadMap],
+    [supabase],
   );
 
   const setSessionStatus = useCallback(
@@ -231,7 +236,7 @@ function CanvasInner({
       void supabase
         .from("branch_sessions")
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update({ status, updated_at: new Date().toISOString() } as any)
+        .update({ status, updated_at: new Date().toISOString() } as never)
         .eq("id", sessionId)
         .then(() => undefined);
     },
