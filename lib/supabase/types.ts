@@ -14,6 +14,142 @@ export type Database = {
   }
   public: {
     Tables: {
+      branch_session_turns: {
+        Row: {
+          created_at: string
+          full_text: string
+          id: string
+          role: string
+          seq: number
+          session_id: string
+          summary_line: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_text: string
+          id?: string
+          role: string
+          seq: number
+          session_id: string
+          summary_line: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          full_text?: string
+          id?: string
+          role?: string
+          seq?: number
+          session_id?: string
+          summary_line?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_session_turns_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "branch_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      branch_sessions: {
+        Row: {
+          child_mission_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          parent_mission_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          child_mission_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          parent_mission_id: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          child_mission_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          parent_mission_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_sessions_child_mission_id_fkey"
+            columns: ["child_mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branch_sessions_parent_mission_id_fkey"
+            columns: ["parent_mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      canvas_nodes: {
+        Row: {
+          created_at: string
+          id: string
+          meta: Json
+          mission_id: string
+          node_type: string
+          ref_id: string | null
+          updated_at: string
+          user_id: string
+          x: number
+          y: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meta?: Json
+          mission_id: string
+          node_type: string
+          ref_id?: string | null
+          updated_at?: string
+          user_id?: string
+          x?: number
+          y?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meta?: Json
+          mission_id?: string
+          node_type?: string
+          ref_id?: string | null
+          updated_at?: string
+          user_id?: string
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canvas_nodes_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       concept_edges: {
         Row: {
           concept_id: string
@@ -253,7 +389,9 @@ export type Database = {
           created_at: string
           id: string
           parent_mission_id: string
+          pick_order: number | null
           selected_text: string
+          session_id: string | null
           user_id: string
         }
         Insert: {
@@ -262,7 +400,9 @@ export type Database = {
           created_at?: string
           id?: string
           parent_mission_id: string
+          pick_order?: number | null
           selected_text: string
+          session_id?: string | null
           user_id?: string
         }
         Update: {
@@ -271,7 +411,9 @@ export type Database = {
           created_at?: string
           id?: string
           parent_mission_id?: string
+          pick_order?: number | null
           selected_text?: string
+          session_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -294,6 +436,13 @@ export type Database = {
             columns: ["parent_mission_id"]
             isOneToOne: false
             referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_highlights_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "branch_sessions"
             referencedColumns: ["id"]
           },
         ]

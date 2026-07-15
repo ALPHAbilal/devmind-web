@@ -12,6 +12,11 @@ interface BranchBody {
   parent_mission_id?: unknown;
   note?: unknown;
   highlights?: unknown;
+  /** Branch-canvas road: when set, the child links to this session and the
+   *  session's already-stored highlights are adopted (none re-inserted). */
+  session_id?: unknown;
+  /** Optional explicit child title (e.g. agreed during the exchange). */
+  title?: unknown;
 }
 
 /**
@@ -59,6 +64,25 @@ export async function POST(req: Request) {
           text: (h.text as string).trim(),
         }))
     : [];
+  const sessionId =
+    typeof body.session_id === "string" && body.session_id ? body.session_id : null;
+  const explicitTitle =
+    typeof body.title === "string" && body.title.trim() ? body.title.trim() : null;
+
+  // Session mode: highlights already live in mission_highlights (written as
+  // the user picked them); load them instead of requiring them in the body.
+  let sessionHighlights: HighlightRow[] = [];
+  if (sessionId) {
+    const { data: shData } = await supabase
+      .from("mission_highlights")
+      .select("*")
+      .eq("session_id", sessionId)
+      .order("pick_order", { ascending: true });
+    sessionHighlights = (shData ?? []) as HighlightRow[];
+    for (const h of sessionHighlights) {
+      highlights.push({ cell_id: h.cell_id, text: h.selected_text });
+    }
+  }
 
   if (!parentId || highlights.length === 0) {
     return NextResponse.json(
@@ -98,11 +122,13 @@ export async function POST(req: Request) {
     );
   }
 
-  const title = note
-    ? note.length > 80
-      ? `${note.slice(0, 80)}…`
-      : note
-    : `Deep dive: ${truncate(highlights[0].text, 60)}`;
+  const title =
+    explicitTitle ??
+    (note
+      ? note.length > 80
+        ? `${note.slice(0, 80)}…`
+        : note
+      : `Deep dive: ${truncate(highlights[0].text, 60)}`);
 
   const { data: childData, error: childErr } = await supabase
     .from("missions")
@@ -142,30 +168,60 @@ export async function POST(req: Request) {
     );
   }
 
-  const { data: hlData, error: hlErr } = await supabase
-    .from("mission_highlights")
-    .insert(
-      highlights.map((h) => ({
-        user_id: user.id,
-        parent_mission_id: parent.id,
+  let outHighlights: HighlightRow[];
+  if (sessionId) {
+    // Adopt the session's highlights and close the road.
+    const { data: updData, error: updErr } = await supabase
+      .from("mission_highlights")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ child_mission_id: child.id } as any)
+      .eq("session_id", sessionId)
+      .select("*");
+    if (updErr) {
+      return NextResponse.json(
+        { error: { code: "update_failed", message: updErr.message } },
+        { status: 500 },
+      );
+    }
+    outHighlights = (updData ?? []) as HighlightRow[];
+    await supabase
+      .from("branch_sessions")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({
         child_mission_id: child.id,
-        cell_id: h.cell_id,
-        selected_text: h.text,
+        status: "generated",
+        note: note || null,
+        updated_at: new Date().toISOString(),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      })) as any,
-    )
-    .select("*");
+      } as any)
+      .eq("id", sessionId);
+  } else {
+    const { data: hlData, error: hlErr } = await supabase
+      .from("mission_highlights")
+      .insert(
+        highlights.map((h) => ({
+          user_id: user.id,
+          parent_mission_id: parent.id,
+          child_mission_id: child.id,
+          cell_id: h.cell_id,
+          selected_text: h.text,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        })) as any,
+      )
+      .select("*");
 
-  if (hlErr) {
-    return NextResponse.json(
-      { error: { code: "insert_failed", message: hlErr.message } },
-      { status: 500 },
-    );
+    if (hlErr) {
+      return NextResponse.json(
+        { error: { code: "insert_failed", message: hlErr.message } },
+        { status: 500 },
+      );
+    }
+    outHighlights = (hlData ?? []) as HighlightRow[];
   }
 
   return NextResponse.json({
     child_mission: child,
-    highlights: (hlData ?? []) as HighlightRow[],
+    highlights: outHighlights,
   });
 }
 

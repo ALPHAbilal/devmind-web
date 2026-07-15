@@ -370,6 +370,15 @@ export function NotebookContent({
             ⑂ Branches ({branchCount})
           </button>
         ) : null}
+        {!parentMission ? (
+          <Link
+            href={`/missions/${missionId}/canvas`}
+            className="branches-toggle"
+            title="Open the branch canvas — grow mini notebooks from highlights"
+          >
+            ⑂ Canvas
+          </Link>
+        ) : null}
       </div>
 
       <div className="notebook-cells" ref={cellsContainerRef}>

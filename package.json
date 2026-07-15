@@ -14,6 +14,8 @@
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@types/prismjs": "^1.26.6",
+    "@xyflow/react": "^12.11.2",
+    "lucide-react": "^1.24.0",
     "marked": "^18.0.4",
     "next": "^15.5.18",
     "prismjs": "^1.30.0",
