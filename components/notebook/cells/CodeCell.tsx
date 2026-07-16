@@ -14,7 +14,7 @@ import {
   DEVMIND_MONACO_THEME,
   readThemeColors,
 } from "@/lib/monaco-theme";
-import { useNotebook } from "../NotebookProvider";
+import { useNotebookOptional } from "../NotebookProvider";
 import type { Cell } from "./types";
 
 const LANG_LABEL: Record<string, string> = {
@@ -66,7 +66,11 @@ function isCodeAction(language: string | null): string {
 }
 
 export function CodeCell({ cell }: { cell: Cell }) {
-  const { missionId, sessionActive } = useNotebook();
+  // Canvas renders cells outside <NotebookProvider>; fall back to the cell's
+  // own mission_id and treat the mission as read-only there.
+  const nb = useNotebookOptional();
+  const missionId = nb?.missionId ?? cell.mission_id;
+  const sessionActive = nb?.sessionActive ?? false;
   const langKey = cell.language ?? "python";
   const monacoLang = MONACO_LANG[langKey] ?? "plaintext";
   const label = LANG_LABEL[langKey] ?? cell.language ?? "Code";
