@@ -186,6 +186,14 @@
 .cv-nb-inner {
   padding: 34px 42px 40px;
   cursor: text;
+  /* React Flow sets user-select: none on nodes; restore it so learners can
+     select text to branch from. */
+  user-select: text;
+  -webkit-user-select: text;
+}
+.cv-nb-inner * {
+  user-select: text;
+  -webkit-user-select: text;
 }
 .cv-nb-title {
   font-size: 26px;
