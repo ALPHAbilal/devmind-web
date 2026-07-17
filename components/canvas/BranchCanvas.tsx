@@ -110,7 +110,48 @@ function CanvasInner({
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [hotRoad, setHotRoad] = useState<string | null>(null);
-  const [pulsePick, setPulsePick] = useState<Highlight | null>(null);
+
+  // Hover state flows to NotebookNode outside React (CSS highlights only), so
+  // hovering a road never rebuilds node data — memo'd nodes stay mounted.
+  const hoverStore = useMemo(() => {
+    const listeners = new Set<() => void>();
+    const state: {
+      hotRoad: string | null;
+      pulsePick: { cell_id: string; selected_text: string } | null;
+    } = { hotRoad: null, pulsePick: null };
+    return {
+      get: () => state,
+      set(patch: Partial<typeof state>) {
+        Object.assign(state, patch);
+        listeners.forEach((l) => l());
+      },
+      subscribe(cb: () => void) {
+        listeners.add(cb);
+        return () => {
+          listeners.delete(cb);
+        };
+      },
+    };
+  }, []);
+
+  const handleHover = useCallback(
+    (sid: string | null) => {
+      setHotRoad(sid);
+      hoverStore.set({ hotRoad: sid });
+    },
+    [hoverStore],
+  );
+
+  const handlePulsePick = useCallback(
+    (p: Highlight | null) => {
+      hoverStore.set({
+        pulsePick: p
+          ? { cell_id: p.cell_id, selected_text: p.selected_text }
+          : null,
+      });
+    },
+    [hoverStore],
+  );
   const [wiredRoads, setWiredRoads] = useState<Set<string>>(new Set());
 
   const [roadMap, setRoadMap] = useState<Map<string, RoadState>>(() => {
@@ -497,10 +538,7 @@ function CanvasInner({
             }))
           : [],
         pendingSessionId: isCollecting ? liveId : null,
-        pulsePick: pulsePick
-          ? { cell_id: pulsePick.cell_id, selected_text: pulsePick.selected_text }
-          : null,
-        hotRoad,
+        hover: hoverStore,
         onHandlesMeasured,
       },
     };
@@ -517,7 +555,6 @@ function CanvasInner({
         type: "road",
         position: defaultPos("road", sid, i),
         dragHandle: ".canvas-frame-tab",
-        className: hotRoad && hotRoad !== sid ? "cv-dim" : undefined,
         data: {
           sessionId: sid,
           title,
@@ -539,8 +576,8 @@ function CanvasInner({
           onReply: (text: string) => void onReply(sid, text),
           onFlag: () => void onFlag(sid),
           onRemovePick: (hlId: string) => onRemovePick(sid, hlId),
-          onPulsePick: setPulsePick,
-          onHover: setHotRoad,
+          onPulsePick: handlePulsePick,
+          onHover: handleHover,
         },
       };
       out.push(roadNode);
@@ -550,7 +587,6 @@ function CanvasInner({
           type: "mini",
           position: defaultPos("mini", sid, i),
           dragHandle: ".canvas-frame-tab",
-          className: hotRoad && hotRoad !== sid ? "cv-dim" : undefined,
           data: {
             sessionId: sid,
             missionId: r.child.id,
@@ -559,7 +595,7 @@ function CanvasInner({
             color: r.color,
             pickCount: r.picks.length,
             newborn: r.newborn,
-            onHover: setHotRoad,
+            onHover: handleHover,
           },
         };
         out.push(miniNode);
@@ -567,8 +603,9 @@ function CanvasInner({
     });
     return out;
   }, [
-    roadsArr, roadMap, cells, missionId, missionTitle, defaultPos, hotRoad,
-    pulsePick, onDone, onReply, onFlag, onRemovePick, onHandlesMeasured,
+    roadsArr, roadMap, cells, missionId, missionTitle, defaultPos, hoverStore,
+    handleHover, handlePulsePick, onDone, onReply, onFlag, onRemovePick,
+    onHandlesMeasured,
   ]);
 
   // React Flow owns positions after mount; we rebuild data but keep positions.
@@ -582,6 +619,17 @@ function CanvasInner({
       }));
     });
   }, [builtNodes, setNodes]);
+
+  // Dim classes are layered on top without touching `data`, so memo'd node
+  // components skip re-rendering when hover changes.
+  const displayNodes = useMemo(() => {
+    if (!hotRoad) return nodes;
+    return nodes.map((n) =>
+      n.id === "notebook" || n.id === `road-${hotRoad}` || n.id === `mini-${hotRoad}`
+        ? n
+        : { ...n, className: "cv-dim" },
+    );
+  }, [nodes, hotRoad]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -670,7 +718,7 @@ function CanvasInner({
 
       <div className="cv-flow">
         <ReactFlow
-          nodes={nodes}
+          nodes={displayNodes}
           edges={edges}
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}

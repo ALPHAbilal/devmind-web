@@ -38,9 +38,15 @@ export type NotebookNodeType = Node<
     /** live picks of an in-flight road (pending color) */
     pending: Array<{ cell_id: string; selected_text: string }>;
     pendingSessionId: string | null;
-    /** pick currently hovered in a road card — pulses in the text */
-    pulsePick: { cell_id: string; selected_text: string } | null;
-    hotRoad: string | null;
+    /** Hover state (hot road + pulsed pick) delivered outside React so
+     *  hovering never rebuilds node data — we repaint CSS highlights only. */
+    hover: {
+      get: () => {
+        hotRoad: string | null;
+        pulsePick: { cell_id: string; selected_text: string } | null;
+      };
+      subscribe: (cb: () => void) => () => void;
+    };
     /** Reports which roads have a measured wire anchor, so the canvas only
      *  draws highlight edges whose source handle actually exists. */
     onHandlesMeasured?: (sessionIds: string[]) => void;
@@ -67,9 +73,11 @@ export const NotebookNode = memo(function NotebookNode({
     const rootTop = root.getBoundingClientRect().top;
     const tops: Record<string, number> = {};
 
+    const { hotRoad, pulsePick } = data.hover.get();
+
     const byColor: Range[][] = Array.from({ length: MAX_COLORS }, () => []);
     for (const road of data.roads) {
-      const dim = data.hotRoad !== null && data.hotRoad !== road.sessionId;
+      const dim = hotRoad !== null && hotRoad !== road.sessionId;
       let firstTop: number | null = null;
       for (const p of road.picks) {
         const cellEl = root.querySelector<HTMLElement>(
@@ -109,12 +117,12 @@ export const NotebookNode = memo(function NotebookNode({
     }
 
     // Pulse (row-hover cross-light).
-    if (data.pulsePick) {
+    if (pulsePick) {
       const cellEl = root.querySelector<HTMLElement>(
-        `[data-cell-id="${data.pulsePick.cell_id}"]`,
+        `[data-cell-id="${pulsePick.cell_id}"]`,
       );
       const range = cellEl
-        ? findTextRange(cellEl, data.pulsePick.selected_text)
+        ? findTextRange(cellEl, pulsePick.selected_text)
         : null;
       setHighlight("devmind-canvas-pulse", range ? [range] : []);
     } else {
@@ -140,6 +148,9 @@ export const NotebookNode = memo(function NotebookNode({
       clearTimeout(t2);
     };
   }, [paint]);
+
+  // Repaint highlights when hover state changes — no React re-render involved.
+  useEffect(() => data.hover.subscribe(paint), [data.hover, paint]);
 
   useEffect(() => {
     updateNodeInternals(id);
