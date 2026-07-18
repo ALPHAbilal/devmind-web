@@ -777,3 +777,365 @@
   background: var(--border-subtle);
   margin: 0 3px;
 }
+
+/* ============================================================================
+ * DEMO SKIN — ported from canvas_inspirations/agent-node-variations.html.
+ * Moss-washed cards, a bleeding "clippings" well, chat-style exchange, pill
+ * footers. Declared AFTER the base .cv-road / .cv-mini rules so it overrides
+ * them by source order (same specificity). Behaviour is untouched — this is
+ * purely the box look.
+ * ========================================================================== */
+
+/* ── road card ───────────────────────────────────────────────────────────── */
+.cv-road {
+  width: 360px;
+  padding: 22px 26px;
+  border: none;
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-green) 9%, transparent),
+      transparent 55%
+    ),
+    var(--bg-surface);
+  box-shadow: var(--shadow-card);
+}
+.cv-road-title {
+  font-size: 15.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+.cv-road-sub {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* clippings well — bleeds toward the card edges */
+.cv-well {
+  margin: 18px -18px 0;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+.cv-well-cnt {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.cv-well-empty {
+  padding: 6px 2px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.cv-well-empty b {
+  color: var(--text-secondary);
+}
+.cv-clips {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 220px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent-green) 45%, transparent)
+    transparent;
+}
+.cv-clips::-webkit-scrollbar {
+  width: 4px;
+}
+.cv-clips::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent-green) 45%, transparent);
+  border-radius: 2px;
+}
+.cv-clip {
+  position: relative;
+  padding: 2px 4px 2px 18px;
+  cursor: pointer;
+  flex: none;
+}
+.cv-clip::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  width: 2px;
+  border-radius: 2px;
+  background: rgb(var(--c, var(--cv-pending)));
+  opacity: 0.55;
+  transition: opacity 0.2s;
+}
+.cv-clip:hover::before {
+  opacity: 1;
+}
+.cv-clip q {
+  quotes: none;
+  font-style: normal;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  font-weight: 450;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-line;
+}
+.cv-clip.open q {
+  -webkit-line-clamp: unset;
+  max-height: none;
+}
+.cv-clip-meta {
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cv-clip-meta b {
+  color: rgb(var(--c, var(--cv-pending)));
+  font-weight: 600;
+}
+.cv-clip-x {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+.cv-clip:hover .cv-clip-x {
+  opacity: 1;
+}
+.cv-clip-x:hover {
+  color: var(--accent-red);
+}
+
+/* exchange — chat bubbles */
+.cv-convo {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent-green) 45%, transparent)
+    transparent;
+}
+.cv-convo::-webkit-scrollbar {
+  width: 4px;
+}
+.cv-convo::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent-green) 45%, transparent);
+  border-radius: 2px;
+}
+.cv-msg {
+  font-size: 13px;
+  line-height: 1.6;
+  flex: none;
+}
+.cv-msg-who {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.cv-msg-agent {
+  color: var(--text-secondary);
+}
+.cv-msg-agent .cv-msg-who {
+  color: var(--accent-green);
+}
+.cv-msg-user {
+  color: var(--text-primary);
+  padding-left: 22px;
+}
+.cv-msg-user .cv-msg-who {
+  color: var(--text-muted);
+}
+.cv-flag-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--accent-green);
+  margin-top: 2px;
+}
+
+/* quick replies + composer (override the base indented .cv-chips) */
+.cv-road .cv-chips {
+  padding: 0;
+  margin-top: 8px;
+  gap: 8px;
+}
+.cv-road .cv-chip {
+  border: 0;
+  background: color-mix(in srgb, var(--accent-green) 9%, transparent);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 550;
+}
+.cv-road .cv-chip:hover {
+  background: color-mix(in srgb, var(--accent-green) 18%, transparent);
+  color: var(--text-primary);
+}
+.cv-composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.cv-composer input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--text-primary);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-medium);
+  transition: border-color 0.2s;
+}
+.cv-composer input::placeholder {
+  color: var(--text-muted);
+}
+.cv-composer input:focus {
+  border-bottom-color: var(--accent-green);
+}
+.cv-composer button {
+  border: 0;
+  background: none;
+  color: var(--accent-green);
+  cursor: pointer;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+}
+
+/* pill footer actions */
+.cv-act {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 0;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-green) 12%, transparent);
+  color: var(--accent-green-bright);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.cv-act:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-green) 20%, transparent);
+}
+.cv-act:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.cv-act-flag {
+  position: relative;
+  overflow: hidden;
+}
+.cv-road .cv-generating {
+  margin-top: 22px;
+  padding: 2px;
+}
+
+/* ── mini card ───────────────────────────────────────────────────────────── */
+.cv-mini {
+  width: 300px;
+  padding: 20px 26px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-green) 9%, transparent),
+      transparent 55%
+    ),
+    var(--bg-surface);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.25s ease;
+}
+.cv-mini:hover {
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--accent-green) 50%, transparent),
+    var(--shadow-card);
+}
+.cv-mini-kind {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--accent-green);
+}
+.cv-mini-title {
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+.cv-mini-meta {
+  margin-top: 14px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.cv-mini-meta b {
+  color: var(--text-secondary);
+  font-weight: 550;
+}
+.cv-mini-go {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 9px 0;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-green) 9%, transparent);
+  color: var(--accent-green);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cv-mini:hover .cv-mini-go {
+  background: color-mix(in srgb, var(--accent-green) 18%, transparent);
+}

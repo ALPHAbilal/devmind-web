@@ -1,13 +1,16 @@
 "use client";
 
 /**
- * MiniNode — a mini notebook (branch lesson) on the canvas. Compact card:
- * color dot + title + status pill + open action.
+ * MiniNode — a mini notebook (branch lesson) on the canvas.
+ *
+ * Visual language ported from the canvas_inspirations demo: a moss-washed
+ * card with a kind label, title, a small meta line and a pill "open" action.
+ * All wiring (routing, hover, newborn pop, color) is preserved.
  */
 import { memo } from "react";
 import { useRouter } from "next/navigation";
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
-import { ArrowRight, Check, Leaf, PenLine } from "lucide-react";
+import { ArrowRight, Leaf } from "lucide-react";
 
 export type MiniNodeType = Node<
   {
@@ -33,40 +36,35 @@ export const MiniNode = memo(function MiniNode({ data }: NodeProps<MiniNodeType>
       style={{ ["--c" as string]: `var(--cv-br-${data.color % 4})` }}
       onMouseEnter={() => data.onHover?.(data.sessionId)}
       onMouseLeave={() => data.onHover?.(null)}
+      onClick={() => router.push(`/missions/${data.missionId}`)}
     >
       <div className="cv-frame-tab canvas-frame-tab">
         <Leaf size={11} strokeWidth={2} aria-hidden />
         <span>Mini notebook{data.newborn ? " · just grown" : ""}</span>
       </div>
-      <div className="cv-mini-head">
-        <span className="cv-mini-dot" aria-hidden />
-        <span className="cv-mini-title">{data.title}</span>
-        <span className={`cv-mini-status ${draft ? "is-draft" : "is-ready"}`}>
-          {draft ? (
-            <>
-              <PenLine size={8} strokeWidth={2.4} aria-hidden /> draft
-            </>
-          ) : (
-            <>
-              <Check size={8} strokeWidth={2.8} aria-hidden /> ready
-            </>
-          )}
-        </span>
+
+      <div className="cv-mini-kind">
+        <Leaf size={11} strokeWidth={2} aria-hidden /> Branch lesson
       </div>
-      <div className="cv-mini-body">
-        Grown from {data.pickCount} highlight{data.pickCount === 1 ? "" : "s"} in
-        the parent notebook.
+      <h3 className="cv-mini-title">{data.title}</h3>
+      <div className="cv-mini-meta">
+        <b>
+          {data.pickCount} cell{data.pickCount === 1 ? "" : "s"}
+        </b>{" "}
+        · {draft ? "draft" : "ready"}
       </div>
-      <div className="cv-mini-foot">
-        <button
-          type="button"
-          className="cv-btn-open"
-          onClick={() => router.push(`/missions/${data.missionId}`)}
-        >
-          <span>Open lesson</span>
-          <ArrowRight size={11} strokeWidth={2.2} aria-hidden />
-        </button>
-      </div>
+      <button
+        type="button"
+        className="cv-mini-go"
+        onClick={(e) => {
+          e.stopPropagation();
+          router.push(`/missions/${data.missionId}`);
+        }}
+      >
+        <span>Open lesson</span>
+        <ArrowRight size={12} strokeWidth={2.2} aria-hidden />
+      </button>
+
       <Handle
         type="target"
         position={Position.Left}

@@ -2,24 +2,24 @@
 
 /**
  * RoadNode — ONE card holding the full provenance of a mini notebook:
- * the user's highlights (in picking order) + the exchange with the agent
- * + the green-flag stamp. Every entry is a one-line row that expands on
- * click. The same card is the live creation surface: its footer morphs
- * through collecting → discussing → flagged → generating → generated.
+ * the user's highlights (as clippings) + the exchange with the agent
+ * + the green-flag stamp. The same card is the live creation surface: its
+ * footer morphs through collecting → discussing → flagged → generating →
+ * generated.
+ *
+ * Visual language ported from the canvas_inspirations demo: a moss-washed
+ * card, a bleeding "clippings" well where each highlight is a moss-barred
+ * quote (click to unfold), and a chat-style exchange (agent / you bubbles,
+ * typing dots, quick-reply chips, an underline composer).
  */
 import { memo, useState, type KeyboardEvent } from "react";
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import {
   ArrowRight,
-  Bot,
   Check,
   Flag,
   GitBranch,
   Loader2,
-  PenLine,
-  Quote,
-  User,
-  X,
 } from "lucide-react";
 import type { BranchTurn, Highlight, RoadStatus } from "./types";
 
@@ -69,6 +69,17 @@ export const RoadNode = memo(function RoadNode({ data }: NodeProps<RoadNodeType>
   };
 
   const c = `var(--cv-br-${data.color % 4})`;
+  const sub =
+    data.status === "collecting"
+      ? "highlighting…"
+      : data.status === "discussing"
+        ? "discussing with agent…"
+        : data.status === "generating"
+          ? "generating…"
+          : "highlighted → discussed → generated";
+
+  const showExchange =
+    data.turns.length > 0 || data.agentTyping || data.status !== "collecting";
 
   return (
     <div
@@ -86,165 +97,99 @@ export const RoadNode = memo(function RoadNode({ data }: NodeProps<RoadNodeType>
         </span>
       </div>
 
-      <div className="cv-road-head">
-        <span className="cv-road-icon" aria-hidden>
-          <GitBranch size={13} strokeWidth={2} />
-        </span>
-        <span className="cv-road-headtext">
-          <span className="cv-road-title">{data.title}</span>
-          <span className="cv-road-sub">
-            {data.status === "collecting"
-              ? "highlighting…"
-              : data.status === "discussing"
-                ? "discussing with agent…"
-                : data.status === "generating"
-                  ? "generating…"
-                  : "highlighted → discussed → generated"}
-          </span>
-        </span>
-      </div>
+      <h3 className="cv-road-title">{data.title}</h3>
+      <div className="cv-road-sub">{sub}</div>
 
-      {/* ── picks ─────────────────────────────────────────────────────── */}
-      <section className="cv-road-sec">
-        <div className="cv-sec-label">
-          <Quote size={10} strokeWidth={2} aria-hidden /> Your highlights · in
-          picking order
+      {/* ── clippings well ────────────────────────────────────────────── */}
+      <div className="cv-well">
+        <div className="cv-well-cnt">
+          Clippings · {data.picks.length}
         </div>
         {data.picks.length === 0 ? (
-          <div className="cv-road-empty">
-            <b>Select text in the notebook</b> — every pick stacks here as one
-            line.
+          <div className="cv-well-empty">
+            <b>Select text in the notebook</b> — every pick stacks here.
           </div>
         ) : (
-          data.picks.map((p, i) => {
-            const key = `pick-${p.id}`;
-            return (
-              <div key={p.id} className={`cv-row${open.has(key) ? " open" : ""}`}>
-                <button
-                  type="button"
-                  className="cv-row-line"
+          <div className="cv-clips">
+            {data.picks.map((p, i) => {
+              const key = `pick-${p.id}`;
+              const multi = /\n\s*\n/.test(p.selected_text.trim());
+              return (
+                <div
+                  key={p.id}
+                  className={`cv-clip${open.has(key) ? " open" : ""}`}
                   onClick={() => toggle(key)}
                   onMouseEnter={() => data.onPulsePick?.(p)}
                   onMouseLeave={() => data.onPulsePick?.(null)}
                 >
-                  <span className="cv-row-num">{i + 1}</span>
-                  <span className="cv-row-text">{flat(p.selected_text)}</span>
-                  <span className="cv-row-caret" aria-hidden>
-                    ▸
-                  </span>
-                  {data.status === "collecting" && data.onRemovePick ? (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      className="cv-row-x"
-                      aria-label="Remove highlight"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        data.onRemovePick?.(p.id);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") data.onRemovePick?.(p.id);
-                      }}
-                    >
-                      <X size={9} strokeWidth={2.4} />
-                    </span>
-                  ) : null}
-                </button>
-                <div className="cv-row-full">
-                  <div className="cv-row-full-inner">{p.selected_text}</div>
-                </div>
-              </div>
-            );
-          })
-        )}
-        {data.note ? (
-          <div className={`cv-row${open.has("note") ? " open" : ""}`}>
-            <button type="button" className="cv-row-line" onClick={() => toggle("note")}>
-              <span className="cv-row-ico" aria-hidden>
-                <PenLine size={11} strokeWidth={2} />
-              </span>
-              <span className="cv-row-text">note: {flat(data.note)}</span>
-              <span className="cv-row-caret" aria-hidden>
-                ▸
-              </span>
-            </button>
-            <div className="cv-row-full">
-              <div className="cv-row-full-inner">
-                <span className="cv-row-who">your note</span>
-                {data.note}
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </section>
-
-      {/* ── exchange ──────────────────────────────────────────────────── */}
-      {data.turns.length > 0 || data.agentTyping || data.status !== "collecting" ? (
-        <section className="cv-road-sec">
-          <div className="cv-sec-label">
-            <Bot size={10} strokeWidth={2} aria-hidden /> Exchange with agent
-          </div>
-          {data.turns.map((t) => {
-            const key = `turn-${t.id}`;
-            return (
-              <div key={t.id} className={`cv-row${open.has(key) ? " open" : ""}`}>
-                <button
-                  type="button"
-                  className="cv-row-line"
-                  onClick={() => toggle(key)}
-                >
-                  <span
-                    className={`cv-row-ico ${t.role === "agent" ? "cv-ico-bot" : "cv-ico-user"}`}
-                    aria-hidden
-                  >
-                    {t.role === "agent" ? (
-                      <Bot size={11} strokeWidth={2} />
-                    ) : (
-                      <User size={11} strokeWidth={2} />
-                    )}
-                  </span>
-                  <span className="cv-row-text">{t.summary_line}</span>
-                  <span className="cv-row-caret" aria-hidden>
-                    ▸
-                  </span>
-                </button>
-                <div className="cv-row-full">
-                  <div className="cv-row-full-inner">
-                    <span className="cv-row-who">
-                      {t.role === "agent" ? "agent" : "you"}
-                    </span>
-                    {t.full_text}
+                  <q>{p.selected_text}</q>
+                  <div className="cv-clip-meta">
+                    <b>#{i + 1}</b>
+                    {multi ? " · click to unfold" : ""}
+                    {data.status === "collecting" && data.onRemovePick ? (
+                      <button
+                        type="button"
+                        className="cv-clip-x"
+                        aria-label="Remove highlight"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          data.onRemovePick?.(p.id);
+                        }}
+                      >
+                        remove
+                      </button>
+                    ) : null}
                   </div>
                 </div>
+              );
+            })}
+            {data.note ? (
+              <div
+                className={`cv-clip cv-clip-note${open.has("note") ? " open" : ""}`}
+                onClick={() => toggle("note")}
+              >
+                <q>{data.note}</q>
+                <div className="cv-clip-meta">
+                  <b>note</b> · click to unfold
+                </div>
               </div>
-            );
-          })}
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      {/* ── exchange (chat) ───────────────────────────────────────────── */}
+      {showExchange ? (
+        <div className="cv-convo">
+          {data.turns.map((t) => (
+            <div
+              key={t.id}
+              className={`cv-msg ${t.role === "agent" ? "cv-msg-agent" : "cv-msg-user"}`}
+            >
+              <span className="cv-msg-who">
+                {t.role === "agent" ? "Agent" : "You"}
+              </span>
+              {t.full_text}
+            </div>
+          ))}
           {data.agentTyping ? (
-            <div className="cv-row">
-              <div className="cv-row-line cv-row-static">
-                <span className="cv-row-ico cv-ico-bot" aria-hidden>
-                  <Bot size={11} strokeWidth={2} />
-                </span>
-                <span className="cv-typing" aria-label="Agent is thinking">
-                  <i /> <i /> <i />
-                </span>
-              </div>
+            <div className="cv-msg cv-msg-agent">
+              <span className="cv-msg-who">Agent</span>
+              <span className="cv-typing" aria-label="Agent is thinking">
+                <i /> <i /> <i />
+              </span>
             </div>
           ) : null}
           {data.flagLine ? (
-            <div className="cv-row">
-              <div className="cv-row-line cv-row-static">
-                <span className="cv-row-ico cv-ico-flag" aria-hidden>
-                  <Flag size={11} strokeWidth={2} />
-                </span>
-                <span className="cv-row-text">
-                  <b>green flag</b> · {data.flagLine}
-                </span>
-              </div>
+            <div className="cv-flag-line">
+              <Flag size={11} strokeWidth={2} aria-hidden />
+              <span>
+                <b>green flag</b> · {data.flagLine}
+              </span>
             </div>
           ) : null}
 
-          {/* quick replies */}
+          {/* quick replies + composer */}
           {data.options && data.options.length > 0 && !data.agentTyping ? (
             <>
               <div className="cv-chips">
@@ -259,7 +204,7 @@ export const RoadNode = memo(function RoadNode({ data }: NodeProps<RoadNodeType>
                   </button>
                 ))}
               </div>
-              <div className="cv-free">
+              <div className="cv-composer">
                 <input
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
@@ -268,41 +213,35 @@ export const RoadNode = memo(function RoadNode({ data }: NodeProps<RoadNodeType>
                   aria-label="Reply to the agent"
                 />
                 <button type="button" onClick={send} aria-label="Send reply">
-                  <ArrowRight size={11} strokeWidth={2.2} />
+                  <ArrowRight size={13} strokeWidth={2.2} />
                 </button>
               </div>
             </>
           ) : null}
-        </section>
+        </div>
       ) : null}
 
       {/* ── status footer ─────────────────────────────────────────────── */}
       {data.status === "collecting" ? (
-        <div className="cv-road-foot">
-          <button
-            type="button"
-            className="cv-btn-done"
-            disabled={data.picks.length === 0}
-            onClick={data.onDone}
-          >
-            <Check size={13} strokeWidth={2.4} aria-hidden /> Done highlighting
-          </button>
-        </div>
+        <button
+          type="button"
+          className="cv-act"
+          disabled={data.picks.length === 0}
+          onClick={data.onDone}
+        >
+          <Check size={13} strokeWidth={2.4} aria-hidden /> Done highlighting
+        </button>
       ) : null}
       {data.status === "flagged" ? (
-        <div className="cv-road-foot">
-          <button type="button" className="cv-btn-flag" onClick={data.onFlag}>
-            <Flag size={13} strokeWidth={2} aria-hidden /> Green flag — generate
-            the lesson
-          </button>
-        </div>
+        <button type="button" className="cv-act cv-act-flag" onClick={data.onFlag}>
+          <Flag size={13} strokeWidth={2} aria-hidden /> Green flag — generate the
+          lesson
+        </button>
       ) : null}
       {data.status === "generating" ? (
-        <div className="cv-road-foot">
-          <div className="cv-generating">
-            <Loader2 size={15} strokeWidth={2} className="cv-spin" aria-hidden />
-            Growing the mini notebook…
-          </div>
+        <div className="cv-generating">
+          <Loader2 size={15} strokeWidth={2} className="cv-spin" aria-hidden />
+          Growing the mini notebook…
         </div>
       ) : null}
 
@@ -323,7 +262,3 @@ export const RoadNode = memo(function RoadNode({ data }: NodeProps<RoadNodeType>
     </div>
   );
 });
-
-function flat(s: string): string {
-  return s.replace(/\s+/g, " ").trim();
-}
