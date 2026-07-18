@@ -372,11 +372,11 @@ export function NotebookContent({
         ) : null}
         {!parentMission ? (
           <Link
-            href={`/missions/${missionId}/canvas`}
+            href={`/missions/${missionId}/branches`}
             className="branches-toggle"
-            title="Open the branch canvas — grow mini notebooks from highlights"
+            title="Open branches — grow mini notebooks from highlights"
           >
-            ⑂ Canvas
+            ⑂ Branches
           </Link>
         ) : null}
       </div>

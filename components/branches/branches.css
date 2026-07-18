@@ -1,0 +1,728 @@
+/* ============================================================================
+ * Branch workspace — hub (garden grid) ⇄ three-lane workspace.
+ * Visual spec source: canvas_inspirations/branch-flow-final.html.
+ * All colors come from .theme-notebook tokens (light + dark both work);
+ * separation is whitespace + shadows — no border lines.
+ * ========================================================================== */
+
+.br-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  overflow: hidden;
+}
+
+/* ── highlight tints (CSS Custom Highlight API) ─────────────────────────── */
+::highlight(devmind-branch-picks) {
+  background: color-mix(in srgb, var(--accent-green) 22%, transparent);
+}
+::highlight(devmind-branch-pulse) {
+  background: color-mix(in srgb, var(--accent-green) 38%, transparent);
+}
+
+/* ── top bar ────────────────────────────────────────────────────────────── */
+.br-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 36px 4px;
+  flex: 0 0 auto;
+}
+.br-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 5px 12px;
+  border-radius: 9999px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.br-back:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.br-mission {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+.br-top .br-status {
+  margin-left: auto;
+}
+.br-iconbtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 6px;
+  border-radius: 9999px;
+  display: inline-flex;
+  transition: all var(--transition-fast);
+}
+.br-iconbtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ── status chips ───────────────────────────────────────────────────────── */
+.br-status {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+.br-status.talk {
+  color: var(--accent-yellow);
+  background: color-mix(in srgb, var(--accent-yellow) 12%, transparent);
+}
+.br-status.ready {
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 12%, transparent);
+}
+
+/* ════════════════════════════ HUB ═══════════════════════════════════════ */
+.br-hub {
+  flex: 1;
+  overflow-y: auto;
+  padding: 34px 40px 80px;
+}
+.br-hub-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.br-hub-top {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 30px;
+}
+.br-hub-top h1 {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+.br-hub-top .n {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.br-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+@media (max-width: 900px) {
+  .br-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.br-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 172px;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+  transition:
+    box-shadow var(--transition-normal),
+    transform var(--transition-normal),
+    background var(--transition-normal);
+}
+.br-card:hover {
+  background: color-mix(in srgb, var(--accent-green) 3%, var(--bg-surface));
+  box-shadow:
+    var(--shadow-elevated),
+    0 0 0 1.5px color-mix(in srgb, var(--accent-green) 24%, transparent),
+    0 0 24px color-mix(in srgb, var(--accent-green) 10%, transparent);
+  transform: translateY(-2px);
+}
+.br-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  transition: color var(--transition-normal);
+}
+.br-card:hover h3 {
+  color: var(--accent-green);
+}
+.br-card .row1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.br-card .foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 6px;
+}
+.br-meta {
+  font-size: 12px;
+  color: var(--text-disabled);
+}
+.br-quote {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  padding-left: 12px;
+  position: relative;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.br-quote::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  width: 3px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent-green) 40%, transparent);
+  transition:
+    background var(--transition-normal),
+    box-shadow var(--transition-normal);
+}
+.br-card:hover .br-quote::before {
+  background: var(--accent-green);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent-green) 45%, transparent);
+}
+.br-new {
+  border: none;
+  font-family: inherit;
+  border-radius: var(--radius-lg);
+  min-height: 172px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: color-mix(in srgb, var(--accent-green) 7%, transparent);
+  cursor: pointer;
+  transition:
+    background var(--transition-normal),
+    box-shadow var(--transition-normal);
+}
+.br-new:hover {
+  background: color-mix(in srgb, var(--accent-green) 13%, transparent);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent-green) 12%, transparent);
+}
+.br-new .plus {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: var(--accent-green);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition:
+    transform var(--transition-normal),
+    background var(--transition-normal);
+}
+.br-new:hover .plus {
+  transform: rotate(90deg);
+  background: var(--accent-green-bright);
+}
+.br-new .lbl {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--accent-green);
+}
+
+/* ═════════════════════════ WORKSPACE ════════════════════════════════════ */
+.br-work {
+  display: flex;
+  gap: 34px;
+  flex: 1;
+  min-height: 0;
+  padding: 12px 36px 26px;
+}
+.br-lane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.br-lane.clips {
+  flex: 0.85;
+}
+.br-lane.agent {
+  flex: 1.1;
+}
+.br-lane.mini {
+  flex: 0.95;
+}
+.br-lane-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--accent-green-dim);
+  padding: 4px 2px 14px;
+  flex: 0 0 auto;
+}
+.br-lane-h .n {
+  color: var(--text-disabled);
+  letter-spacing: 0;
+}
+.br-lane-b {
+  overflow-y: auto;
+  flex: 1;
+  padding: 2px;
+}
+
+/* ── notebook lane: rail ⇄ surface ──────────────────────────────────────── */
+.br-nb {
+  flex: 0 0 52px;
+  min-width: 0;
+  overflow: hidden;
+  transition: flex-basis var(--transition-normal);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.br-work.nb-open .br-nb {
+  flex-basis: 46%;
+}
+.br-rail {
+  position: absolute;
+  inset: 4px 0 0;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition:
+    opacity var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+.br-rail:hover {
+  box-shadow: var(--shadow-elevated);
+}
+.br-rail span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--accent-green-dim);
+}
+.br-rail.beacon {
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--accent-green) 35%, transparent),
+    0 0 20px color-mix(in srgb, var(--accent-green) 25%, transparent);
+}
+.br-rail.beacon span {
+  color: var(--accent-green);
+}
+.br-work.nb-open .br-rail {
+  opacity: 0;
+  pointer-events: none;
+}
+.br-nb-inner {
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 480px;
+}
+.br-work.nb-open .br-nb-inner {
+  opacity: 1;
+  transition: opacity var(--transition-normal) 120ms;
+}
+.br-nb-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 2px 14px;
+  flex: 0 0 auto;
+}
+.br-collapse {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 5px 14px;
+  border-radius: 9999px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.br-collapse:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.br-nb-surface {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  flex: 1;
+  overflow-y: auto;
+  padding: 30px 38px 60px;
+}
+.br-nb-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  margin-bottom: 14px;
+}
+
+/* ── selection pill ─────────────────────────────────────────────────────── */
+.br-pill {
+  position: fixed;
+  z-index: 60;
+  transform: translateX(-50%);
+}
+.br-pill button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--accent-green);
+  color: #fff;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-elevated);
+  transition: background var(--transition-fast);
+}
+.br-pill button:hover {
+  background: var(--accent-green-bright);
+}
+
+/* ── clippings lane ─────────────────────────────────────────────────────── */
+.br-clip {
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  animation: br-rise 0.25s ease;
+  position: relative;
+}
+.br-clip q {
+  quotes: "\201C" "\201D";
+}
+.br-clip q::before,
+.br-clip q::after {
+  color: var(--accent-green-dim);
+  font-weight: 600;
+}
+.br-clip-x {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-disabled);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 6px;
+  border-radius: 6px;
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+.br-clip:hover .br-clip-x {
+  opacity: 1;
+}
+.br-clip-x:hover {
+  color: var(--accent-red);
+  background: color-mix(in srgb, var(--accent-red) 8%, transparent);
+}
+@keyframes br-rise {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+.br-addmore {
+  width: 100%;
+  padding: 11px;
+  border-radius: var(--radius-md);
+  color: var(--accent-green);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--accent-green) 8%, transparent);
+  transition: background var(--transition-fast);
+}
+.br-addmore:hover {
+  background: color-mix(in srgb, var(--accent-green) 14%, transparent);
+}
+.br-done {
+  width: 100%;
+  padding: 11px;
+  border-radius: var(--radius-md);
+  margin-top: 10px;
+  background: var(--accent-green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    opacity var(--transition-fast);
+}
+.br-done:hover {
+  background: var(--accent-green-bright);
+}
+.br-done:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ── agent lane ─────────────────────────────────────────────────────────── */
+.br-msg {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  animation: br-rise 0.25s ease;
+}
+.br-msg .avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  background: color-mix(in srgb, var(--accent-green) 12%, transparent);
+  color: var(--accent-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.br-msg .bubble {
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border-top-left-radius: 4px;
+  box-shadow: var(--shadow-card);
+  padding: 10px 15px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  max-width: 88%;
+  white-space: pre-wrap;
+}
+.br-msg.user {
+  justify-content: flex-end;
+}
+.br-msg.user .bubble {
+  background: color-mix(in srgb, var(--accent-green) 11%, transparent);
+  box-shadow: none;
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  border-top-right-radius: 4px;
+}
+.br-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 2px 0 14px 36px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--accent-green) 7%, transparent);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  animation: br-rise 0.25s ease;
+}
+.br-action .ic {
+  color: var(--accent-green);
+  font-size: 12px;
+}
+.br-action.working .ic {
+  animation: br-pulse 1.1s ease infinite;
+}
+@keyframes br-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+.br-agent-empty {
+  padding: 22px 4px;
+  font-size: 12.5px;
+  color: var(--text-disabled);
+}
+.br-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 14px 36px;
+}
+.br-chip {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 8%, transparent);
+  border: none;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  transition: background var(--transition-fast);
+}
+.br-chip:hover {
+  background: color-mix(in srgb, var(--accent-green) 16%, transparent);
+}
+.br-flag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 14px 36px;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--accent-green);
+  color: #fff;
+  transition: background var(--transition-fast);
+}
+.br-flag:hover {
+  background: var(--accent-green-bright);
+}
+
+/* composer */
+.br-composer {
+  padding-top: 16px;
+  flex: 0 0 auto;
+}
+.br-composer-shell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border-radius: 9999px;
+  box-shadow: var(--shadow-card);
+  padding: 5px 5px 5px 18px;
+  transition: box-shadow var(--transition-fast);
+}
+.br-composer-shell:focus-within {
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--accent-green) 30%, transparent),
+    var(--shadow-elevated);
+}
+.br-composer input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  padding: 6px 0;
+}
+.br-composer input::placeholder {
+  color: var(--text-disabled);
+}
+.br-send {
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  flex: 0 0 auto;
+  border: none;
+  cursor: pointer;
+  background: var(--accent-green);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast);
+}
+.br-send:hover {
+  background: var(--accent-green-bright);
+  transform: scale(1.06);
+}
+.br-send:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none;
+}
+
+/* ── mini lane ──────────────────────────────────────────────────────────── */
+.br-mini-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 16px 18px;
+  animation: br-rise 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.br-mini-kind {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--accent-green-dim);
+}
+.br-mini-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+.br-open-mini {
+  width: 100%;
+  padding: 11px;
+  border-radius: 9999px;
+  margin-top: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--accent-green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    background var(--transition-normal),
+    box-shadow var(--transition-normal);
+}
+.br-open-mini:hover {
+  background: var(--accent-green-bright);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent-green) 30%, transparent);
+}
