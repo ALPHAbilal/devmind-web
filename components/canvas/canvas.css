@@ -1139,3 +1139,45 @@
 .cv-mini:hover .cv-mini-go {
   background: color-mix(in srgb, var(--accent-green) 18%, transparent);
 }
+
+/* ── agent card (its own node, demo agent skin) ──────────────────────────── */
+.cv-agent {
+  width: 360px;
+  padding: 22px 26px;
+  border: none;
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent-green) 9%, transparent),
+      transparent 55%
+    ),
+    var(--bg-surface);
+  box-shadow: var(--shadow-card);
+}
+.cv-agent .cv-convo {
+  margin-top: 4px;
+}
+/* chips + generating also apply inside the agent card */
+.cv-agent .cv-chips {
+  padding: 0;
+  margin-top: 8px;
+  gap: 8px;
+}
+.cv-agent .cv-chip {
+  border: 0;
+  background: color-mix(in srgb, var(--accent-green) 9%, transparent);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 550;
+}
+.cv-agent .cv-chip:hover {
+  background: color-mix(in srgb, var(--accent-green) 18%, transparent);
+  color: var(--text-primary);
+}
+.cv-agent .cv-generating {
+  margin-top: 22px;
+  padding: 2px;
+}

@@ -47,6 +47,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Cell } from "@/components/notebook/cells";
 import { NotebookNode, type NotebookNodeType } from "./NotebookNode";
 import { RoadNode, type RoadNodeType } from "./RoadNode";
+import { AgentNode, type AgentNodeType } from "./AgentNode";
 import { MiniNode, type MiniNodeType } from "./MiniNode";
 import { SmartEdge } from "./SmartEdge";
 import { ScriptedAgent } from "./agent";
@@ -63,6 +64,7 @@ import "./canvas.css";
 const nodeTypes: NodeTypes = {
   notebook: NotebookNode,
   road: RoadNode,
+  agent: AgentNode,
   mini: MiniNode,
 };
 
@@ -85,7 +87,14 @@ interface Pos {
 }
 const LANE_H = 440;
 const ROAD_X = 780;
-const MINI_X = 1180;
+const AGENT_X = 1180;
+const MINI_X = 1600;
+
+/** canvas_nodes.node_type has a CHECK constraint; the React Flow "agent" node
+ *  persists as the allowed "agent_ui" slot. */
+function dbNodeType(type: string): string {
+  return type === "agent" ? "agent_ui" : type;
+}
 
 export interface BranchCanvasProps {
   missionId: string;
@@ -204,11 +213,12 @@ function CanvasInner({
 
   const defaultPos = useCallback(
     (type: string, refId: string, laneIndex: number): Pos => {
-      const saved = savedPos.get(`${type}:${refId}`);
+      const saved = savedPos.get(`${dbNodeType(type)}:${refId}`);
       if (saved) return saved;
       if (type === "notebook") return { x: 0, y: 0 };
       const y = 40 + laneIndex * LANE_H;
-      return { x: type === "road" ? ROAD_X : MINI_X, y };
+      const x = type === "road" ? ROAD_X : type === "agent" ? AGENT_X : MINI_X;
+      return { x, y };
     },
     [savedPos],
   );
@@ -220,7 +230,7 @@ function CanvasInner({
         .upsert(
           {
             mission_id: missionId,
-            node_type: type,
+            node_type: dbNodeType(type),
             ref_id: refId,
             x: pos.x,
             y: pos.y,
@@ -567,26 +577,44 @@ function CanvasInner({
           color: r.color,
           status: r.status,
           picks: r.picks,
-          turns: r.turns,
           note: r.session.note,
-          flagLine:
-            r.status === "generated"
-              ? r.turns.length > 0
-                ? "generated"
-                : "generated (before exchanges existed)"
-              : null,
-          agentTyping: r.agentTyping,
-          options: r.options,
-          live: r.status === "collecting" || r.status === "discussing",
           onDone: () => void onDone(sid),
-          onReply: (text: string) => void onReply(sid, text),
-          onFlag: () => void onFlag(sid),
           onRemovePick: (hlId: string) => onRemovePick(sid, hlId),
           onPulsePick: handlePulsePick,
           onHover: handleHover,
         },
       };
       out.push(roadNode);
+
+      // The agent is its own node; it appears once highlighting is done and
+      // the exchange begins (any status past "collecting").
+      if (r.status !== "collecting") {
+        const agentNode: AgentNodeType = {
+          id: `agent-${sid}`,
+          type: "agent",
+          position: defaultPos("agent", sid, i),
+          dragHandle: ".canvas-frame-tab",
+          data: {
+            sessionId: sid,
+            color: r.color,
+            status: r.status,
+            turns: r.turns,
+            agentTyping: r.agentTyping,
+            options: r.options,
+            flagLine:
+              r.status === "generated"
+                ? r.turns.length > 0
+                  ? "generated"
+                  : "generated (before exchanges existed)"
+                : null,
+            onReply: (text: string) => void onReply(sid, text),
+            onFlag: () => void onFlag(sid),
+            onHover: handleHover,
+          },
+        };
+        out.push(agentNode);
+      }
+
       if (r.child) {
         const miniNode: MiniNodeType = {
           id: `mini-${sid}`,
@@ -631,7 +659,10 @@ function CanvasInner({
   const displayNodes = useMemo(() => {
     if (!hotRoad) return nodes;
     return nodes.map((n) =>
-      n.id === "notebook" || n.id === `road-${hotRoad}` || n.id === `mini-${hotRoad}`
+      n.id === "notebook" ||
+      n.id === `road-${hotRoad}` ||
+      n.id === `agent-${hotRoad}` ||
+      n.id === `mini-${hotRoad}`
         ? n
         : { ...n, className: "cv-dim" },
     );
@@ -680,11 +711,23 @@ function CanvasInner({
           style,
         });
       }
-      if (r.child) {
+      if (r.status !== "collecting") {
         out.push({
-          id: `e-rm-${sid}`,
+          id: `e-ra-${sid}`,
           type: "smart",
           source: `road-${sid}`,
+          sourceHandle: "out",
+          target: `agent-${sid}`,
+          targetHandle: "in",
+          animated: pending,
+          style,
+        });
+      }
+      if (r.child) {
+        out.push({
+          id: `e-am-${sid}`,
+          type: "smart",
+          source: `agent-${sid}`,
           sourceHandle: "out",
           target: `mini-${sid}`,
           targetHandle: "in",
