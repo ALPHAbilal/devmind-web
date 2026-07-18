@@ -121,7 +121,11 @@ function CanvasInner({
 }: BranchCanvasProps) {
   const supabase = useMemo(() => createClient(), []);
   const agent = useMemo(() => new ScriptedAgent(), []);
-  const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const { zoomIn, zoomOut, fitView, setCenter } = useReactFlow();
+
+  /** Lane Y forced for a freshly-created branch so it spawns beside the
+   *  notebook (not stacked way down at the next lane index). */
+  const forcedLaneRef = useRef<Map<string, number>>(new Map());
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [hotRoad, setHotRoad] = useState<string | null>(null);
@@ -216,7 +220,8 @@ function CanvasInner({
       const saved = savedPos.get(`${dbNodeType(type)}:${refId}`);
       if (saved) return saved;
       if (type === "notebook") return { x: 0, y: 0 };
-      const y = 40 + laneIndex * LANE_H;
+      const forcedY = forcedLaneRef.current.get(refId);
+      const y = forcedY ?? 40 + laneIndex * LANE_H;
       const x = type === "road" ? ROAD_X : type === "agent" ? AGENT_X : MINI_X;
       return { x, y };
     },
@@ -451,6 +456,14 @@ function CanvasInner({
       sessionId = session.id;
       liveIdRef.current = sessionId;
       const color = roadMap.size % 4;
+
+      // Spawn the new branch beside the notebook (aligned to its top), not
+      // stacked far down — then bring it into focus.
+      const nb = savedPos.get(`notebook:${missionId}`) ?? { x: 0, y: 0 };
+      forcedLaneRef.current.set(session.id, nb.y);
+      requestAnimationFrame(() =>
+        setCenter(ROAD_X + 180, nb.y + 220, { zoom: 0.75, duration: 500 }),
+      );
       setRoadMap((prev) => {
         const next = new Map(prev);
         next.set(session.id, {
@@ -491,7 +504,7 @@ function CanvasInner({
       next.set(sessionId as string, { ...cur, picks: [...cur.picks, hl] });
       return next;
     });
-  }, [pill, supabase, missionId, roadMap]);
+  }, [pill, supabase, missionId, roadMap, savedPos, setCenter]);
 
   const onRemovePick = useCallback(
     (sessionId: string, highlightId: string) => {
@@ -656,17 +669,30 @@ function CanvasInner({
 
   // Dim classes are layered on top without touching `data`, so memo'd node
   // components skip re-rendering when hover changes.
+  // Focus target: an explicit hover wins; otherwise the in-flight branch
+  // (collecting / discussing) so the live work reads clearly and everything
+  // else recedes.
+  const liveFocus = useMemo(() => {
+    for (const r of roadMap.values()) {
+      if (r.status === "collecting" || r.status === "discussing") {
+        return r.session.id;
+      }
+    }
+    return null;
+  }, [roadMap]);
+  const focus = hotRoad ?? liveFocus;
+
   const displayNodes = useMemo(() => {
-    if (!hotRoad) return nodes;
+    if (!focus) return nodes;
     return nodes.map((n) =>
       n.id === "notebook" ||
-      n.id === `road-${hotRoad}` ||
-      n.id === `agent-${hotRoad}` ||
-      n.id === `mini-${hotRoad}`
+      n.id === `road-${focus}` ||
+      n.id === `agent-${focus}` ||
+      n.id === `mini-${focus}`
         ? n
         : { ...n, className: "cv-dim" },
     );
-  }, [nodes, hotRoad]);
+  }, [nodes, focus]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -693,11 +719,11 @@ function CanvasInner({
       const sid = r.session.id;
       const stroke = `rgb(var(--cv-br-${r.color % 4}))`;
       const pending = r.status !== "generated";
-      const dimmed = hotRoad !== null && hotRoad !== sid;
+      const dimmed = focus !== null && focus !== sid;
       const style = {
         stroke: pending ? "rgb(var(--cv-pending))" : stroke,
         strokeWidth: 1.6,
-        opacity: dimmed ? 0.08 : hotRoad === sid ? 0.95 : 0.4,
+        opacity: dimmed ? 0.08 : focus === sid ? 0.95 : 0.4,
       };
       if (wiredRoads.has(sid)) {
         out.push({
@@ -737,7 +763,7 @@ function CanvasInner({
       }
     });
     return out;
-  }, [roadsArr, hotRoad, wiredRoads]);
+  }, [roadsArr, focus, wiredRoads]);
 
   /* ── render ────────────────────────────────────────────────────────────── */
   return (

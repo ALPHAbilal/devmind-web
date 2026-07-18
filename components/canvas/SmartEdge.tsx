@@ -1,23 +1,27 @@
 "use client";
 
 /**
- * SmartEdge — an obstacle-avoiding React Flow edge.
+ * SmartEdge — a floating, obstacle-avoiding React Flow edge.
  *
- * Instead of a bezier that cuts straight through other cards, it runs the
- * grid-A* router (smartPath) over the live node rects so the wire bends
- * AROUND every other node. Source/target nodes are excluded from the
- * obstacle set. Falls back to a smooth bezier if no orthogonal route exists.
+ *  • Floating anchors: the wire attaches on whichever side of each card faces
+ *    the other (via getFloatingParams), so it stays sensible when you drag a
+ *    node to the left, above, below — not just to the right.
+ *  • Obstacle avoidance: the grid-A* router (smartPath) bends the wire AROUND
+ *    every other node instead of cutting through them.
+ *  • Falls back to a smooth bezier if no orthogonal route exists.
  */
 import { memo, useMemo } from "react";
 import {
   BaseEdge,
   getBezierPath,
+  useInternalNode,
   useNodes,
   type EdgeProps,
   type Node,
   Position,
 } from "@xyflow/react";
 import { smartPath, type Rect, type Side } from "./smartPath";
+import { getSmartAnchors } from "./floating";
 
 function sideOf(p: Position): Side {
   switch (p) {
@@ -54,8 +58,33 @@ export const SmartEdge = memo(function SmartEdge({
   interactionWidth,
 }: EdgeProps) {
   const nodes = useNodes();
+  const sourceNode = useInternalNode(source);
+  const targetNode = useInternalNode(target);
 
   const path = useMemo(() => {
+    // Floating anchors when we can measure both nodes; else fall back to the
+    // handle coords React Flow gave us.
+    let sx = sourceX;
+    let sy = sourceY;
+    let tx = targetX;
+    let ty = targetY;
+    let sPos = sourcePosition;
+    let tPos = targetPosition;
+    if (sourceNode && targetNode) {
+      const f = getSmartAnchors(
+        sourceNode,
+        targetNode,
+        { x: sourceX, y: sourceY },
+        { x: targetX, y: targetY },
+      );
+      sx = f.sx;
+      sy = f.sy;
+      tx = f.tx;
+      ty = f.ty;
+      sPos = f.sourcePos;
+      tPos = f.targetPos;
+    }
+
     const obstacles: Rect[] = [];
     for (const n of nodes) {
       if (n.id === source || n.id === target) continue;
@@ -64,26 +93,27 @@ export const SmartEdge = memo(function SmartEdge({
     }
 
     const routed = smartPath({
-      source: { x: sourceX, y: sourceY },
-      target: { x: targetX, y: targetY },
-      sourceSide: sideOf(sourcePosition),
-      targetSide: sideOf(targetPosition),
+      source: { x: sx, y: sy },
+      target: { x: tx, y: ty },
+      sourceSide: sideOf(sPos),
+      targetSide: sideOf(tPos),
       obstacles,
     });
     if (routed) return routed;
 
-    // fallback: smooth bezier
     const [d] = getBezierPath({
-      sourceX,
-      sourceY,
-      sourcePosition,
-      targetX,
-      targetY,
-      targetPosition,
+      sourceX: sx,
+      sourceY: sy,
+      sourcePosition: sPos,
+      targetX: tx,
+      targetY: ty,
+      targetPosition: tPos,
     });
     return d;
   }, [
     nodes,
+    sourceNode,
+    targetNode,
     source,
     target,
     sourceX,
