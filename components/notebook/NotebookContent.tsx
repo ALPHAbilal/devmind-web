@@ -19,11 +19,6 @@ import { Thread } from "./Thread";
 import { useNotebook, type Puzzle } from "./NotebookProvider";
 import { PuzzlePane } from "@/components/puzzle/PuzzlePane";
 import { BuildStage } from "./build/BuildStage";
-import {
-  BranchController,
-  type BranchHighlight,
-  type BranchChild,
-} from "./branch/BranchController";
 import Link from "next/link";
 import { SessionControl } from "./SessionControl";
 import type {
@@ -46,9 +41,6 @@ interface NotebookContentProps {
   checkpoints: CheckpointLite[];
   /** mission.spec_json.title — shown in the warm opening state. */
   missionTitle?: string | null;
-  /** Branch lessons: stored highlights + the child missions they created. */
-  initialHighlights?: BranchHighlight[];
-  initialBranchChildren?: BranchChild[];
   /** Set when THIS mission is a child — renders the back-crumb and disables
    *  further branching (one depth only). */
   parentMission?: { id: string; title: string } | null;
@@ -74,8 +66,6 @@ export function NotebookContent({
   initialCells,
   initialState,
   missionTitle,
-  initialHighlights = [],
-  initialBranchChildren = [],
   parentMission = null,
 }: NotebookContentProps) {
   const {
@@ -88,27 +78,7 @@ export function NotebookContent({
     stageExpanded,
     openStage,
     closeStage,
-    branchesOn,
-    toggleBranches,
   } = useNotebook();
-
-  // Branch lessons — SSR-seeded, appended to when the user generates one.
-  const [branchHighlights, setBranchHighlights] =
-    useState<BranchHighlight[]>(initialHighlights);
-  const [branchChildren, setBranchChildren] = useState<
-    Record<string, BranchChild>
-  >(() =>
-    Object.fromEntries(initialBranchChildren.map((c) => [c.id, c])),
-  );
-  const onBranchCreated = useCallback(
-    (child: BranchChild, created: BranchHighlight[]) => {
-      setBranchChildren((prev) => ({ ...prev, [child.id]: child }));
-      setBranchHighlights((prev) => [...prev, ...created]);
-      if (!branchesOn) toggleBranches(); // reveal the new veins right away
-    },
-    [branchesOn, toggleBranches],
-  );
-  const branchCount = Object.keys(branchChildren).length;
 
   const [cells, setCells] = useState<Cell[]>(initialCells);
   const [session, setSession] = useState<LearningSession | null>(initialState);
@@ -359,17 +329,6 @@ export function NotebookContent({
         >
           ⧉ Workspace
         </button>
-        {!parentMission && branchCount > 0 ? (
-          <button
-            type="button"
-            className={`branches-toggle${branchesOn ? " active" : ""}`}
-            onClick={toggleBranches}
-            aria-pressed={branchesOn}
-            title={branchesOn ? "Hide branch anchors" : "Show branch anchors"}
-          >
-            ⑂ Branches ({branchCount})
-          </button>
-        ) : null}
         {!parentMission ? (
           <Link
             href={`/missions/${missionId}/branches`}
@@ -439,13 +398,6 @@ export function NotebookContent({
         ) : null}
       </div>
       {puzzle ? <PuzzlePane puzzle={puzzle} /> : null}
-      {!parentMission ? (
-        <BranchController
-          highlights={branchHighlights}
-          childrenById={branchChildren}
-          onCreated={onBranchCreated}
-        />
-      ) : null}
       </div>
       {stageOpen ? <BuildStage cells={orderedCells} /> : null}
     </div>

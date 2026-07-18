@@ -1,6 +1,5 @@
 /** Find a live Range for `needle` inside `root`'s text nodes. Single-node
- * matches only — text that can't be re-found simply doesn't tint. Same
- * anchoring model as BranchController. */
+ * matches only — text that can't be re-found simply doesn't tint. */
 export function findTextRange(root: HTMLElement, needle: string): Range | null {
   const target = needle.trim();
   if (!target) return null;
