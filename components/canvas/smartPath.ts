@@ -1,9 +1,15 @@
 /**
  * smartPath — grid A* connector routing in React Flow coordinate space.
  *
- * Ported from the canvas_inspirations demo (the react-flow-smart-edge
- * algorithm): wires bend AROUND node rects instead of cutting through them.
- * Pure + framework-free so it can be memoised inside the custom edge.
+ * Wires bend AROUND node rects instead of cutting through them.
+ *
+ * Robustness rules (learned from the huge notebook node + overlapping cards):
+ *  • adaptive grid — the cell size grows with the routed area so the search
+ *    space stays bounded and the router NEVER gives up from budget exhaustion
+ *  • an obstacle that swallows an endpoint (overlapping cards) is dropped for
+ *    that wire — you can't route around a box you're inside of
+ *  • the caller falls back to a smoothstep (never a through-cutting bezier)
+ *    when no route exists
  */
 
 export interface Rect {
@@ -15,11 +21,11 @@ export interface Rect {
 
 export type Side = "left" | "right" | "top" | "bottom";
 
-const CELL = 20; // routing-grid resolution, flow px
+const BASE_CELL = 20; // preferred routing-grid resolution, flow px
+const MAX_CELLS = 60_000; // grid budget — cell size grows past this
 const PAD = 22; // clearance kept from every card
 const RADIUS = 12; // corner rounding
 const TURN = 0.8; // per-turn cost — favours long straight runs
-const MAX_NODES_EXPANDED = 40000;
 
 const DIRS: ReadonlyArray<readonly [number, number]> = [
   [1, 0],
@@ -79,7 +85,8 @@ interface GridCell {
 }
 
 /* A* over the grid; a state is (cell, incoming-direction) so turns cost extra
-   and the route prefers long straight runs. */
+   and the route prefers long straight runs. Budget = full grid, so a route is
+   found whenever one exists. */
 function astar(
   blocked: Uint8Array,
   cols: number,
@@ -92,6 +99,7 @@ function astar(
   const prev = new Map<number, number | null>();
   const open = new Heap();
   const hx = (c: number, r: number) => Math.abs(c - e.c) + Math.abs(r - e.r);
+  const maxExpand = cols * rows * 4 + 8;
 
   for (let d = 0; d < 4; d++) {
     const c = s.c + DIRS[d][0];
@@ -105,7 +113,7 @@ function astar(
 
   let goal: number | null = null;
   let guard = 0;
-  while (open.size && guard++ < MAX_NODES_EXPANDED) {
+  while (open.size && guard++ < maxExpand) {
     const [f, k] = open.pop();
     const d = k & 3;
     const cell = k >> 2;
@@ -193,11 +201,12 @@ function freeCell(
   rows: number,
   originX: number,
   originY: number,
+  cell: number,
 ): GridCell | null {
   const v = SIDE_VEC[side];
-  let c = Math.round((p.x - originX) / CELL);
-  let r = Math.round((p.y - originY) / CELL);
-  for (let i = 0; i < 60; i++) {
+  let c = Math.round((p.x - originX) / cell);
+  let r = Math.round((p.y - originY) / cell);
+  for (let i = 0; i < 80; i++) {
     if (c >= 0 && c < cols && r >= 0 && r < rows && !blocked[r * cols + c])
       return { c, r };
     c += v[0];
@@ -205,6 +214,9 @@ function freeCell(
   }
   return null;
 }
+
+const inRect = (p: Pt, r: Rect, pad: number) =>
+  p.x > r.x - pad && p.x < r.x + r.w + pad && p.y > r.y - pad && p.y < r.y + r.h + pad;
 
 export interface SmartPathInput {
   source: Pt;
@@ -218,15 +230,21 @@ export interface SmartPathInput {
 /**
  * Route an orthogonal, obstacle-avoiding path from source to target.
  * Returns an SVG path string, or null when no route exists (caller should
- * fall back to a bezier).
+ * fall back to a smoothstep).
  */
 export function smartPath({
   source,
   target,
   sourceSide,
   targetSide,
-  obstacles,
+  obstacles: rawObstacles,
 }: SmartPathInput): string | null {
+  // A card that swallows an endpoint (overlapping nodes) can't be routed
+  // around — drop it for this wire.
+  const obstacles = rawObstacles.filter(
+    (o) => !inRect(source, o, PAD / 2) && !inRect(target, o, PAD / 2),
+  );
+
   // grid bounds: union of endpoints + inflated obstacles, with margin
   let minX = Math.min(source.x, target.x);
   let minY = Math.min(source.y, target.y);
@@ -238,25 +256,35 @@ export function smartPath({
     maxX = Math.max(maxX, o.x + o.w + PAD);
     maxY = Math.max(maxY, o.y + o.h + PAD);
   }
-  const margin = CELL * 4;
-  const originX = minX - margin;
-  const originY = minY - margin;
-  const cols = Math.ceil((maxX - minX + margin * 2) / CELL) + 1;
-  const rows = Math.ceil((maxY - minY + margin * 2) / CELL) + 1;
-  if (cols <= 0 || rows <= 0 || cols * rows > 1_500_000) return null;
+
+  // adaptive cell: grow until the grid fits the budget — never bail out
+  let cell = BASE_CELL;
+  const margin = () => cell * 4;
+  let cols = 0;
+  let rows = 0;
+  let originX = 0;
+  let originY = 0;
+  for (;;) {
+    originX = minX - margin();
+    originY = minY - margin();
+    cols = Math.ceil((maxX - minX + margin() * 2) / cell) + 1;
+    rows = Math.ceil((maxY - minY + margin() * 2) / cell) + 1;
+    if (cols * rows <= MAX_CELLS) break;
+    cell = Math.ceil(cell * 1.5);
+  }
 
   const blocked = new Uint8Array(cols * rows);
   for (const o of obstacles) {
-    const c0 = Math.max(0, Math.floor((o.x - PAD - originX) / CELL));
-    const c1 = Math.min(cols - 1, Math.ceil((o.x + o.w + PAD - originX) / CELL));
-    const r0 = Math.max(0, Math.floor((o.y - PAD - originY) / CELL));
-    const r1 = Math.min(rows - 1, Math.ceil((o.y + o.h + PAD - originY) / CELL));
+    const c0 = Math.max(0, Math.floor((o.x - PAD - originX) / cell));
+    const c1 = Math.min(cols - 1, Math.ceil((o.x + o.w + PAD - originX) / cell));
+    const r0 = Math.max(0, Math.floor((o.y - PAD - originY) / cell));
+    const r1 = Math.min(rows - 1, Math.ceil((o.y + o.h + PAD - originY) / cell));
     for (let r = r0; r <= r1; r++)
       for (let c = c0; c <= c1; c++) blocked[r * cols + c] = 1;
   }
 
-  const s = freeCell(source, sourceSide, blocked, cols, rows, originX, originY);
-  const e = freeCell(target, targetSide, blocked, cols, rows, originX, originY);
+  const s = freeCell(source, sourceSide, blocked, cols, rows, originX, originY, cell);
+  const e = freeCell(target, targetSide, blocked, cols, rows, originX, originY, cell);
   if (!s || !e) return null;
 
   const grid = astar(blocked, cols, rows, s, e);
@@ -265,8 +293,8 @@ export function smartPath({
   const pts: Pt[] = [
     source,
     ...corners(grid).map((p) => ({
-      x: originX + p.c * CELL,
-      y: originY + p.r * CELL,
+      x: originX + p.c * cell,
+      y: originY + p.r * cell,
     })),
     target,
   ];

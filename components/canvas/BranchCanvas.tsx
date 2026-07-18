@@ -121,11 +121,25 @@ function CanvasInner({
 }: BranchCanvasProps) {
   const supabase = useMemo(() => createClient(), []);
   const agent = useMemo(() => new ScriptedAgent(), []);
-  const { zoomIn, zoomOut, fitView, setCenter } = useReactFlow();
+  const { zoomIn, zoomOut, fitView, setCenter, screenToFlowPosition, getNodes } =
+    useReactFlow();
 
-  /** Lane Y forced for a freshly-created branch so it spawns beside the
-   *  notebook (not stacked way down at the next lane index). */
-  const forcedLaneRef = useRef<Map<string, number>>(new Map());
+  /** Spawn position forced for a freshly-created branch so it appears next to
+   *  the highlight it came from (not stacked at the next lane index). */
+  const forcedSpawnRef = useRef<Map<string, Pos>>(new Map());
+
+  /** Focus = the session the user is actively working on. Set on pick/exchange
+   *  actions, cleared on pane click, Escape, or generation. NEVER inferred
+   *  from stored session status (stale rows must not capture focus). */
+  const [liveFocusId, setLiveFocusId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") setLiveFocusId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [hotRoad, setHotRoad] = useState<string | null>(null);
@@ -193,6 +207,28 @@ function CanvasInner({
       ?.session.id ?? null,
   );
 
+  // Stale-session hygiene: an empty live session (no picks, no turns) is junk
+  // left by an abandoned visit — mark it abandoned and drop it from the board.
+  useEffect(() => {
+    for (const r of initialRoads) {
+      const live =
+        r.session.status === "collecting" || r.session.status === "discussing";
+      if (!live || r.picks.length > 0 || r.turns.length > 0) continue;
+      void supabase
+        .from("branch_sessions")
+        .update({ status: "abandoned", updated_at: new Date().toISOString() } as never)
+        .eq("id", r.session.id)
+        .then(() => undefined);
+      setRoadMap((prev) => {
+        const next = new Map(prev);
+        next.delete(r.session.id);
+        return next;
+      });
+      if (liveIdRef.current === r.session.id) liveIdRef.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const patchRoad = useCallback(
     (id: string, patch: Partial<RoadState>) => {
       setRoadMap((prev) => {
@@ -220,8 +256,18 @@ function CanvasInner({
       const saved = savedPos.get(`${dbNodeType(type)}:${refId}`);
       if (saved) return saved;
       if (type === "notebook") return { x: 0, y: 0 };
-      const forcedY = forcedLaneRef.current.get(refId);
-      const y = forcedY ?? 40 + laneIndex * LANE_H;
+      const forced = forcedSpawnRef.current.get(refId);
+      if (forced) {
+        // road at the spawn point; agent/mini step out to its right
+        const x =
+          type === "road"
+            ? forced.x
+            : type === "agent"
+              ? forced.x + 420
+              : forced.x + 840;
+        return { x, y: forced.y };
+      }
+      const y = 40 + laneIndex * LANE_H;
       const x = type === "road" ? ROAD_X : type === "agent" ? AGENT_X : MINI_X;
       return { x, y };
     },
@@ -324,6 +370,7 @@ function CanvasInner({
 
   const onDone = useCallback(
     async (sessionId: string) => {
+      setLiveFocusId(sessionId);
       patchRoad(sessionId, { status: "discussing", agentTyping: true, options: null });
       setSessionStatus(sessionId, "discussing");
       const turn = await agent.start(agentCtx(sessionId));
@@ -385,6 +432,7 @@ function CanvasInner({
           newborn: true,
         });
         if (liveIdRef.current === sessionId) liveIdRef.current = null;
+        setLiveFocusId(null);
       } catch {
         // Roll back to flagged so the user can retry.
         patchRoad(sessionId, { status: "flagged" });
@@ -436,7 +484,7 @@ function CanvasInner({
 
   const addPick = useCallback(async () => {
     if (!pill) return;
-    const { cellId, text } = pill;
+    const { cellId, text, x: pillX, y: pillY } = pill;
     setPill(null);
     window.getSelection()?.removeAllRanges();
 
@@ -457,12 +505,32 @@ function CanvasInner({
       liveIdRef.current = sessionId;
       const color = roadMap.size % 4;
 
-      // Spawn the new branch beside the notebook (aligned to its top), not
-      // stacked far down — then bring it into focus.
-      const nb = savedPos.get(`notebook:${missionId}`) ?? { x: 0, y: 0 };
-      forcedLaneRef.current.set(session.id, nb.y);
+      // Spawn beside the highlight that started this branch: same vertical
+      // position, just right of the notebook, nudged down past any card
+      // already occupying that spot — never overlapping.
+      const flowPt = screenToFlowPosition({ x: pillX, y: pillY });
+      const nbNode = getNodes().find((n) => n.id === "notebook");
+      const spawnX =
+        (nbNode?.position.x ?? 0) + (nbNode?.measured?.width ?? 640) + 140;
+      let spawnY = flowPt.y - 60;
+      const W = 380;
+      const H = 340;
+      const GAP = 30;
+      for (let guard = 0; guard < 24; guard++) {
+        const hit = getNodes().find(
+          (n) =>
+            n.id !== "notebook" &&
+            n.position.x < spawnX + W &&
+            n.position.x + (n.measured?.width ?? 360) > spawnX &&
+            n.position.y < spawnY + H &&
+            n.position.y + (n.measured?.height ?? 300) > spawnY,
+        );
+        if (!hit) break;
+        spawnY = hit.position.y + (hit.measured?.height ?? 300) + GAP;
+      }
+      forcedSpawnRef.current.set(session.id, { x: spawnX, y: spawnY });
       requestAnimationFrame(() =>
-        setCenter(ROAD_X + 180, nb.y + 220, { zoom: 0.75, duration: 500 }),
+        setCenter(spawnX + 190, spawnY + 170, { zoom: 0.8, duration: 500 }),
       );
       setRoadMap((prev) => {
         const next = new Map(prev);
@@ -504,7 +572,8 @@ function CanvasInner({
       next.set(sessionId as string, { ...cur, picks: [...cur.picks, hl] });
       return next;
     });
-  }, [pill, supabase, missionId, roadMap, savedPos, setCenter]);
+    setLiveFocusId(sessionId);
+  }, [pill, supabase, missionId, roadMap, setCenter, screenToFlowPosition, getNodes]);
 
   const onRemovePick = useCallback(
     (sessionId: string, highlightId: string) => {
@@ -669,18 +738,10 @@ function CanvasInner({
 
   // Dim classes are layered on top without touching `data`, so memo'd node
   // components skip re-rendering when hover changes.
-  // Focus target: an explicit hover wins; otherwise the in-flight branch
-  // (collecting / discussing) so the live work reads clearly and everything
-  // else recedes.
-  const liveFocus = useMemo(() => {
-    for (const r of roadMap.values()) {
-      if (r.status === "collecting" || r.status === "discussing") {
-        return r.session.id;
-      }
-    }
-    return null;
-  }, [roadMap]);
-  const focus = hotRoad ?? liveFocus;
+  // Focus target: an explicit hover wins; otherwise the branch the user is
+  // actively working on (liveFocusId — set by actions, cleared by pane click,
+  // Escape, or generation; never inferred from stored status).
+  const focus = hotRoad ?? liveFocusId;
 
   const displayNodes = useMemo(() => {
     if (!focus) return nodes;
@@ -801,6 +862,7 @@ function CanvasInner({
           edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onNodeDragStop={onNodeDragStop}
+          onPaneClick={() => setLiveFocusId(null)}
           fitView
           fitViewOptions={{ padding: 0.12, maxZoom: 0.9 }}
           minZoom={0.2}
