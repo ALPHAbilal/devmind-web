@@ -296,21 +296,21 @@ export function NotebookContent({
       }`}
     >
       <div className="notebook-content">
-      {parentMission ? (
-        <Link
-          href={`/missions/${parentMission.id}`}
-          className="branch-crumb"
-          title={`Back to ${parentMission.title}`}
-        >
-          <ArrowLeft size={13} strokeWidth={2.2} aria-hidden />
-          <span className="branch-crumb-title">{parentMission.title}</span>
-        </Link>
-      ) : null}
       <div
         className="notebook-progress"
         role="status"
         aria-label="Mission progress"
       >
+        {parentMission ? (
+          <Link
+            href={`/missions/${parentMission.id}`}
+            className="branch-crumb"
+            title={`Back to ${parentMission.title}`}
+          >
+            <ArrowLeft size={13} strokeWidth={2.2} aria-hidden />
+            <span className="branch-crumb-title">{parentMission.title}</span>
+          </Link>
+        ) : null}
         {session ? (
           <span className="notebook-progress-label">{session.status}</span>
         ) : null}
