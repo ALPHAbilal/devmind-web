@@ -27,6 +27,7 @@ import {
   useNodesState,
   applyNodeChanges,
   type Edge,
+  type EdgeTypes,
   type Node,
   type NodeChange,
   type NodeTypes,
@@ -47,6 +48,7 @@ import type { Cell } from "@/components/notebook/cells";
 import { NotebookNode, type NotebookNodeType } from "./NotebookNode";
 import { RoadNode, type RoadNodeType } from "./RoadNode";
 import { MiniNode, type MiniNodeType } from "./MiniNode";
+import { SmartEdge } from "./SmartEdge";
 import { ScriptedAgent } from "./agent";
 import type {
   BranchSession,
@@ -62,6 +64,10 @@ const nodeTypes: NodeTypes = {
   notebook: NotebookNode,
   road: RoadNode,
   mini: MiniNode,
+};
+
+const edgeTypes: EdgeTypes = {
+  smart: SmartEdge,
 };
 
 /** Runtime road state = stored road + live-exchange UI state. */
@@ -665,6 +671,7 @@ function CanvasInner({
       if (wiredRoads.has(sid)) {
         out.push({
           id: `e-hl-${sid}`,
+          type: "smart",
           source: "notebook",
           sourceHandle: `road-${sid}`,
           target: `road-${sid}`,
@@ -676,6 +683,7 @@ function CanvasInner({
       if (r.child) {
         out.push({
           id: `e-rm-${sid}`,
+          type: "smart",
           source: `road-${sid}`,
           sourceHandle: "out",
           target: `mini-${sid}`,
@@ -721,6 +729,7 @@ function CanvasInner({
           nodes={displayNodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onNodeDragStop={onNodeDragStop}
           fitView
