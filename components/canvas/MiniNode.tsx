@@ -28,7 +28,6 @@ export type MiniNodeType = Node<
 
 export const MiniNode = memo(function MiniNode({ data }: NodeProps<MiniNodeType>) {
   const router = useRouter();
-  const draft = data.status === "draft" || data.status === "generating";
 
   return (
     <div
@@ -50,8 +49,7 @@ export const MiniNode = memo(function MiniNode({ data }: NodeProps<MiniNodeType>
       <div className="cv-mini-meta">
         <b>
           {data.pickCount} cell{data.pickCount === 1 ? "" : "s"}
-        </b>{" "}
-        · {draft ? "draft" : "ready"}
+        </b>
       </div>
       <button
         type="button"

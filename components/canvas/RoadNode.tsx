@@ -69,14 +69,6 @@ export const RoadNode = memo(function RoadNode({ data }: NodeProps<RoadNodeType>
   };
 
   const c = `var(--cv-br-${data.color % 4})`;
-  const sub =
-    data.status === "collecting"
-      ? "highlighting…"
-      : data.status === "discussing"
-        ? "discussing with agent…"
-        : data.status === "generating"
-          ? "generating…"
-          : "highlighted → discussed → generated";
 
   const showExchange =
     data.turns.length > 0 || data.agentTyping || data.status !== "collecting";
@@ -91,14 +83,9 @@ export const RoadNode = memo(function RoadNode({ data }: NodeProps<RoadNodeType>
       <div className="cv-frame-tab canvas-frame-tab">
         <GitBranch size={11} strokeWidth={2} aria-hidden />
         <span>Road{data.live ? " · live" : ""}</span>
-        <span className="cv-tag">
-          {data.picks.length} pick{data.picks.length === 1 ? "" : "s"}
-          {data.turns.length > 0 ? ` · ${data.turns.length} turns` : ""}
-        </span>
       </div>
 
       <h3 className="cv-road-title">{data.title}</h3>
-      <div className="cv-road-sub">{sub}</div>
 
       {/* ── clippings well ────────────────────────────────────────────── */}
       <div className="cv-well">
@@ -111,7 +98,7 @@ export const RoadNode = memo(function RoadNode({ data }: NodeProps<RoadNodeType>
           </div>
         ) : (
           <div className="cv-clips">
-            {data.picks.map((p, i) => {
+            {data.picks.map((p) => {
               const key = `pick-${p.id}`;
               const multi = /\n\s*\n/.test(p.selected_text.trim());
               return (
@@ -123,23 +110,25 @@ export const RoadNode = memo(function RoadNode({ data }: NodeProps<RoadNodeType>
                   onMouseLeave={() => data.onPulsePick?.(null)}
                 >
                   <q>{p.selected_text}</q>
-                  <div className="cv-clip-meta">
-                    <b>#{i + 1}</b>
-                    {multi ? " · click to unfold" : ""}
-                    {data.status === "collecting" && data.onRemovePick ? (
-                      <button
-                        type="button"
-                        className="cv-clip-x"
-                        aria-label="Remove highlight"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          data.onRemovePick?.(p.id);
-                        }}
-                      >
-                        remove
-                      </button>
-                    ) : null}
-                  </div>
+                  {multi ||
+                  (data.status === "collecting" && data.onRemovePick) ? (
+                    <div className="cv-clip-meta">
+                      {multi ? <span>click to unfold</span> : null}
+                      {data.status === "collecting" && data.onRemovePick ? (
+                        <button
+                          type="button"
+                          className="cv-clip-x"
+                          aria-label="Remove highlight"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            data.onRemovePick?.(p.id);
+                          }}
+                        >
+                          remove
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               );
             })}
@@ -150,7 +139,7 @@ export const RoadNode = memo(function RoadNode({ data }: NodeProps<RoadNodeType>
               >
                 <q>{data.note}</q>
                 <div className="cv-clip-meta">
-                  <b>note</b> · click to unfold
+                  <span>note</span>
                 </div>
               </div>
             ) : null}
@@ -181,11 +170,12 @@ export const RoadNode = memo(function RoadNode({ data }: NodeProps<RoadNodeType>
             </div>
           ) : null}
           {data.flagLine ? (
-            <div className="cv-flag-line">
-              <Flag size={11} strokeWidth={2} aria-hidden />
-              <span>
-                <b>green flag</b> · {data.flagLine}
-              </span>
+            <div
+              className="cv-flag-line"
+              aria-label="Green-flagged"
+              title="Green-flagged"
+            >
+              <Flag size={12} strokeWidth={2} aria-hidden />
             </div>
           ) : null}
 
