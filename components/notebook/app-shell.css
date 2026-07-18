@@ -58,6 +58,39 @@
   }
 }
 
+/* Back-to-parent button, shown on branch (child) notebooks. */
+.branch-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  margin-bottom: 14px;
+  padding: 5px 12px 5px 9px;
+  border: 1px solid var(--border-medium);
+  border-radius: 9999px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.branch-crumb:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+.branch-crumb svg {
+  flex: 0 0 auto;
+}
+.branch-crumb-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40ch;
+}
+
 .notebook-progress {
   display: flex;
   align-items: center;
@@ -66,6 +99,18 @@
   margin-bottom: 16px;
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+/* Session status — compact uppercase chip instead of a verbose sentence. */
+.notebook-progress-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: var(--bg-hover);
 }
 
 /* Always-visible toggle for the build stage (right-side workspace). */

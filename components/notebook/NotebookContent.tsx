@@ -20,6 +20,7 @@ import { useNotebook, type Puzzle } from "./NotebookProvider";
 import { PuzzlePane } from "@/components/puzzle/PuzzlePane";
 import { BuildStage } from "./build/BuildStage";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { SessionControl } from "./SessionControl";
 import type {
   ConceptGraphSpec,
@@ -299,8 +300,10 @@ export function NotebookContent({
         <Link
           href={`/missions/${parentMission.id}`}
           className="branch-crumb"
+          title={`Back to ${parentMission.title}`}
         >
-          ↰ Back to: {parentMission.title}
+          <ArrowLeft size={13} strokeWidth={2.2} aria-hidden />
+          <span className="branch-crumb-title">{parentMission.title}</span>
         </Link>
       ) : null}
       <div
@@ -308,9 +311,9 @@ export function NotebookContent({
         role="status"
         aria-label="Mission progress"
       >
-        <span className="notebook-progress-label">
-          {session ? `Session: ${session.status}` : "Session: not started"}
-        </span>
+        {session ? (
+          <span className="notebook-progress-label">{session.status}</span>
+        ) : null}
         {currentCheckpointId ? (
           <span className="notebook-progress-checkpoint">
             Checkpoint: <code>{currentCheckpointId}</code>
@@ -356,10 +359,7 @@ export function NotebookContent({
               <div className="notebook-opening-shimmer" aria-hidden="true" />
             </div>
           ) : (
-            <p className="notebook-empty">
-              No cells yet. The agent will start writing here once the mission
-              begins.
-            </p>
+            <p className="notebook-empty">Nothing here yet.</p>
           )
         ) : (
           orderedCells.map((cell, idx) => (
