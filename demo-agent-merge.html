@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>devmind · agent merge demo</title>
+<style>
+  /* ── theme-board dark tokens (verbatim from globals.css) ─────────────── */
+  :root {
+    --bg: #0a0b0a;
+    --line: rgba(255,255,255,.08);
+    --ink: #e9ede8; --ink-2: #9aa097; --ink-3: #5e655c;
+    --col-bg: rgba(255,255,255,.018);
+    --card-bg: rgba(255,255,255,.05); --card-bd: rgba(255,255,255,.12);
+    --panel: #141613;
+    --holo: 233,238,232;
+    --amber: #d6a85f;
+    --mono: "SF Mono", ui-monospace, Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); overflow: hidden; }
+
+  .app { height: 100vh; display: flex; }
+
+  /* ── sidebar (sketch) ── */
+  .sidebar { width: 218px; flex-shrink: 0; border-right: 1px solid var(--line); padding: 26px 14px; }
+  .brandword { font: 400 22px Georgia, serif; color: var(--ink-2); }
+  .brandword b { color: var(--ink); font-weight: 400; }
+  .slabel { font: 500 12px var(--sans); color: var(--ink-3); margin: 26px 0 6px; }
+  .litem { font: 400 14px var(--sans); color: var(--ink-2); padding: 6px 6px; border-radius: 8px; cursor: pointer; }
+  .litem:hover { color: var(--ink); background: var(--col-bg); }
+
+  .main { flex: 1; min-width: 0; position: relative; display: flex; flex-direction: column; }
+
+  /* ── board ── */
+  .board { flex: 1; display: flex; gap: 16px; padding: 22px 22px 110px; min-height: 0; position: relative; }
+  .col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;
+         transition: transform .62s cubic-bezier(.45,0,.12,1), opacity .5s ease, filter .5s ease;
+         transform-origin: top left; position: relative; }
+  .col-h { display: flex; align-items: center; gap: 8px; padding: 0 2px 10px; }
+  .col-h .sw { width: 8px; height: 8px; border-radius: 3px; background: var(--ink-3); }
+  .col-h .nm { font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: 1px; color: var(--ink-2); }
+  .col-h .ct { font: 600 11px var(--mono); color: var(--ink-3); }
+  .col-h .plus { margin-left: auto; width: 22px; height: 22px; border: 1px solid var(--line); border-radius: 7px;
+                 background: none; color: var(--ink-2); cursor: pointer; font-size: 14px; line-height: 1; }
+  .col-h .plus:hover { color: rgb(var(--holo)); border-color: rgba(var(--holo),.5); box-shadow: 0 0 12px -4px rgba(var(--holo),.6); }
+  .col-b { flex: 1; border: 1px solid var(--line); border-radius: 12px; background: var(--col-bg);
+           padding: 10px; display: flex; flex-direction: column; gap: 9px; overflow-y: auto; }
+  .card { background: var(--card-bg); border: 1px solid var(--card-bd); border-radius: 11px; padding: 11px 12px; cursor: grab; }
+  .card .nm { font: 600 13px var(--sans); }
+  .card .tag { float: right; font: 600 10px var(--mono); color: var(--ink-3); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; }
+  .card .sub { font: 500 11px var(--mono); color: var(--ink-3); margin-top: 6px; }
+  .card .sub.amber { color: var(--amber); }
+  .btn { margin-top: 9px; font: 700 11px var(--sans); border-radius: 8px; padding: 6px 11px; cursor: pointer;
+         background: rgba(var(--holo),.1); color: var(--ink); border: 1px solid rgba(var(--holo),.35); }
+  .btn:hover { box-shadow: 0 0 14px -6px rgba(var(--holo),.8); }
+
+  /* ═══════════════ THE MERGE (branch-mode style) ═══════════════
+     The working column is PRESERVED — it glides to the edge and stays live.
+     The other three columns physically gather into a small deck tucked in the
+     working column's corner; the agent surface breathes open in the freed
+     space, exactly like branch-creation: context on one side, conversation
+     filling the rest.                                              */
+
+  .board.merged .col { position: absolute; top: 22px; bottom: 110px; }
+
+  /* JS sets --tx/--sc per column from measured rects (FLIP) */
+  .col.deck { transform: translate(var(--tx), var(--ty)) scale(var(--sc)) rotate(var(--rot));
+              opacity: .55; filter: saturate(.7); pointer-events: none; z-index: 1; }
+  .col.work { transform: translate(var(--tx), 0); z-index: 3; }
+  .col.work .col-b { border-color: rgba(var(--holo),.35); box-shadow: 0 0 26px -10px rgba(var(--holo),.35); }
+
+  .deck-cap { position: absolute; z-index: 2; font: 600 10.5px var(--mono); color: var(--ink-3);
+              text-align: center; opacity: 0; transition: opacity .4s ease .5s; pointer-events: none; width: 130px; }
+  .board.merged .deck-cap { opacity: 1; }
+
+  /* ── agent surface ── */
+  .agent { position: absolute; z-index: 4; top: 22px; bottom: 110px; display: flex; flex-direction: column;
+           background: var(--panel); border: 1px solid rgba(var(--holo),.4); border-radius: 16px;
+           box-shadow: 0 0 0 1px rgba(var(--holo),.1), 0 0 54px -10px rgba(var(--holo),.3), 0 28px 80px -24px rgba(0,0,0,.7);
+           opacity: 0; transform: translateX(40px) scale(.97); pointer-events: none;
+           transition: opacity .5s ease .18s, transform .62s cubic-bezier(.3,.8,.25,1) .18s, left .62s cubic-bezier(.45,0,.12,1), right .62s cubic-bezier(.45,0,.12,1); }
+  .board.merged ~ .agent { opacity: 1; transform: none; pointer-events: auto; }
+
+  .ap-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .ap-dot { width: 8px; height: 8px; border-radius: 50%; background: rgb(var(--holo)); box-shadow: 0 0 12px rgba(var(--holo),.9); animation: breathe 2.6s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
+  .ap-title { font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: .8px; color: var(--ink-2); }
+  .ap-title b { color: var(--ink); }
+  .ap-x { margin-left: auto; background: none; border: none; color: var(--ink-3); font-size: 16px; cursor: pointer; }
+  .ap-x:hover { color: var(--ink); }
+
+  .ap-log { flex: 1; overflow-y: auto; padding: 20px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 82%; font: 500 13.5px var(--sans); line-height: 1.55; padding: 9px 13px; border-radius: 13px; opacity: 0; animation: msgIn .4s ease forwards; }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
+  .msg.agent { align-self: flex-start; background: var(--card-bg); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+  .msg.user { align-self: flex-end; background: rgba(var(--holo),.12); border: 1px solid rgba(var(--holo),.3); border-bottom-right-radius: 5px; }
+
+  .spec { border: 1px dashed rgba(var(--holo),.45); background: rgba(var(--holo),.05); border-radius: 13px; padding: 13px 15px;
+          font: 500 12.5px var(--sans); opacity: 0; animation: msgIn .4s ease forwards; }
+  .spec .h { font: 700 10.5px var(--mono); letter-spacing: 1.2px; color: rgb(var(--holo)); margin-bottom: 8px; }
+  .spec .row { display: flex; gap: 12px; margin-top: 5px; }
+  .spec .k { flex: 0 0 84px; color: var(--ink-3); font: 500 11px var(--mono); }
+
+  .ap-files { padding: 8px 16px 0; display: flex; gap: 6px; }
+  .chipf { font: 600 11px var(--mono); color: var(--ink-2); background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+  .chipf em { font-style: normal; color: var(--ink-3); }
+
+  .ap-input { display: flex; align-items: flex-end; gap: 8px; padding: 12px 14px 14px; border-top: 1px solid var(--line); }
+  .attach { font: 600 11px var(--mono); color: var(--ink-2); background: none; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; cursor: pointer; }
+  .attach:hover { color: var(--ink); border-color: rgba(var(--holo),.45); }
+  .ap-input textarea { flex: 1; resize: none; border: 1px solid var(--line); background: var(--col-bg); border-radius: 11px;
+                       font: 500 13.5px var(--sans); color: var(--ink); padding: 9px 12px; outline: none; }
+  .ap-input textarea:focus { border-color: rgba(var(--holo),.5); }
+  .sendb { font: 700 12px var(--sans); color: #08131a; background: rgb(var(--holo)); border: none; border-radius: 10px; padding: 9px 16px; cursor: pointer; }
+
+  /* ── dock ── */
+  .dock { position: absolute; left: 0; right: 0; bottom: 26px; display: flex; justify-content: center; padding: 0 22px; z-index: 5; transition: opacity .35s; }
+  .board.merged ~ .dock { opacity: 0; pointer-events: none; }
+  .pill { width: 100%; max-width: 560px; display: flex; align-items: center; gap: 9px; background: var(--panel);
+          border: 1px solid var(--card-bd); border-radius: 18px; padding: 7px 8px 7px 18px;
+          box-shadow: 0 14px 44px -14px rgba(0,0,0,.6); }
+  .pill input { flex: 1; border: none; background: none; outline: none; font: 500 14.5px var(--sans); color: var(--ink); }
+  .pill .go { width: 34px; height: 34px; border-radius: 12px; border: none; background: rgb(var(--holo)); color: #08131a; font-size: 16px; cursor: pointer; }
+
+  .hint { position: fixed; top: 14px; right: 18px; font: 600 11px var(--mono); color: var(--ink-3); z-index: 9; text-align: right; line-height: 1.7; }
+  .hint b { color: var(--amber); }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brandword">dev<b>mind</b></div>
+    <div class="slabel">Technologies</div>
+    <div class="litem">python</div><div class="litem">react</div><div class="litem">rust</div>
+    <div class="slabel">History</div>
+    <div class="litem">What "self" really means</div>
+    <div class="litem">Build Your First Python Classes</div>
+  </aside>
+
+  <div class="main">
+    <div class="board" id="board">
+      <div class="col" data-col="queued">
+        <div class="col-h"><span class="sw"></span><span class="nm">To Learn</span><span class="ct">2</span>
+          <button class="plus" onclick="openAgent('queued')">+</button></div>
+        <div class="col-b">
+          <div class="card"><span class="tag">rust</span><div class="nm">Rust ownership</div><button class="btn">Generate lesson</button></div>
+          <div class="card"><span class="tag">css</span><div class="nm">CSS Grid deep dive</div><button class="btn">Spec with agent →</button></div>
+        </div>
+      </div>
+      <div class="col" data-col="learning">
+        <div class="col-h"><span class="sw"></span><span class="nm">Learning</span><span class="ct">1</span></div>
+        <div class="col-b">
+          <div class="card"><span class="tag">python</span><div class="nm">Python classes</div>
+            <div class="sub">↳ from <b>What "self" really means</b></div><button class="btn">Open notebook →</button></div>
+        </div>
+      </div>
+      <div class="col" data-col="completed">
+        <div class="col-h"><span class="sw"></span><span class="nm">Completed</span><span class="ct">1</span></div>
+        <div class="col-b">
+          <div class="card" onclick="openAgent('review')" title="click = simulate drag → Review">
+            <span class="tag">git</span><div class="nm">Git branching model</div>
+            <div class="sub">drag → review (click to demo)</div><button class="btn">Open notebook →</button></div>
+        </div>
+      </div>
+      <div class="col" data-col="review">
+        <div class="col-h"><span class="sw"></span><span class="nm">Review</span><span class="ct">1</span></div>
+        <div class="col-b">
+          <div class="card"><span class="tag">sql</span><div class="nm">SQL joins</div>
+            <div class="sub amber">↻ due in 2d · ◎ more code</div><button class="btn">Start review →</button></div>
+        </div>
+      </div>
+      <div class="deck-cap" id="deckcap">3 columns tucked aside<br/>they return on close</div>
+    </div>
+
+    <div class="agent" id="agent">
+      <div class="ap-head">
+        <span class="ap-dot"></span>
+        <span class="ap-title" id="aptitle">Spec a new lesson</span>
+        <button class="ap-x" onclick="closeAgent()">×</button>
+      </div>
+      <div class="ap-log" id="aplog"></div>
+      <div class="ap-files"><span class="chipf">shelter.py <em>4.1 KB</em></span><span class="chipf">models/ <em>12 files</em></span></div>
+      <div class="ap-input">
+        <button class="attach">⎘ files</button><button class="attach">⌸ folder</button>
+        <textarea rows="1" placeholder="Describe it — the long version…"></textarea>
+        <button class="sendb">Send</button>
+      </div>
+    </div>
+
+    <div class="dock">
+      <div class="pill">
+        <input placeholder="What do you want to learn next?" onkeydown="if(event.key==='Enter')openAgent('queued')"/>
+        <button class="go" onclick="openAgent('queued')">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hint">DEMO · <b>⊕</b> or dock ⏎ → lesson merge<br/>click the <b>Git card</b> → review merge<br/><b>×</b> closes · columns return</div>
+
+<script>
+const board = document.getElementById("board");
+const agent = document.getElementById("agent");
+const cap   = document.getElementById("deckcap");
+const cols  = [...board.querySelectorAll(".col")];
+
+function openAgent(workKey) {
+  if (board.classList.contains("merged")) return;
+  const bRect = board.getBoundingClientRect();
+  const rects = new Map(cols.map(c => [c, c.getBoundingClientRect()]));
+  const work = cols.find(c => c.dataset.col === workKey);
+  const workLeft = workKey === "review";           // review works from the RIGHT edge
+  const pad = 22, wWork = 300;
+
+  // 1) freeze layout: absolutize every column at its current spot (FLIP start)
+  cols.forEach(c => {
+    const r = rects.get(c);
+    c.style.left = (r.left - bRect.left) + "px";
+    c.style.width = r.width + "px";
+  });
+  board.classList.add("merged");
+
+  // 2) working column glides to its edge and STAYS LIVE
+  const workTargetX = workLeft ? (bRect.width - pad - wWork) : pad;
+  work.classList.add("work");
+  work.style.setProperty("--tx", (workTargetX - (rects.get(work).left - bRect.left)) + "px");
+  work.style.width = wWork + "px";
+
+  // 3) the others gather into a deck tucked under the working column's corner
+  const deckX = workLeft ? (bRect.width - pad - 120) : pad + 8;
+  const deckY = bRect.height - 210;
+  let i = 0;
+  cols.filter(c => c !== work).forEach(c => {
+    const r = rects.get(c);
+    c.classList.add("deck");
+    c.style.setProperty("--tx", (deckX - (r.left - bRect.left) + i * 7) + "px");
+    c.style.setProperty("--ty", (deckY + i * 6) + "px");
+    c.style.setProperty("--sc", 0.16);
+    c.style.setProperty("--rot", ((i - 1) * 4) + "deg");
+    c.style.zIndex = 1 + i;
+    i++;
+  });
+  cap.style.left = (deckX - 26) + "px";
+  cap.style.top = (deckY + 78) + "px";
+
+  // 4) agent surface breathes open in the freed space
+  agent.style.left  = workLeft ? pad + "px" : (pad + wWork + 18) + "px";
+  agent.style.right = workLeft ? (pad + wWork + 18) + "px" : pad + "px";
+  document.getElementById("aptitle").innerHTML =
+    workKey === "review" ? "Spec this review · <b>Git branching model</b>" : "Spec a new lesson";
+  playScript(workKey);
+}
+
+function closeAgent() {
+  board.classList.remove("merged");
+  cols.forEach(c => {
+    c.classList.remove("work", "deck");
+    c.style.cssText = "";
+  });
+  document.getElementById("aplog").innerHTML = "";
+}
+
+function playScript(kind) {
+  const log = document.getElementById("aplog");
+  log.innerHTML = "";
+  const steps = kind === "review"
+    ? [["agent","Let's shape the review for “Git branching model”. What do you want out of it — theory refresh, or hands-on with real merge conflicts?"],
+       ["user","hands-on. give me messy rebase scenarios on my actual repo structure, I attached it"],
+       ["agent","Perfect — I'll ground the scenarios in your attached repo. Quick or deep?"],
+       ["spec","Review: Git branching · <b>hands-on</b> · grounded in <b>models/ (12 files)</b> · messy-rebase drills"]]
+    : [["agent","What do you want to learn? The longer and more specific the ask, the better the lesson. Attach code if you have it."],
+       ["user","I keep writing python classes that turn into a mess — I want to actually design them well, composition vs inheritance, when dataclasses, real refactors of MY code (attached), not toy examples"],
+       ["agent","Great ask. I'll build it around refactoring shelter.py step by step. Concept-first or straight into the refactor?"],
+       ["spec","Class design in Python · <b>refactor-driven</b> · grounded in <b>shelter.py</b> · composition, dataclasses, no toys"]];
+  let t = 600;
+  steps.forEach(([role, text]) => {
+    setTimeout(() => {
+      const el = document.createElement("div");
+      if (role === "spec") {
+        el.className = "spec";
+        el.innerHTML = `<div class="h">DRAFT SPEC</div><div class="row"><span class="k">shape</span><span>${text}</span></div>
+          <div class="row" style="margin-top:10px"><button class="btn">Confirm — queue it</button></div>`;
+      } else {
+        el.className = "msg " + role;
+        el.textContent = text;
+      }
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+    }, t);
+    t += role === "user" ? 900 : 1400;
+  });
+}
+</script>
+</body>
+</html>

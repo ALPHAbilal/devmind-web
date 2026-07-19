@@ -100,7 +100,9 @@ export function Board({
   const [agentVisible, setAgentVisible] = useState(false);
   /** concept ids whose progress detail is collapsed (× on the progress view) */
   const [hiddenGen, setHiddenGen] = useState<Set<string>>(new Set());
+  const [agentSide, setAgentSide] = useState<{ left: number; right: number } | null>(null);
   const dockRef = useRef<HTMLTextAreaElement>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
   const genTimers = useRef<Map<string, ReturnType<typeof setInterval>>>(
     new Map(),
   );
@@ -110,16 +112,82 @@ export function Board({
     return () => timers.forEach((t) => clearInterval(t));
   }, []);
 
-  const openAgent = useCallback((ctx: AgentCtx) => {
-    setAgent(ctx);
-    // next frame so the fold-in transition runs
-    requestAnimationFrame(() => setAgentVisible(true));
+  /** FLIP merge — absolutize the columns, glide the working one to its edge,
+   * gather the rest into the deck, and hand the freed space to the agent. */
+  const mergeIn = useCallback((workKey: "queued" | "review") => {
+    const board = boardRef.current;
+    if (!board) return;
+    const cols = Array.from(board.querySelectorAll<HTMLElement>(".col"));
+    const bRect = board.getBoundingClientRect();
+    const rects = new Map(cols.map((c) => [c, c.getBoundingClientRect()]));
+    const work = cols.find((c) => c.dataset.col === workKey);
+    if (!work) return;
+    const workRight = workKey === "review"; // review works from the right edge
+    const pad = 22;
+    const wWork = 300;
+
+    cols.forEach((c) => {
+      const r = rects.get(c)!;
+      c.style.left = `${r.left - bRect.left}px`;
+      c.style.width = `${r.width}px`;
+    });
+    board.classList.add("merged");
+
+    const workX = workRight ? bRect.width - pad - wWork : pad;
+    work.classList.add("work");
+    work.style.setProperty("--tx", `${workX - (rects.get(work)!.left - bRect.left)}px`);
+    work.style.width = `${wWork}px`;
+
+    const deckX = workRight ? bRect.width - pad - 120 : pad + 8;
+    const deckY = bRect.height - 210;
+    let i = 0;
+    for (const c of cols) {
+      if (c === work) continue;
+      const r = rects.get(c)!;
+      c.classList.add("deck");
+      c.style.setProperty("--tx", `${deckX - (r.left - bRect.left) + i * 7}px`);
+      c.style.setProperty("--ty", `${deckY + i * 6}px`);
+      c.style.setProperty("--sc", "0.16");
+      c.style.setProperty("--rot", `${(i - 1) * 4}deg`);
+      c.style.zIndex = `${1 + i}`;
+      i += 1;
+    }
+    setAgentSide(
+      workRight
+        ? { left: pad, right: pad + wWork + 18 }
+        : { left: pad + wWork + 18, right: pad },
+    );
   }, []);
+
+  const mergeOut = useCallback(() => {
+    const board = boardRef.current;
+    if (!board) return;
+    board.classList.remove("merged");
+    board.querySelectorAll<HTMLElement>(".col").forEach((c) => {
+      c.classList.remove("work", "deck");
+      c.style.cssText = "";
+    });
+  }, []);
+
+  const openAgent = useCallback(
+    (ctx: AgentCtx) => {
+      setAgent(ctx);
+      requestAnimationFrame(() => {
+        mergeIn(ctx.purpose === "spec_review" ? "review" : "queued");
+        setAgentVisible(true);
+      });
+    },
+    [mergeIn],
+  );
 
   const closeAgent = useCallback(() => {
     setAgentVisible(false);
-    setTimeout(() => setAgent(null), 480); // matches the CSS fold duration
-  }, []);
+    mergeOut();
+    setTimeout(() => {
+      setAgent(null);
+      setAgentSide(null);
+    }, 620); // matches the merge duration
+  }, [mergeOut]);
 
   const visible = useMemo(
     () =>
@@ -440,7 +508,6 @@ export function Board({
               Open notebook →
             </button>
           ) : null}
-          <span className="lbl">drag → review</span>
         </div>
       );
     } else {
@@ -508,6 +575,7 @@ export function Board({
     plus?: () => void,
   ) => (
     <div
+      data-col={state}
       className={`col${active ? " active" : ""}${dropCol === state ? " drop" : ""}`}
       onDragOver={(e) => {
         e.preventDefault();
@@ -536,7 +604,6 @@ export function Board({
     </div>
   );
 
-  const empty = visible.length === 0;
   const agentOpen = agent !== null;
 
   return (
@@ -555,7 +622,7 @@ export function Board({
                 </span>
               </div>
             )}
-            <div className="board cols-4">
+            <div className="board cols-4" ref={boardRef}>
               {column("queued", "To Learn", columns.queued, false, () =>
                 openAgent({ purpose: "spec_lesson" }),
               )}
@@ -564,9 +631,16 @@ export function Board({
               {column("review", "Review", columns.review, anyOverdue)}
             </div>
 
-            {/* The agent surface the columns fold into */}
+            {/* The agent surface — opens beside the preserved working column */}
             {agentOpen && (
-              <div className="agent-stage">
+              <div
+                className={`agent${agentVisible ? " on" : ""}`}
+                style={
+                  agentSide
+                    ? { left: agentSide.left, right: agentSide.right }
+                    : undefined
+                }
+              >
                 <AgentPanel
                   purpose={agent.purpose}
                   conceptName={agent.conceptName}
@@ -579,12 +653,6 @@ export function Board({
 
             {/* Dock — the floating chat input; acts as To Learn's ⊕ */}
             <div className="dock">
-              {empty && !agentOpen && (
-                <div className="dock-hint">
-                  Tell the agent what you want to learn — attach code if you
-                  have it. It lands in To Learn until you’re ready.
-                </div>
-              )}
               <div className="pill">
                 <textarea
                   ref={dockRef}

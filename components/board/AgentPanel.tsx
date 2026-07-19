@@ -96,8 +96,8 @@ export function AgentPanel({
     const opener: Msg = {
       role: "agent",
       text: isReview
-        ? `Let's shape the review for “${conceptName}”. What do you want out of it — more theory, more code, real problems? Say it in your own words, and attach any code of yours I should review against.`
-        : "What do you want to learn? Take your time — the longer and more specific your ask, the better the lesson. You can attach code files or a whole directory you're working with.",
+        ? `What should the “${conceptName}” review focus on? Attach your code to ground it.`
+        : "What do you want to learn? Long and specific beats short. Attach code or a folder.",
     };
     setMsgs([opener]);
     if (seed?.trim()) {
@@ -124,8 +124,8 @@ export function AgentPanel({
           {
             role: "agent",
             text: isReview
-              ? "Got it. One more thing — how deep should this go: a quick refresh, or a full re-derivation with exercises? And how much time do you want to spend?"
-              : "Understood. Quick check before I draft the spec: what's your current level with this, and do you want it hands-on (build something) or concept-first? Anything you specifically do NOT want?",
+              ? "Quick refresh, or deep with exercises? How much time?"
+              : "Your level? Hands-on or concept-first? Anything to skip?",
           },
         ]);
         return;
@@ -146,11 +146,7 @@ export function AgentPanel({
         ...m,
         {
           role: "agent",
-          text: `Here's the spec I'd build from${
-            attachments.length
-              ? `, grounded in your ${attachments.length} attached file${attachments.length > 1 ? "s" : ""}`
-              : ""
-          }. Look it over — confirm and I'll queue it, or keep talking to refine it.`,
+          text: "Draft spec — confirm to queue it, or keep refining.",
         },
       ]);
     }, 900 + Math.random() * 600);

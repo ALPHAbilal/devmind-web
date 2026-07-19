@@ -410,22 +410,24 @@
 .theme-board .focus-panel textarea:focus { border-color: rgba(var(--holo), 0.5); }
 .theme-board .focus-panel textarea::placeholder { color: var(--ink-3); }
 
-/* ═══════════════ the merge: columns fold into the agent stage ═══════════════ */
-/* Columns converge toward center, blur and give way — staggered so the fold
-   reads as a motion, not a cut. Everything reverses on close. */
-.theme-board .board-wrap .board .col { transition: transform 0.48s cubic-bezier(0.5, 0, 0.15, 1), opacity 0.4s ease, filter 0.4s ease; }
-.theme-board .board-wrap.agent-open .board .col { opacity: 0; filter: blur(6px); pointer-events: none; }
-.theme-board .board-wrap.agent-open .board .col:nth-child(1) { transform: translateX(46%) scale(0.88); transition-delay: 0s; }
-.theme-board .board-wrap.agent-open .board .col:nth-child(2) { transform: translateX(16%) scale(0.9); transition-delay: 0.05s; }
-.theme-board .board-wrap.agent-open .board .col:nth-child(3) { transform: translateX(-16%) scale(0.9); transition-delay: 0.1s; }
-.theme-board .board-wrap.agent-open .board .col:nth-child(4) { transform: translateX(-46%) scale(0.88); transition-delay: 0.15s; }
+/* ═══════════ the merge — branch-mode: work column preserved, rest deck ═════
+   FLIP: JS absolutizes each column at its measured spot, then the working
+   column glides to its edge (and stays live), the other three gather into a
+   small tilted deck at its foot, and the agent surface breathes open in the
+   freed space. All reverses on close. */
+.theme-board .board.merged { overflow: visible; }
+.theme-board .board.merged .col { position: absolute; top: 20px; bottom: 12px; margin: 0; flex: none; transition: transform 0.62s cubic-bezier(0.45, 0, 0.12, 1), opacity 0.5s ease, filter 0.5s ease; transform-origin: top left; }
+.theme-board .board .col { transition: transform 0.62s cubic-bezier(0.45, 0, 0.12, 1), opacity 0.5s ease, filter 0.5s ease; }
+.theme-board .col.deck { transform: translate(var(--tx), var(--ty)) scale(var(--sc)) rotate(var(--rot)); opacity: 0.55; filter: saturate(0.7); pointer-events: none; }
+.theme-board .col.work { transform: translate(var(--tx), 0); z-index: 3; }
+.theme-board .col.work .col-b { border-color: rgba(var(--holo), 0.35); box-shadow: 0 0 26px -10px rgba(var(--holo), 0.35); }
 .theme-board .board-wrap.agent-open .dock { opacity: 0; pointer-events: none; }
 .theme-board .dock { transition: opacity 0.3s ease; }
 
-.theme-board .agent-stage { position: absolute; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; padding: 28px 22px 96px; pointer-events: none; }
-.theme-board .agent-panel { pointer-events: auto; width: min(680px, 100%); height: 100%; max-height: 640px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid rgba(var(--holo), 0.4); border-radius: 18px; box-shadow: 0 0 0 1px rgba(var(--holo), 0.12), 0 0 44px -8px rgba(var(--holo), 0.35), 0 24px 70px -20px rgba(0, 0, 0, 0.65); opacity: 0; transform: translateY(26px) scale(0.96); animation: apRise 0.5s cubic-bezier(0.3, 0.8, 0.3, 1) 0.18s forwards; overflow: hidden; }
-@keyframes apRise { to { opacity: 1; transform: none; } }
-.theme-board .board-wrap:not(.agent-open) .agent-panel { animation: none; opacity: 0; transform: translateY(26px) scale(0.96); transition: opacity 0.3s, transform 0.3s; }
+/* the agent surface — position (left/right) set inline by the merge code */
+.theme-board .agent { position: absolute; z-index: 9; top: 20px; bottom: 108px; opacity: 0; transform: translateX(40px) scale(0.97); pointer-events: none; transition: opacity 0.5s ease 0.18s, transform 0.62s cubic-bezier(0.3, 0.8, 0.25, 1) 0.18s; }
+.theme-board .agent.on { opacity: 1; transform: none; pointer-events: auto; }
+.theme-board .agent-panel { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--panel); border: 1px solid rgba(var(--holo), 0.4); border-radius: 16px; box-shadow: 0 0 0 1px rgba(var(--holo), 0.1), 0 0 54px -10px rgba(var(--holo), 0.3), 0 28px 80px -24px rgba(0, 0, 0, 0.7); overflow: hidden; }
 
 .theme-board .ap-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .theme-board .ap-dot { width: 8px; height: 8px; border-radius: 50%; background: rgb(var(--holo)); box-shadow: 0 0 10px rgba(var(--holo), 0.8); animation: holoBreathe 2.6s ease-in-out infinite; }
