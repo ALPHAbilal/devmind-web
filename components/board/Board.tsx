@@ -64,7 +64,7 @@ interface MergeInfo {
 
 const PAD = 22;
 const W_WORK = 300;
-const DECK_SC = 0.16;
+const DECK_SC = 0.22;
 
 interface AgentCtx {
   purpose: AgentPurpose;
@@ -141,13 +141,17 @@ export function Board({
     if (!board || agent) return;
     const workKey: ConceptState =
       ctx.purpose === "spec_review" ? "review" : "queued";
+    // Absolutized columns resolve against .board-wrap (the positioned
+    // ancestor), so every coordinate is measured relative to it.
+    const wrap = board.closest(".board-wrap") ?? board;
+    const wRect = wrap.getBoundingClientRect();
     const bRect = board.getBoundingClientRect();
     const rects: MergeInfo["rects"] = {};
     board.querySelectorAll<HTMLElement>("[data-col]").forEach((el) => {
       const r = el.getBoundingClientRect();
       rects[el.dataset.col as ConceptState] = {
-        left: r.left - bRect.left,
-        top: r.top - bRect.top,
+        left: r.left - wRect.left,
+        top: r.top - wRect.top,
         width: r.width,
         height: r.height,
       };
@@ -159,9 +163,9 @@ export function Board({
     setMerge({
       work: workKey,
       rects,
-      bw: bRect.width,
-      bh: bRect.height,
-      body: { top: bodyR.top - bRect.top, height: bodyR.height },
+      bw: wRect.width,
+      bh: bRect.bottom - wRect.top, // board's bottom edge, wrap coords
+      body: { top: bodyR.top - wRect.top, height: bodyR.height },
     });
     setAgent(ctx);
     // double rAF: let the absolutized layout commit, then launch the glide
@@ -203,10 +207,6 @@ export function Board({
       });
     return { queued, learning, completed, review };
   }, [visible]);
-
-  const anyOverdue = columns.review.some(
-    (c) => c.review_due_at && dueLabel(c.review_due_at).overdue,
-  );
 
   const patch = useCallback(
     (id: string, fields: Partial<Concept>) => {
@@ -587,9 +587,9 @@ export function Board({
       } else {
         const i = COL_ORDER.filter((k) => k !== merge.work).indexOf(state);
         const deckW = r.width * DECK_SC;
-        const deckX = workRight ? merge.bw - PAD - deckW - 8 : PAD + 8;
-        const deckY = merge.bh - r.height * DECK_SC - 26;
-        style.transform = `translate(${deckX - r.left + i * 7}px, ${deckY - r.top + i * 6}px) scale(${DECK_SC}) rotate(${(i - 1) * 4}deg)`;
+        const deckX = workRight ? merge.bw - PAD - deckW - 10 : PAD + 10;
+        const deckY = merge.bh - r.height * DECK_SC - 18;
+        style.transform = `translate(${deckX - r.left + i * 9}px, ${deckY - r.top + i * 7}px) scale(${DECK_SC}) rotate(${(i - 1) * 3.5}deg)`;
         style.transitionDelay = `${i * 0.045}s`;
         style.zIndex = 1 + i;
         cls += " deck";
@@ -678,7 +678,7 @@ export function Board({
               )}
               {column("learning", "Learning", columns.learning, false)}
               {column("completed", "Completed", columns.completed, false)}
-              {column("review", "Review", columns.review, anyOverdue)}
+              {column("review", "Review", columns.review, false)}
             </div>
 
             {/* The agent surface — opens beside the preserved working column */}
