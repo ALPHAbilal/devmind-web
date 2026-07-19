@@ -47,6 +47,23 @@ function dueLabel(dueAt: string): { text: string; overdue: boolean } {
   return { text: `due in ${days}d`, overdue: false };
 }
 
+/** column geometry captured at merge start (board-relative) */
+interface MergeInfo {
+  work: ConceptState;
+  rects: Partial<
+    Record<
+      ConceptState,
+      { left: number; top: number; width: number; height: number }
+    >
+  >;
+  bw: number;
+  bh: number;
+}
+
+const PAD = 22;
+const W_WORK = 300;
+const DECK_SC = 0.16;
+
 interface AgentCtx {
   purpose: AgentPurpose;
   conceptId?: string;
@@ -100,7 +117,6 @@ export function Board({
   const [agentVisible, setAgentVisible] = useState(false);
   /** concept ids whose progress detail is collapsed (× on the progress view) */
   const [hiddenGen, setHiddenGen] = useState<Set<string>>(new Set());
-  const [agentSide, setAgentSide] = useState<{ left: number; right: number } | null>(null);
   const dockRef = useRef<HTMLTextAreaElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const genTimers = useRef<Map<string, ReturnType<typeof setInterval>>>(
@@ -112,82 +128,47 @@ export function Board({
     return () => timers.forEach((t) => clearInterval(t));
   }, []);
 
-  /** FLIP merge — absolutize the columns, glide the working one to its edge,
-   * gather the rest into the deck, and hand the freed space to the agent. */
-  const mergeIn = useCallback((workKey: "queued" | "review") => {
+  /** FLIP merge — measured once at open, then fully React-driven so no
+   * re-render can wipe mid-animation classes. `phase` flips a frame after the
+   * columns are absolutized at their measured spots, launching the glide. */
+  const [merge, setMerge] = useState<MergeInfo | null>(null);
+  const [phase, setPhase] = useState(false);
+
+  const openAgent = useCallback((ctx: AgentCtx) => {
     const board = boardRef.current;
-    if (!board) return;
-    const cols = Array.from(board.querySelectorAll<HTMLElement>(".col"));
+    if (!board || agent) return;
+    const workKey: ConceptState =
+      ctx.purpose === "spec_review" ? "review" : "queued";
     const bRect = board.getBoundingClientRect();
-    const rects = new Map(cols.map((c) => [c, c.getBoundingClientRect()]));
-    const work = cols.find((c) => c.dataset.col === workKey);
-    if (!work) return;
-    const workRight = workKey === "review"; // review works from the right edge
-    const pad = 22;
-    const wWork = 300;
-
-    cols.forEach((c) => {
-      const r = rects.get(c)!;
-      c.style.left = `${r.left - bRect.left}px`;
-      c.style.width = `${r.width}px`;
+    const rects: MergeInfo["rects"] = {};
+    board.querySelectorAll<HTMLElement>("[data-col]").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      rects[el.dataset.col as ConceptState] = {
+        left: r.left - bRect.left,
+        top: r.top - bRect.top,
+        width: r.width,
+        height: r.height,
+      };
     });
-    board.classList.add("merged");
-
-    const workX = workRight ? bRect.width - pad - wWork : pad;
-    work.classList.add("work");
-    work.style.setProperty("--tx", `${workX - (rects.get(work)!.left - bRect.left)}px`);
-    work.style.width = `${wWork}px`;
-
-    const deckX = workRight ? bRect.width - pad - 120 : pad + 8;
-    const deckY = bRect.height - 210;
-    let i = 0;
-    for (const c of cols) {
-      if (c === work) continue;
-      const r = rects.get(c)!;
-      c.classList.add("deck");
-      c.style.setProperty("--tx", `${deckX - (r.left - bRect.left) + i * 7}px`);
-      c.style.setProperty("--ty", `${deckY + i * 6}px`);
-      c.style.setProperty("--sc", "0.16");
-      c.style.setProperty("--rot", `${(i - 1) * 4}deg`);
-      c.style.zIndex = `${1 + i}`;
-      i += 1;
-    }
-    setAgentSide(
-      workRight
-        ? { left: pad, right: pad + wWork + 18 }
-        : { left: pad + wWork + 18, right: pad },
-    );
-  }, []);
-
-  const mergeOut = useCallback(() => {
-    const board = boardRef.current;
-    if (!board) return;
-    board.classList.remove("merged");
-    board.querySelectorAll<HTMLElement>(".col").forEach((c) => {
-      c.classList.remove("work", "deck");
-      c.style.cssText = "";
-    });
-  }, []);
-
-  const openAgent = useCallback(
-    (ctx: AgentCtx) => {
-      setAgent(ctx);
+    setMerge({ work: workKey, rects, bw: bRect.width, bh: bRect.height });
+    setAgent(ctx);
+    // double rAF: let the absolutized layout commit, then launch the glide
+    requestAnimationFrame(() =>
       requestAnimationFrame(() => {
-        mergeIn(ctx.purpose === "spec_review" ? "review" : "queued");
+        setPhase(true);
         setAgentVisible(true);
-      });
-    },
-    [mergeIn],
-  );
+      }),
+    );
+  }, [agent]);
 
   const closeAgent = useCallback(() => {
+    setPhase(false);
     setAgentVisible(false);
-    mergeOut();
     setTimeout(() => {
       setAgent(null);
-      setAgentSide(null);
-    }, 620); // matches the merge duration
-  }, [mergeOut]);
+      setMerge(null);
+    }, 640); // matches the merge duration
+  }, []);
 
   const visible = useMemo(
     () =>
@@ -567,16 +548,57 @@ export function Board({
     );
   };
 
+  /** Column geometry while merged — everything derived from state, so React
+   * re-renders can never break the animation. */
+  const COL_ORDER: ConceptState[] = ["queued", "learning", "completed", "review"];
+  const colMerge = (state: ConceptState) => {
+    if (!merge) return { cls: "", style: undefined as React.CSSProperties | undefined };
+    const r = merge.rects[state];
+    if (!r) return { cls: "", style: undefined };
+    const isWork = state === merge.work;
+    const workRight = merge.work === "review";
+    const style: React.CSSProperties = {
+      position: "absolute",
+      left: r.left,
+      top: r.top,
+      width: isWork && phase ? W_WORK : r.width,
+      height: r.height,
+      margin: 0,
+      flex: "none",
+    };
+    let cls = " m";
+    if (phase) {
+      if (isWork) {
+        const workX = workRight ? merge.bw - PAD - W_WORK : PAD;
+        style.transform = `translateX(${workX - r.left}px)`;
+        cls += " work";
+      } else {
+        const i = COL_ORDER.filter((k) => k !== merge.work).indexOf(state);
+        const deckW = r.width * DECK_SC;
+        const deckX = workRight ? merge.bw - PAD - deckW - 8 : PAD + 8;
+        const deckY = merge.bh - r.height * DECK_SC - 26;
+        style.transform = `translate(${deckX - r.left + i * 7}px, ${deckY - r.top + i * 6}px) scale(${DECK_SC}) rotate(${(i - 1) * 4}deg)`;
+        style.transitionDelay = `${i * 0.045}s`;
+        style.zIndex = 1 + i;
+        cls += " deck";
+      }
+    }
+    return { cls, style };
+  };
+
   const column = (
     state: ConceptState,
     label: string,
     items: Concept[],
     active: boolean,
     plus?: () => void,
-  ) => (
+  ) => {
+    const m = colMerge(state);
+    return (
     <div
       data-col={state}
-      className={`col${active ? " active" : ""}${dropCol === state ? " drop" : ""}`}
+      style={m.style}
+      className={`col${active ? " active" : ""}${dropCol === state ? " drop" : ""}${m.cls}`}
       onDragOver={(e) => {
         e.preventDefault();
         setDropCol(state);
@@ -602,9 +624,16 @@ export function Board({
         )}
       </div>
     </div>
-  );
+    );
+  };
 
   const agentOpen = agent !== null;
+  const workRight = merge?.work === "review";
+  const agentPos: React.CSSProperties | undefined = merge
+    ? workRight
+      ? { left: PAD, right: PAD + W_WORK + 18 }
+      : { left: PAD + W_WORK + 18, right: PAD }
+    : undefined;
 
   return (
     <div className="theme-board" data-theme="dark">
@@ -613,7 +642,7 @@ export function Board({
         <div className="main">
           <div className={`board-wrap${agentOpen && agentVisible ? " agent-open" : ""}`}>
             {techFilter && (
-              <div className="filter-bar">
+              <div className={`filter-bar${agentOpen ? " off" : ""}`}>
                 <span className="filter-chip">
                   {techFilter}
                   <button title="Clear filter" onClick={() => router.push("/board")}>
@@ -622,7 +651,10 @@ export function Board({
                 </span>
               </div>
             )}
-            <div className="board cols-4" ref={boardRef}>
+            <div
+              className={`board cols-4${merge ? " merged" : ""}`}
+              ref={boardRef}
+            >
               {column("queued", "To Learn", columns.queued, false, () =>
                 openAgent({ purpose: "spec_lesson" }),
               )}
@@ -635,11 +667,7 @@ export function Board({
             {agentOpen && (
               <div
                 className={`agent${agentVisible ? " on" : ""}`}
-                style={
-                  agentSide
-                    ? { left: agentSide.left, right: agentSide.right }
-                    : undefined
-                }
+                style={agentPos}
               >
                 <AgentPanel
                   purpose={agent.purpose}

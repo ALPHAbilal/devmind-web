@@ -178,7 +178,6 @@ export function AgentPanel({
   return (
     <div className="agent-panel">
       <div className="ap-head">
-        <span className="ap-dot" />
         <span className="ap-title">
           {isReview ? "Spec this review" : "Spec a new lesson"}
           {isReview && conceptName ? <b> · {conceptName}</b> : null}
