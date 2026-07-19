@@ -7,6 +7,8 @@ import { OutputCell } from "./OutputCell";
 import { SectionCell } from "./SectionCell";
 import { DividerCell } from "./DividerCell";
 import { ChallengeCell } from "./ChallengeCell";
+import { InteractiveCell } from "./InteractiveCell";
+import { DiagramCell } from "./DiagramCell";
 import type { Cell } from "./types";
 
 // Monaco is browser-only — dynamic-import with ssr:false so `next build`
@@ -28,6 +30,8 @@ export {
   SectionCell,
   DividerCell,
   ChallengeCell,
+  InteractiveCell,
+  DiagramCell,
 };
 
 /** Optional per-cell render hints from NotebookContent (e.g., hint callout). */
@@ -56,6 +60,10 @@ export function CellRenderer({
       return <DividerCell cell={cell} />;
     case "challenge":
       return <ChallengeCell cell={cell} />;
+    case "interactive":
+      return <InteractiveCell cell={cell} />;
+    case "diagram":
+      return <DiagramCell cell={cell} />;
     default: {
       const _exhaustive: never = cell.kind;
       void _exhaustive;

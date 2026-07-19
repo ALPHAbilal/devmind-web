@@ -21,7 +21,21 @@ export type CellKind =
   // these the DB `cell_kind` enum needs `challenge` added (additive migration)
   // plus an agent notebook tool. Until then no `challenge` row arrives —
   // listing it here is harmless and keeps the dispatch switch exhaustive.
-  | "challenge";
+  | "challenge"
+  // Agent visual vocabulary: sandboxed HTML/CSS demo + ASCII diagram.
+  | "interactive"
+  | "diagram";
+
+/** Structured per-cell extras (cells.meta jsonb). Each kind reads the keys it
+ * cares about; unknown keys are ignored. */
+export interface CellMetaJson {
+  /** interactive: iframe height in px (default 320) */
+  height?: number;
+  /** interactive: small title shown above the demo */
+  title?: string;
+  /** diagram: caption shown under the art */
+  caption?: string;
+}
 
 export type CellSource = "agent" | "learner" | "backend";
 
@@ -34,6 +48,7 @@ export interface Cell {
   language: string | null;
   attached_file: string | null;
   attached_to: string | null;
+  meta?: CellMetaJson | null;
   source: CellSource;
   created_at: string;
   updated_at: string;

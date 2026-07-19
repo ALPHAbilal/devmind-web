@@ -162,6 +162,7 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["cell_kind"]
           language: string | null
+          meta: Json | null
           notebook_id: string
           ord: number
           source: Database["public"]["Enums"]["cell_source"]
@@ -175,6 +176,7 @@ export type Database = {
           id?: string
           kind: Database["public"]["Enums"]["cell_kind"]
           language?: string | null
+          meta?: Json | null
           notebook_id: string
           ord: number
           source: Database["public"]["Enums"]["cell_source"]
@@ -188,6 +190,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["cell_kind"]
           language?: string | null
+          meta?: Json | null
           notebook_id?: string
           ord?: number
           source?: Database["public"]["Enums"]["cell_source"]
@@ -654,6 +657,8 @@ export type Database = {
         | "section"
         | "divider"
         | "challenge"
+        | "interactive"
+        | "diagram"
       cell_source: "agent" | "learner" | "backend"
       concept_generation: "none" | "specing" | "ready" | "generating" | "failed"
       concept_status: "queued" | "learning" | "completed" | "review"
@@ -805,6 +810,8 @@ export const Constants = {
         "section",
         "divider",
         "challenge",
+        "interactive",
+        "diagram",
       ],
       cell_source: ["agent", "learner", "backend"],
       concept_generation: ["none", "specing", "ready", "generating", "failed"],
