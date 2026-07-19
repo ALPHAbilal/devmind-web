@@ -499,9 +499,14 @@ export function Board({
         <div className="frow">
           {c.notebook_id ? (
             <button className="btn-pri" onClick={() => openNotebook(c.notebook_id!)}>
-              Open notebook →
+              Continue learning →
             </button>
-          ) : null}
+          ) : (
+            // no notebook yet (legacy card) — build one from here
+            <button className="btn-pri" onClick={() => generate(c, "lesson")}>
+              Generate lesson
+            </button>
+          )}
           <button className="btn-ghost" onClick={() => move(c, "completed")}>
             Mark completed
           </button>
