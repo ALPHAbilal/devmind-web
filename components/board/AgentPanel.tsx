@@ -12,7 +12,25 @@
  * backend slots in behind the same UI.
  */
 import { useEffect, useRef, useState } from "react";
-import { X } from "./icons";
+import { Arrow, X } from "./icons";
+
+/** paperclip — attach files */
+function Clip() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.5 12.8 20.7a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.9 1.9 0 0 1-2.6-2.6l8-8" />
+    </svg>
+  );
+}
+
+/** folder — attach a directory */
+function Folder() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 7.5V6a2 2 0 0 1 2-2h4l2.2 2.5H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7.5Z" />
+    </svg>
+  );
+}
 
 export type AgentPurpose = "spec_lesson" | "spec_review";
 
@@ -259,14 +277,14 @@ export function AgentPanel({
           title="Attach code files"
           onClick={() => fileRef.current?.click()}
         >
-          ⎘ files
+          <Clip />
         </button>
         <button
           className="ap-attach"
-          title="Attach a whole directory"
+          title="Attach a directory"
           onClick={() => dirRef.current?.click()}
         >
-          ⌸ folder
+          <Folder />
         </button>
         <textarea
           ref={taRef}
@@ -288,8 +306,8 @@ export function AgentPanel({
             }
           }}
         />
-        <button className="ap-send" onClick={() => send()}>
-          Send
+        <button className="ap-send" title="Send" onClick={() => send()}>
+          <Arrow />
         </button>
         <input
           ref={fileRef}

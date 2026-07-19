@@ -58,6 +58,8 @@ interface MergeInfo {
   >;
   bw: number;
   bh: number;
+  /** the working column's bordered body box — the agent aligns to this */
+  body: { top: number; height: number };
 }
 
 const PAD = 22;
@@ -150,7 +152,17 @@ export function Board({
         height: r.height,
       };
     });
-    setMerge({ work: workKey, rects, bw: bRect.width, bh: bRect.height });
+    const bodyEl = board.querySelector<HTMLElement>(
+      `[data-col="${workKey}"] .col-b`,
+    );
+    const bodyR = (bodyEl ?? board).getBoundingClientRect();
+    setMerge({
+      work: workKey,
+      rects,
+      bw: bRect.width,
+      bh: bRect.height,
+      body: { top: bodyR.top - bRect.top, height: bodyR.height },
+    });
     setAgent(ctx);
     // double rAF: let the absolutized layout commit, then launch the glide
     requestAnimationFrame(() =>
@@ -629,11 +641,17 @@ export function Board({
 
   const agentOpen = agent !== null;
   const workRight = merge?.work === "review";
-  const agentPos: React.CSSProperties | undefined = merge
-    ? workRight
-      ? { left: PAD, right: PAD + W_WORK + 18 }
-      : { left: PAD + W_WORK + 18, right: PAD }
-    : undefined;
+  // exact same top edge + height as the working column — one visual row
+  const agentPos: React.CSSProperties | undefined =
+    merge
+      ? {
+          top: merge.body.top,
+          height: merge.body.height,
+          ...(workRight
+            ? { left: PAD, right: PAD + W_WORK + 18 }
+            : { left: PAD + W_WORK + 18, right: PAD }),
+        }
+      : undefined;
 
   return (
     <div className="theme-board" data-theme="dark">

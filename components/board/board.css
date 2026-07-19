@@ -426,12 +426,14 @@
 .theme-board .board-wrap.agent-open .dock { opacity: 0; pointer-events: none; }
 .theme-board .dock { transition: opacity 0.3s ease; }
 
-/* the agent surface — position (left/right) set inline by the merge code */
-.theme-board .agent { position: absolute; z-index: 9; top: 20px; bottom: 108px; opacity: 0; transform: translateX(40px) scale(0.97); pointer-events: none; transition: opacity 0.5s ease 0.18s, transform 0.62s cubic-bezier(0.3, 0.8, 0.25, 1) 0.18s; }
+/* the agent surface — geometry (top/height/left/right) set inline from the
+   working column's measured rect, so both read as one aligned row. It dresses
+   exactly like a kanban column: col-bg, hairline border, no glow. */
+.theme-board .agent { position: absolute; z-index: 9; opacity: 0; transform: translateX(40px) scale(0.97); pointer-events: none; transition: opacity 0.5s ease 0.18s, transform 0.62s cubic-bezier(0.3, 0.8, 0.25, 1) 0.18s; }
 .theme-board .agent.on { opacity: 1; transform: none; pointer-events: auto; }
-.theme-board .agent-panel { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--panel); border: 1px solid rgba(var(--holo), 0.4); border-radius: 16px; box-shadow: 0 0 0 1px rgba(var(--holo), 0.1), 0 0 54px -10px rgba(var(--holo), 0.3), 0 28px 80px -24px rgba(0, 0, 0, 0.7); overflow: hidden; }
+.theme-board .agent-panel { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--col-bg); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 
-.theme-board .ap-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.theme-board .ap-head { display: flex; align-items: center; gap: 10px; padding: 18px 20px 6px; flex-shrink: 0; }
 .theme-board .ap-title { font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-2); }
 .theme-board .ap-title b { color: var(--ink); }
 .theme-board .ap-close { margin-left: auto; background: none; border: none; color: var(--ink-3); cursor: pointer; padding: 4px; border-radius: 7px; }
@@ -462,13 +464,15 @@
 .theme-board .ap-file button { background: none; border: none; color: var(--ink-3); cursor: pointer; font-size: 13px; padding: 0 1px; }
 .theme-board .ap-file button:hover { color: var(--ink); }
 
-.theme-board .ap-input { display: flex; align-items: flex-end; gap: 8px; padding: 12px 14px 14px; border-top: 1px solid var(--line); flex-shrink: 0; }
-.theme-board .ap-attach { flex-shrink: 0; font: 600 11px var(--mono); color: var(--ink-2); background: none; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; cursor: pointer; white-space: nowrap; }
-.theme-board .ap-attach:hover { color: var(--ink); border-color: rgba(var(--holo), 0.45); }
-.theme-board .ap-input textarea { flex: 1; min-width: 0; resize: none; border: 1px solid var(--line); background: var(--col-bg); border-radius: 11px; outline: none; font: 500 13.5px var(--sans); line-height: 1.5; color: var(--ink); padding: 9px 12px; max-height: 180px; }
-.theme-board .ap-input textarea:focus { border-color: rgba(var(--holo), 0.5); }
+.theme-board .ap-input { display: flex; align-items: flex-end; gap: 8px; padding: 10px 16px 16px; flex-shrink: 0; }
+.theme-board .ap-attach { flex-shrink: 0; width: 36px; height: 38px; display: grid; place-items: center; color: var(--ink-3); background: none; border: none; border-radius: 10px; cursor: pointer; transition: color 0.15s, background 0.15s; }
+.theme-board .ap-attach:hover { color: var(--ink); background: var(--card-bg); }
+.theme-board .ap-attach svg { width: 17px; height: 17px; }
+.theme-board .ap-input textarea { flex: 1; min-width: 0; resize: none; border: 1px solid var(--line); background: var(--card-bg); border-radius: 12px; outline: none; font: 500 13.5px var(--sans); line-height: 1.5; color: var(--ink); padding: 10px 13px; max-height: 180px; transition: border-color 0.2s; }
+.theme-board .ap-input textarea:focus { border-color: var(--card-bd); }
 .theme-board .ap-input textarea::placeholder { color: var(--ink-3); }
-.theme-board .ap-send { flex-shrink: 0; font: 700 12px var(--sans); color: #08131a; background: rgb(var(--holo)); border: none; border-radius: 10px; padding: 9px 16px; cursor: pointer; }
+.theme-board .ap-send { flex-shrink: 0; width: 38px; height: 38px; display: grid; place-items: center; color: var(--bg); background: rgb(var(--holo)); border: none; border-radius: 12px; cursor: pointer; }
+.theme-board .ap-send svg { width: 16px; height: 16px; }
 .theme-board .ap-send:hover { filter: brightness(1.1); }
 
 /* ═════════════ column ⊕ · generation progress · tech filter ═════════════ */
