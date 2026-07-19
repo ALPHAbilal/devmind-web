@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_sessions: {
+        Row: {
+          attachments: Json
+          concept_id: string | null
+          created_at: string
+          id: string
+          purpose: string
+          spec: Json | null
+          status: string
+          transcript: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attachments?: Json
+          concept_id?: string | null
+          created_at?: string
+          id?: string
+          purpose: string
+          spec?: Json | null
+          status?: string
+          transcript?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attachments?: Json
+          concept_id?: string | null
+          created_at?: string
+          id?: string
+          purpose?: string
+          spec?: Json | null
+          status?: string
+          transcript?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_sessions_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concepts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branch_session_turns: {
         Row: {
           created_at: string
@@ -166,11 +213,15 @@ export type Database = {
       concepts: {
         Row: {
           created_at: string
+          generation: Database["public"]["Enums"]["concept_generation"]
+          generation_progress: Json | null
           id: string
           name: string
           notebook_id: string | null
           review_due_at: string | null
           review_focus: string | null
+          review_notebook_id: string | null
+          spec: Json | null
           review_interval_days: number | null
           state: Database["public"]["Enums"]["concept_status"]
           technology: string
@@ -179,11 +230,15 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          generation?: Database["public"]["Enums"]["concept_generation"]
+          generation_progress?: Json | null
           id?: string
           name: string
           notebook_id?: string | null
           review_due_at?: string | null
           review_focus?: string | null
+          review_notebook_id?: string | null
+          spec?: Json | null
           review_interval_days?: number | null
           state?: Database["public"]["Enums"]["concept_status"]
           technology: string
@@ -192,11 +247,15 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          generation?: Database["public"]["Enums"]["concept_generation"]
+          generation_progress?: Json | null
           id?: string
           name?: string
           notebook_id?: string | null
           review_due_at?: string | null
           review_focus?: string | null
+          review_notebook_id?: string | null
+          spec?: Json | null
           review_interval_days?: number | null
           state?: Database["public"]["Enums"]["concept_status"]
           technology?: string
@@ -326,6 +385,7 @@ export type Database = {
           current_checkpoint_id: string | null
           goal: Database["public"]["Enums"]["notebook_goal"]
           id: string
+          kind: Database["public"]["Enums"]["notebook_kind"]
           level: Database["public"]["Enums"]["notebook_level"]
           parent_notebook_id: string | null
           path_card: string
@@ -345,6 +405,7 @@ export type Database = {
           current_checkpoint_id?: string | null
           goal: Database["public"]["Enums"]["notebook_goal"]
           id?: string
+          kind?: Database["public"]["Enums"]["notebook_kind"]
           level: Database["public"]["Enums"]["notebook_level"]
           parent_notebook_id?: string | null
           path_card: string
@@ -364,6 +425,7 @@ export type Database = {
           current_checkpoint_id?: string | null
           goal?: Database["public"]["Enums"]["notebook_goal"]
           id?: string
+          kind?: Database["public"]["Enums"]["notebook_kind"]
           level?: Database["public"]["Enums"]["notebook_level"]
           parent_notebook_id?: string | null
           path_card?: string
@@ -593,7 +655,9 @@ export type Database = {
         | "divider"
         | "challenge"
       cell_source: "agent" | "learner" | "backend"
+      concept_generation: "none" | "specing" | "ready" | "generating" | "failed"
       concept_status: "queued" | "learning" | "completed" | "review"
+      notebook_kind: "lesson" | "review"
       message_role: "user" | "assistant"
       notebook_goal: "build" | "understand" | "interview" | "work"
       notebook_level: "beginner" | "intermediate" | "advanced"
@@ -743,7 +807,9 @@ export const Constants = {
         "challenge",
       ],
       cell_source: ["agent", "learner", "backend"],
+      concept_generation: ["none", "specing", "ready", "generating", "failed"],
       concept_status: ["queued", "learning", "completed", "review"],
+      notebook_kind: ["lesson", "review"],
       message_role: ["user", "assistant"],
       notebook_goal: ["build", "understand", "interview", "work"],
       notebook_level: ["beginner", "intermediate", "advanced"],

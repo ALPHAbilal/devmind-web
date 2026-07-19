@@ -10,7 +10,12 @@ import type { Tables } from "@/lib/supabase/types";
  * One concepts query seeds everything; notebook titles resolve in a second
  * small lookup only for linked concepts.
  */
-export default async function BoardPage() {
+export default async function BoardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tech?: string }>;
+}) {
+  const { tech } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -67,6 +72,8 @@ export default async function BoardPage() {
       notebookTitles={titles}
       techs={techs}
       history={history}
+      userId={user.id}
+      techFilter={tech ?? null}
     />
   );
 }

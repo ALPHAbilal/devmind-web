@@ -409,3 +409,81 @@
 .theme-board .focus-panel textarea { resize: none; font: 500 12px var(--sans); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 7px 9px; outline: none; }
 .theme-board .focus-panel textarea:focus { border-color: rgba(var(--holo), 0.5); }
 .theme-board .focus-panel textarea::placeholder { color: var(--ink-3); }
+
+/* ═══════════════ the merge: columns fold into the agent stage ═══════════════ */
+/* Columns converge toward center, blur and give way — staggered so the fold
+   reads as a motion, not a cut. Everything reverses on close. */
+.theme-board .board-wrap .board .col { transition: transform 0.48s cubic-bezier(0.5, 0, 0.15, 1), opacity 0.4s ease, filter 0.4s ease; }
+.theme-board .board-wrap.agent-open .board .col { opacity: 0; filter: blur(6px); pointer-events: none; }
+.theme-board .board-wrap.agent-open .board .col:nth-child(1) { transform: translateX(46%) scale(0.88); transition-delay: 0s; }
+.theme-board .board-wrap.agent-open .board .col:nth-child(2) { transform: translateX(16%) scale(0.9); transition-delay: 0.05s; }
+.theme-board .board-wrap.agent-open .board .col:nth-child(3) { transform: translateX(-16%) scale(0.9); transition-delay: 0.1s; }
+.theme-board .board-wrap.agent-open .board .col:nth-child(4) { transform: translateX(-46%) scale(0.88); transition-delay: 0.15s; }
+.theme-board .board-wrap.agent-open .dock { opacity: 0; pointer-events: none; }
+.theme-board .dock { transition: opacity 0.3s ease; }
+
+.theme-board .agent-stage { position: absolute; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center; padding: 28px 22px 96px; pointer-events: none; }
+.theme-board .agent-panel { pointer-events: auto; width: min(680px, 100%); height: 100%; max-height: 640px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid rgba(var(--holo), 0.4); border-radius: 18px; box-shadow: 0 0 0 1px rgba(var(--holo), 0.12), 0 0 44px -8px rgba(var(--holo), 0.35), 0 24px 70px -20px rgba(0, 0, 0, 0.65); opacity: 0; transform: translateY(26px) scale(0.96); animation: apRise 0.5s cubic-bezier(0.3, 0.8, 0.3, 1) 0.18s forwards; overflow: hidden; }
+@keyframes apRise { to { opacity: 1; transform: none; } }
+.theme-board .board-wrap:not(.agent-open) .agent-panel { animation: none; opacity: 0; transform: translateY(26px) scale(0.96); transition: opacity 0.3s, transform 0.3s; }
+
+.theme-board .ap-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.theme-board .ap-dot { width: 8px; height: 8px; border-radius: 50%; background: rgb(var(--holo)); box-shadow: 0 0 10px rgba(var(--holo), 0.8); animation: holoBreathe 2.6s ease-in-out infinite; }
+.theme-board .ap-title { font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-2); }
+.theme-board .ap-title b { color: var(--ink); }
+.theme-board .ap-close { margin-left: auto; background: none; border: none; color: var(--ink-3); cursor: pointer; padding: 4px; border-radius: 7px; }
+.theme-board .ap-close:hover { color: var(--ink); background: var(--card-bg); }
+.theme-board .ap-close svg { width: 15px; height: 15px; }
+
+.theme-board .ap-log { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; scrollbar-color: rgba(127,127,127,0.4) transparent; }
+.theme-board .ap-msg { max-width: 84%; font: 500 13.5px var(--sans); line-height: 1.55; padding: 9px 13px; border-radius: 13px; white-space: pre-wrap; }
+.theme-board .ap-msg.agent { align-self: flex-start; color: var(--ink); background: var(--card-bg); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+.theme-board .ap-msg.user { align-self: flex-end; color: var(--ink); background: rgba(var(--holo), 0.12); border: 1px solid rgba(var(--holo), 0.3); border-bottom-right-radius: 5px; }
+.theme-board .ap-msg.thinking { display: flex; gap: 5px; padding: 12px 14px; }
+.theme-board .ap-msg.thinking .d { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); animation: apDot 1.1s ease-in-out infinite; }
+.theme-board .ap-msg.thinking .d:nth-child(2) { animation-delay: 0.18s; }
+.theme-board .ap-msg.thinking .d:nth-child(3) { animation-delay: 0.36s; }
+@keyframes apDot { 40% { transform: translateY(-4px); background: var(--ink); } }
+
+.theme-board .ap-spec { align-self: stretch; border: 1px dashed rgba(var(--holo), 0.45); border-radius: 13px; padding: 13px 15px; display: flex; flex-direction: column; gap: 8px; background: rgba(var(--holo), 0.05); }
+.theme-board .ap-spec-h { font: 700 10.5px var(--mono); letter-spacing: 1.2px; color: rgb(var(--holo)); }
+.theme-board .ap-spec-row { display: flex; gap: 12px; font: 500 12.5px var(--sans); }
+.theme-board .ap-spec-row .k { flex: 0 0 84px; color: var(--ink-3); font-family: var(--mono); font-size: 11px; padding-top: 1px; }
+.theme-board .ap-spec-row .v { color: var(--ink); min-width: 0; }
+.theme-board .ap-spec-row .v.ask { color: var(--ink-2); white-space: pre-wrap; max-height: 110px; overflow-y: auto; }
+.theme-board .ap-spec-actions { display: flex; gap: 8px; margin-top: 5px; }
+
+.theme-board .ap-files { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px 0; flex-shrink: 0; }
+.theme-board .ap-file { display: inline-flex; align-items: center; gap: 6px; font: 600 11px var(--mono); color: var(--ink-2); background: var(--card-bg); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; max-width: 220px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.theme-board .ap-file em { font-style: normal; color: var(--ink-3); }
+.theme-board .ap-file button { background: none; border: none; color: var(--ink-3); cursor: pointer; font-size: 13px; padding: 0 1px; }
+.theme-board .ap-file button:hover { color: var(--ink); }
+
+.theme-board .ap-input { display: flex; align-items: flex-end; gap: 8px; padding: 12px 14px 14px; border-top: 1px solid var(--line); flex-shrink: 0; }
+.theme-board .ap-attach { flex-shrink: 0; font: 600 11px var(--mono); color: var(--ink-2); background: none; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; cursor: pointer; white-space: nowrap; }
+.theme-board .ap-attach:hover { color: var(--ink); border-color: rgba(var(--holo), 0.45); }
+.theme-board .ap-input textarea { flex: 1; min-width: 0; resize: none; border: 1px solid var(--line); background: var(--col-bg); border-radius: 11px; outline: none; font: 500 13.5px var(--sans); line-height: 1.5; color: var(--ink); padding: 9px 12px; max-height: 180px; }
+.theme-board .ap-input textarea:focus { border-color: rgba(var(--holo), 0.5); }
+.theme-board .ap-input textarea::placeholder { color: var(--ink-3); }
+.theme-board .ap-send { flex-shrink: 0; font: 700 12px var(--sans); color: #08131a; background: rgb(var(--holo)); border: none; border-radius: 10px; padding: 9px 16px; cursor: pointer; }
+.theme-board .ap-send:hover { filter: brightness(1.1); }
+
+/* ═════════════ column ⊕ · generation progress · tech filter ═════════════ */
+.theme-board .col-plus { margin-left: 6px; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: none; border: 1px solid var(--line); border-radius: 7px; color: var(--ink-2); cursor: pointer; }
+.theme-board .col-plus:hover { color: rgb(var(--holo)); border-color: rgba(var(--holo), 0.5); box-shadow: 0 0 12px -4px rgba(var(--holo), 0.6); }
+.theme-board .col-plus svg { width: 13px; height: 13px; }
+
+.theme-board .card.building { border-color: rgba(var(--holo), 0.4); box-shadow: 0 0 18px -8px rgba(var(--holo), 0.5); }
+.theme-board .gen-panel { margin-top: 9px; padding-top: 9px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; }
+.theme-board .gen-head { display: flex; align-items: center; gap: 8px; }
+.theme-board .gen-step { font: 600 11px var(--mono); color: var(--ink-2); }
+.theme-board .gen-x { margin-left: auto; background: none; border: none; color: var(--ink-3); cursor: pointer; font-size: 14px; padding: 0 2px; }
+.theme-board .gen-x:hover { color: var(--ink); }
+.theme-board .gen-bar { height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.theme-board .gen-fill { height: 100%; border-radius: 4px; background: rgb(var(--holo)); box-shadow: 0 0 8px rgba(var(--holo), 0.7); transition: width 0.5s ease; }
+.theme-board .gen-badge { display: inline-flex; align-items: center; gap: 7px; font: 600 11px var(--mono); color: var(--ink-2); background: none; border: 1px dashed rgba(var(--holo), 0.4); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+
+.theme-board .filter-bar { padding: 14px 22px 0; flex-shrink: 0; }
+.theme-board .filter-chip { display: inline-flex; align-items: center; gap: 7px; font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: 0.8px; color: rgb(var(--holo)); border: 1px solid rgba(var(--holo), 0.45); border-radius: 999px; padding: 5px 7px 5px 12px; box-shadow: 0 0 14px -6px rgba(var(--holo), 0.6); }
+.theme-board .filter-chip button { background: none; border: none; color: var(--ink-2); cursor: pointer; font-size: 13px; line-height: 1; padding: 1px 4px; border-radius: 50%; }
+.theme-board .filter-chip button:hover { color: var(--ink); }
