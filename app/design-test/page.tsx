@@ -34,7 +34,7 @@ const DevMindMark = () => (
 
 type TokenRow = [name: string, value: string];
 
-const notebookBgTokens: TokenRow[] = [
+const notebookBgTokensDark: TokenRow[] = [
   ["--bg-base", "#1a1d18"],
   ["--bg-subtle", "#22261f"],
   ["--bg-elevated", "#2a2f26"],
@@ -42,21 +42,21 @@ const notebookBgTokens: TokenRow[] = [
   ["--bg-interactive-hover", "#3f4639"],
 ];
 
-const notebookTextTokens: TokenRow[] = [
+const notebookTextTokensDark: TokenRow[] = [
   ["--text-primary", "#f4f5f2"],
   ["--text-secondary", "#b8bdb2"],
   ["--text-tertiary", "#7d8477"],
   ["--text-quaternary", "#565b51"],
 ];
 
-const notebookAccentTokens: TokenRow[] = [
+const notebookAccentTokensDark: TokenRow[] = [
   ["--accent-green", "#9cd594"],
   ["--accent-green-soft", "rgba(156,213,148,0.12)"],
   ["--accent-green-border", "rgba(156,213,148,0.25)"],
   ["--accent-green-glow", "rgba(156,213,148,0.08)"],
 ];
 
-const notebookBorderTokens: TokenRow[] = [
+const notebookBorderTokensDark: TokenRow[] = [
   ["--border-subtle", "rgba(255,255,255,0.06)"],
   ["--border-medium", "rgba(255,255,255,0.1)"],
 ];
@@ -95,7 +95,7 @@ const notebookBorderTokens: TokenRow[] = [
   ["--border-strong", "rgba(255,255,255,0.22)"],
 ];
 
-const notebookRadii: Array<[string, string]> = [
+const notebookRadiiDark: Array<[string, string]> = [
   ["--radius-sm", "8px"],
   ["--radius-md", "12px"],
   ["--radius-lg", "16px"],
@@ -116,7 +116,7 @@ type TypeRow = {
   style: React.CSSProperties;
 };
 
-const notebookTypeRows: TypeRow[] = [
+const notebookTypeRowsDark: TypeRow[] = [
   {
     label: "main-title · display · 32px / 400 / -0.02em",
     sample: "What do you want to learn today?",
@@ -460,28 +460,28 @@ export default function DesignTestPage() {
           <>
             <SwatchGroup
               title="Backgrounds (notebook §1.1)"
-              tokens={notebookBgTokens}
+              tokens={notebookBgTokensDark}
             />
             <SwatchGroup
               title="Text colors (notebook §1.1)"
-              tokens={notebookTextTokens}
+              tokens={notebookTextTokensDark}
               textOnSurface
             />
             <SwatchGroup
               title="Accent (notebook §1.1)"
-              tokens={notebookAccentTokens}
+              tokens={notebookAccentTokensDark}
             />
             <SwatchGroup
               title="Borders (notebook §1.1)"
-              tokens={notebookBorderTokens}
+              tokens={notebookBorderTokensDark}
             />
             <TypeBlock
               title="Typography (notebook §2.2)"
-              rows={notebookTypeRows}
+              rows={notebookTypeRowsDark}
             />
             <RadiusGrid
               title="Radii (notebook §3)"
-              radii={notebookRadii}
+              radii={notebookRadiiDark}
             />
             <BrandRow />
           </>
