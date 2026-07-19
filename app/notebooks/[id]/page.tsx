@@ -99,6 +99,16 @@ export default async function NotebookPage({
   const { conceptGraph, checkpoints } = extractGraph(notebookRow?.spec_json);
   const notebookTitle = extractTitle(notebookRow?.spec_json);
 
+  // An active puzzle survives a reload — seed it so the pane reopens.
+  const { data: puzzleRow } = await supabase
+    .from("puzzles")
+    .select("*")
+    .eq("notebook_id", id)
+    .eq("status", "active")
+    .order("opened_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const initialSessionActive = false;
 
   return (
@@ -117,6 +127,7 @@ export default async function NotebookPage({
         checkpoints={checkpoints}
         notebookTitle={notebookTitle}
         parentNotebook={parentNotebook}
+        initialPuzzle={puzzleRow ?? null}
       />
     </AppShell>
   );

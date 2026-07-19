@@ -53,6 +53,8 @@ interface NotebookContentProps {
   /** Set when THIS notebook is a child — renders the back-crumb and disables
    *  further branching (one depth only). */
   parentNotebook?: { id: string; title: string } | null;
+  /** Active puzzle at SSR time — reopens the pane after a reload. */
+  initialPuzzle?: Puzzle | null;
 }
 
 /**
@@ -76,6 +78,7 @@ export function NotebookContent({
   initialState,
   notebookTitle,
   parentNotebook = null,
+  initialPuzzle = null,
 }: NotebookContentProps) {
   const {
     setSessionActive,
@@ -109,6 +112,12 @@ export function NotebookContent({
   useEffect(() => {
     setSessionActive(Boolean(session && session.status === "active"));
   }, [session, setSessionActive]);
+
+  // Seed the SSR-loaded active puzzle once; Realtime takes over from there.
+  useEffect(() => {
+    if (initialPuzzle) setPuzzle(initialPuzzle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Puzzle mode trigger ──────────────────────────────────────────────────
   // Puzzle mode activates itself: three failed runs of the same code cell in
