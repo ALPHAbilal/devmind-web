@@ -10,7 +10,7 @@ import type { AgentContext, AgentTurn, ExchangeAgent } from "./types";
  */
 export class ScriptedAgent implements ExchangeAgent {
   async start(ctx: AgentContext): Promise<AgentTurn> {
-    await wait(1100);
+    await wait(400);
     const n = ctx.picks.length;
     const first = trimText(ctx.picks[0]?.text ?? "", 60);
     return {
@@ -24,7 +24,7 @@ export class ScriptedAgent implements ExchangeAgent {
   }
 
   async reply(ctx: AgentContext, userText: string): Promise<AgentTurn> {
-    await wait(1100);
+    await wait(400);
     const agentTurns = ctx.priorTurns.filter((t) => t.role === "agent").length;
     if (agentTurns <= 1) {
       return {

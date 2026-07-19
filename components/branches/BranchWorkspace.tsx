@@ -67,6 +67,14 @@ export function BranchWorkspace({
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
+  // Warm the router cache for the routes this surface navigates to.
+  useEffect(() => {
+    router.prefetch(`/notebooks/${notebookId}`);
+    for (const b of initialBranches) {
+      if (b.child) router.prefetch(`/notebooks/${b.child.id}`);
+    }
+  }, [router, notebookId, initialBranches]);
+
   /** null = hub; { sessionId: null } = new branch (session born on first pick) */
   const [view, setView] = useState<{ sessionId: string | null } | null>(null);
   const [nbOpen, setNbOpen] = useState(false);
@@ -318,6 +326,38 @@ export function BranchWorkspace({
       }
 
       const order = (branchMap.get(sessionId)?.picks.length ?? 0) + 1;
+      // Optimistic: show the clip immediately; the insert reconciles the id
+      // (or removes the clip) when the round trip returns.
+      const tempId = `temp-${Date.now()}-${order}`;
+      const optimistic = {
+        id: tempId,
+        parent_notebook_id: notebookId,
+        cell_id: cellId,
+        selected_text: text,
+        session_id: sessionId,
+        pick_order: order,
+        created_at: new Date().toISOString(),
+        user_id: "",
+      } as unknown as Highlight;
+      setBranchMap((prev) => {
+        const cur = prev.get(sessionId as string);
+        if (!cur) return prev;
+        const next = new Map(prev);
+        next.set(sessionId as string, {
+          ...cur,
+          picks: [...cur.picks, optimistic],
+        });
+        return next;
+      });
+      // Denormalize the first clipping onto the session — the hub reads
+      // first_quote in one query instead of joining all highlights.
+      if (order === 1) {
+        void supabase
+          .from("branch_sessions")
+          .update({ first_quote: text } as never)
+          .eq("id", sessionId)
+          .then(() => undefined);
+      }
       const { data: hlData } = await supabase
         .from("highlights")
         .insert({
@@ -331,21 +371,16 @@ export function BranchWorkspace({
         .select("*")
         .single();
       const hl = (hlData ?? null) as Highlight | null;
-      if (!hl) return;
-      // Denormalize the first clipping onto the session — the hub reads
-      // first_quote in one query instead of joining all highlights.
-      if (order === 1) {
-        void supabase
-          .from("branch_sessions")
-          .update({ first_quote: text } as never)
-          .eq("id", sessionId)
-          .then(() => undefined);
-      }
       setBranchMap((prev) => {
         const cur = prev.get(sessionId as string);
         if (!cur) return prev;
         const next = new Map(prev);
-        next.set(sessionId as string, { ...cur, picks: [...cur.picks, hl] });
+        next.set(sessionId as string, {
+          ...cur,
+          picks: hl
+            ? cur.picks.map((p) => (p.id === tempId ? hl : p))
+            : cur.picks.filter((p) => p.id !== tempId), // insert failed — undo
+        });
         return next;
       });
     },

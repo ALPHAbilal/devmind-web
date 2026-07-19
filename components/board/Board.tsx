@@ -417,6 +417,17 @@ export function Board({
     [router],
   );
 
+  // Warm the router cache for every notebook a card can open, so the click
+  // lands on an already-downloaded page instead of starting from zero.
+  useEffect(() => {
+    const ids = new Set<string>();
+    for (const c of concepts) {
+      if (c.notebook_id) ids.add(c.notebook_id);
+      if (c.review_notebook_id) ids.add(c.review_notebook_id);
+    }
+    ids.forEach((id) => router.prefetch(`/notebooks/${id}`));
+  }, [concepts, router]);
+
   const card = (c: Concept) => {
     const due =
       c.state === "review" && c.review_due_at ? dueLabel(c.review_due_at) : null;
