@@ -498,15 +498,11 @@ export function Board({
       body = (
         <div className="frow">
           {c.notebook_id ? (
+            // in Learning the notebook always exists — this is the way in
             <button className="btn-pri" onClick={() => openNotebook(c.notebook_id!)}>
               Continue learning →
             </button>
-          ) : (
-            // no notebook yet (legacy card) — build one from here
-            <button className="btn-pri" onClick={() => generate(c, "lesson")}>
-              Generate lesson
-            </button>
-          )}
+          ) : null}
           <button className="btn-ghost" onClick={() => move(c, "completed")}>
             Mark completed
           </button>
