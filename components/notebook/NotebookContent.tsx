@@ -326,7 +326,7 @@ export function NotebookContent({
             className="branches-toggle"
             title="Open branches — grow mini notebooks from highlights"
           >
-            ⑂ Branches
+            Branches
           </Link>
         ) : null}
       </div>

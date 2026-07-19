@@ -137,6 +137,26 @@
   background: var(--bg-hover);
 }
 
+/* Branches link — same visual language as the workspace toggle. */
+.branches-toggle {
+  border: 1px solid var(--border-medium);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.branches-toggle:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
 /* Placeholder used until Phase 5.6 lands real notebook rendering */
 .app-shell-placeholder {
   max-width: 720px;

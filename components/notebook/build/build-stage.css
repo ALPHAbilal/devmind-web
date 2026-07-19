@@ -9,15 +9,26 @@
   --stage-width: clamp(420px, 44vw, 860px);
 }
 
-/* ── Docked split: notebook keeps scrolling in the space left of the stage ── */
+/* ── Docked split: notebook keeps scrolling in the space left of the stage ──
+ * margin-right (not padding) so the scroll container ends at the stage's
+ * edge — its scrollbar sits beside the notebook, not under the panel. */
 .app-shell-content:has(.notebook-layout.has-stage) {
-  padding-right: calc(var(--stage-width) + 24px);
+  margin-right: calc(var(--stage-width) + 24px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-medium) transparent;
 }
 .notebook-layout.has-stage .notebook-content {
   max-width: 640px;
 }
 .notebook-layout.stage-expanded .notebook-content {
   display: none;
+}
+/* Ease the split open/closed instead of snapping. */
+.app-shell-content {
+  transition: margin-right 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.notebook-layout .notebook-content {
+  transition: max-width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Chat bar re-centers in the remaining space; hidden when stage is full. */
@@ -45,6 +56,17 @@
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.4),
     0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: stage-in 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes stage-in {
+  from {
+    opacity: 0;
+    transform: translateX(48px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 /* Expanded: fill everything RIGHT of the left sidebar (248px, 48px when
  * collapsed) — never overlap it. */
