@@ -57,6 +57,7 @@ export default async function NotebookPage({
         .from("notebooks")
         .select("id, title")
         .eq("user_id", user.id)
+        .is("parent_notebook_id", null)
         .order("updated_at", { ascending: false })
         .limit(8),
     ]);

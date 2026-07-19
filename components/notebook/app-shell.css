@@ -58,20 +58,18 @@
   }
 }
 
-/* Back-to-parent button, shown on branch (child) notebooks. */
+/* Back-to-parent, shown on branch (child) notebooks — compact icon button;
+ * the parent's title lives in the tooltip, not the layout. */
 .branch-crumb {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  padding: 5px 12px 5px 9px;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
   border: 1px solid var(--border-medium);
   border-radius: 9999px;
   background: var(--bg-surface);
   color: var(--text-secondary);
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 600;
   text-decoration: none;
   transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
@@ -79,15 +77,6 @@
   color: var(--text-primary);
   background: var(--bg-hover);
   border-color: var(--border-strong);
-}
-.branch-crumb svg {
-  flex: 0 0 auto;
-}
-.branch-crumb-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 40ch;
 }
 
 .notebook-progress {

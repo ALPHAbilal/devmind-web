@@ -294,9 +294,9 @@ export function NotebookContent({
             href={`/notebooks/${parentNotebook.id}`}
             className="branch-crumb"
             title={`Back to ${parentNotebook.title}`}
+            aria-label={`Back to ${parentNotebook.title}`}
           >
-            <ArrowLeft size={13} strokeWidth={2.2} aria-hidden />
-            <span className="branch-crumb-title">{parentNotebook.title}</span>
+            <ArrowLeft size={14} strokeWidth={2} aria-hidden />
           </Link>
         ) : null}
         {session ? (
