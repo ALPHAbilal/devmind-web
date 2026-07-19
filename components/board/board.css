@@ -387,3 +387,22 @@
 .theme-board .cx:hover { color: var(--amber); }
 /* column drop target — reuse the active holo treatment */
 .theme-board .col.drop .col-b { border-color: rgba(var(--holo), 0.5); background: var(--act-bg); }
+
+/* ============ four-column board + review-focus panel (new flow) ============ */
+/* With four columns, shrink each slightly so the board fits wide screens
+   without scrolling; still scrolls horizontally on narrow ones. */
+.theme-board .board.cols-4 .col { flex: 1 1 250px; min-width: 240px; max-width: 320px; }
+
+/* the review angle shown on a scheduled card */
+.theme-board .card .sub.focus { color: var(--ink-2); font-style: italic; }
+
+/* focus panel — opens inside a Completed card when promoting to Review */
+.theme-board .focus-panel { display: flex; flex-direction: column; gap: 8px; margin-top: 9px; padding-top: 9px; border-top: 1px dashed var(--line); }
+.theme-board .focus-lbl { font: 600 11px var(--sans); color: var(--ink-2); }
+.theme-board .focus-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.theme-board .focus-chips .chip { font: 600 11px var(--sans); color: var(--ink-2); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.theme-board .focus-chips .chip:hover { color: var(--ink); border-color: var(--card-bd); }
+.theme-board .focus-chips .chip.on { color: var(--ink); border-color: rgba(var(--holo), 0.55); box-shadow: 0 0 0 1px rgba(var(--holo), 0.25), 0 0 14px -6px rgba(var(--holo), 0.6); }
+.theme-board .focus-panel textarea { resize: none; font: 500 12px var(--sans); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 7px 9px; outline: none; }
+.theme-board .focus-panel textarea:focus { border-color: rgba(var(--holo), 0.5); }
+.theme-board .focus-panel textarea::placeholder { color: var(--ink-3); }

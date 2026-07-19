@@ -170,6 +170,7 @@ export type Database = {
           name: string
           notebook_id: string | null
           review_due_at: string | null
+          review_focus: string | null
           review_interval_days: number | null
           state: Database["public"]["Enums"]["concept_status"]
           technology: string
@@ -182,6 +183,7 @@ export type Database = {
           name: string
           notebook_id?: string | null
           review_due_at?: string | null
+          review_focus?: string | null
           review_interval_days?: number | null
           state?: Database["public"]["Enums"]["concept_status"]
           technology: string
@@ -194,6 +196,7 @@ export type Database = {
           name?: string
           notebook_id?: string | null
           review_due_at?: string | null
+          review_focus?: string | null
           review_interval_days?: number | null
           state?: Database["public"]["Enums"]["concept_status"]
           technology?: string
@@ -590,7 +593,7 @@ export type Database = {
         | "divider"
         | "challenge"
       cell_source: "agent" | "learner" | "backend"
-      concept_status: "queued" | "learning" | "review"
+      concept_status: "queued" | "learning" | "completed" | "review"
       message_role: "user" | "assistant"
       notebook_goal: "build" | "understand" | "interview" | "work"
       notebook_level: "beginner" | "intermediate" | "advanced"
@@ -740,7 +743,7 @@ export const Constants = {
         "challenge",
       ],
       cell_source: ["agent", "learner", "backend"],
-      concept_status: ["queued", "learning", "review"],
+      concept_status: ["queued", "learning", "completed", "review"],
       message_role: ["user", "assistant"],
       notebook_goal: ["build", "understand", "interview", "work"],
       notebook_level: ["beginner", "intermediate", "advanced"],

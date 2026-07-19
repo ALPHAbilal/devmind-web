@@ -26,6 +26,9 @@ const DEFAULT_INTERVAL_DAYS = 3;
 /** Dock textarea growth cap — past this it scrolls internally. */
 const MAX_H = 200;
 
+/** Preset review angles — the free-text field covers everything else. */
+const FOCUS_PRESETS = ["More theory", "More code", "Coding problems", "Mixed"];
+
 /** Reset to one line, then grow to fit content up to MAX_H. */
 function fit(el: HTMLTextAreaElement) {
   el.style.height = "auto";
@@ -45,12 +48,13 @@ function dueLabel(dueAt: string): { text: string; overdue: boolean } {
 }
 
 /**
- * The board — three columns (To Learn · Learning · Review) in the original
- * .theme-board visual system: mono column headers, bordered scrollable column
- * bodies, holo active-column glow, and the floating dock pill at the bottom.
- * The dock now seeds a queued concept (the DAG mapping flow is retired);
- * drags between columns map to state transitions. Overdue reviews float to
- * the top of Review with the amber flag.
+ * The board — four columns (To Learn · Learning · Completed · Review) in the
+ * .theme-board visual system. The dock seeds To Learn with things the learner
+ * wants later; Review is reachable only from Completed, and promoting a card
+ * there opens the focus panel: preset chips + free text describing what the
+ * review should emphasize (theory, code, problems…). That focus is stored on
+ * the concept and will drive the review agent. Overdue reviews float to the
+ * top of Review with the amber flag.
  */
 export function Board({
   initialConcepts,
@@ -63,11 +67,16 @@ export function Board({
   const [concepts, setConcepts] = useState<Concept[]>(initialConcepts);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropCol, setDropCol] = useState<ConceptState | null>(null);
+  /** Card whose review-focus panel is open (completed → review promotion). */
+  const [focusFor, setFocusFor] = useState<string | null>(null);
+  const [focusPreset, setFocusPreset] = useState<string | null>(null);
+  const focusTextRef = useRef<HTMLTextAreaElement>(null);
   const dockRef = useRef<HTMLTextAreaElement>(null);
 
   const columns = useMemo(() => {
     const queued = concepts.filter((c) => c.state === "queued");
     const learning = concepts.filter((c) => c.state === "learning");
+    const completed = concepts.filter((c) => c.state === "completed");
     const review = concepts
       .filter((c) => c.state === "review")
       .sort((a, b) => {
@@ -75,7 +84,7 @@ export function Board({
         const bd = b.review_due_at ? new Date(b.review_due_at).getTime() : 0;
         return ad - bd; // most overdue first
       });
-    return { queued, learning, review };
+    return { queued, learning, completed, review };
   }, [concepts]);
 
   const anyOverdue = columns.review.some(
@@ -99,18 +108,34 @@ export function Board({
   const move = useCallback(
     (c: Concept, to: ConceptState) => {
       if (c.state === to) return;
+      // Review is only entered through the focus panel, from Completed.
       if (to === "review") {
-        const days = c.review_interval_days ?? DEFAULT_INTERVAL_DAYS;
-        patch(c.id, {
-          state: "review",
-          review_interval_days: days,
-          review_due_at: new Date(Date.now() + days * 86_400_000).toISOString(),
-        });
-      } else {
-        patch(c.id, { state: to });
+        if (c.state !== "completed") return;
+        setFocusFor(c.id);
+        setFocusPreset(null);
+        return;
       }
+      patch(c.id, { state: to });
     },
     [patch],
+  );
+
+  /** Confirm the focus panel — schedule the review with the chosen angle. */
+  const scheduleReview = useCallback(
+    (c: Concept) => {
+      const free = focusTextRef.current?.value.trim() ?? "";
+      const focus = [focusPreset, free].filter(Boolean).join(" — ") || null;
+      const days = c.review_interval_days ?? DEFAULT_INTERVAL_DAYS;
+      patch(c.id, {
+        state: "review",
+        review_focus: focus,
+        review_interval_days: days,
+        review_due_at: new Date(Date.now() + days * 86_400_000).toISOString(),
+      });
+      setFocusFor(null);
+      setFocusPreset(null);
+    },
+    [patch, focusPreset],
   );
 
   /** Reviewed now → double the interval, push the due date out. */
@@ -134,7 +159,7 @@ export function Board({
     [supabase],
   );
 
-  /** Dock submit — seed a queued concept from free text. */
+  /** Dock submit — park something the learner wants later in To Learn. */
   const submit = useCallback(async () => {
     const el = dockRef.current;
     if (!el) return;
@@ -164,6 +189,7 @@ export function Board({
     const due =
       c.state === "review" && c.review_due_at ? dueLabel(c.review_due_at) : null;
     const nb = c.notebook_id ? notebookTitles[c.notebook_id] : null;
+    const focusOpen = focusFor === c.id;
 
     let body: React.ReactNode = null;
     if (c.state === "queued") {
@@ -185,9 +211,59 @@ export function Board({
               Open notebook →
             </button>
           ) : null}
-          <button className="btn-ghost" onClick={() => move(c, "review")}>
-            Schedule review
+          <button className="btn-ghost" onClick={() => move(c, "completed")}>
+            Mark completed
           </button>
+        </div>
+      );
+    } else if (c.state === "completed") {
+      body = focusOpen ? (
+        <div className="focus-panel">
+          <div className="focus-lbl">What should this review focus on?</div>
+          <div className="focus-chips">
+            {FOCUS_PRESETS.map((p) => (
+              <button
+                key={p}
+                className={`chip${focusPreset === p ? " on" : ""}`}
+                onClick={() => setFocusPreset((cur) => (cur === p ? null : p))}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <textarea
+            ref={focusTextRef}
+            rows={2}
+            placeholder="…or tell it in your own words"
+          />
+          <div className="frow">
+            <button className="btn-pri" onClick={() => scheduleReview(c)}>
+              Schedule review
+            </button>
+            <button
+              className="btn-ghost"
+              onClick={() => {
+                setFocusFor(null);
+                setFocusPreset(null);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="frow">
+          <button className="btn-pri" onClick={() => move(c, "review")}>
+            Review this →
+          </button>
+          {c.notebook_id ? (
+            <button
+              className="btn-ghost"
+              onClick={() => router.push(`/notebooks/${c.notebook_id}`)}
+            >
+              Open notebook
+            </button>
+          ) : null}
         </div>
       );
     } else {
@@ -197,6 +273,9 @@ export function Board({
             {due?.overdue ? "⚑ " : "↻ "}
             {due?.text ?? "due for review"}
           </div>
+          {c.review_focus ? (
+            <div className="sub focus">◎ {c.review_focus}</div>
+          ) : null}
           <div className="frow">
             <span className="lbl">spaced review</span>
             <button className="btn-open" onClick={() => reviewed(c)}>
@@ -214,7 +293,7 @@ export function Board({
       <div
         key={c.id}
         className={`card${due?.overdue ? " overdue" : ""}`}
-        draggable
+        draggable={!focusOpen}
         onDragStart={() => setDragId(c.id)}
         onDragEnd={() => {
           setDragId(null);
@@ -275,16 +354,11 @@ export function Board({
       <div className="app">
         <NotebookSidebar techs={techs} history={history} />
         <div className="main">
-          <div className="topbar">
-            <span className="brand">
-              dev<b>mind</b> · board
-            </span>
-            <span className="spacer" />
-          </div>
           <div className="board-wrap">
-            <div className="board">
+            <div className="board cols-4">
               {column("queued", "To Learn", columns.queued, false)}
               {column("learning", "Learning", columns.learning, false)}
+              {column("completed", "Completed", columns.completed, false)}
               {column("review", "Review", columns.review, anyOverdue)}
             </div>
 
@@ -292,8 +366,8 @@ export function Board({
             <div className="dock">
               {empty && (
                 <div className="dock-hint">
-                  Nothing here yet — type a concept you want to learn and it
-                  lands in To Learn.
+                  Nothing here yet — type something you want to learn and it
+                  lands in To Learn until you’re ready.
                 </div>
               )}
               <div className="pill">
