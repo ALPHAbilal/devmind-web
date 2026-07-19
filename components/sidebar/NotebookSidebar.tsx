@@ -15,10 +15,11 @@ import { ChevLeft, Gear, Logo, Plus, Search } from "@/components/board/icons";
 type ThemeMode = "light" | "dark";
 const THEME_KEY = "nb-theme";
 
-/** Set the notebook theme on the .theme-notebook root and remember it. */
+/** Set the theme on the surface root (.theme-notebook or .theme-board) and
+ * remember it — the key is shared, so the choice follows across surfaces. */
 function applyTheme(mode: ThemeMode) {
   document
-    .querySelector(".theme-notebook")
+    .querySelector(".theme-notebook, .theme-board")
     ?.setAttribute("data-theme", mode);
   try {
     localStorage.setItem(THEME_KEY, mode);

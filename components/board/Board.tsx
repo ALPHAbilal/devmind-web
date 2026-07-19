@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables } from "@/lib/supabase/types";
 import {
@@ -9,7 +9,7 @@ import {
   type NotebookSidebarTech,
   type NotebookSidebarHistoryItem,
 } from "@/components/sidebar/NotebookSidebar";
-import "@/components/sidebar/sidebar.css";
+import { Arrow } from "./icons";
 import "./board.css";
 
 export type Concept = Tables<"concepts">;
@@ -23,8 +23,17 @@ interface BoardProps {
 }
 
 const DEFAULT_INTERVAL_DAYS = 3;
+/** Dock textarea growth cap — past this it scrolls internally. */
+const MAX_H = 200;
 
-/** ms → "6d overdue" / "due in 2d" / "due today". */
+/** Reset to one line, then grow to fit content up to MAX_H. */
+function fit(el: HTMLTextAreaElement) {
+  el.style.height = "auto";
+  el.style.height = `${Math.min(el.scrollHeight, MAX_H)}px`;
+  el.style.overflowY = el.scrollHeight > MAX_H ? "auto" : "hidden";
+}
+
+/** "6d overdue" / "due in 2d" / "due today". */
 function dueLabel(dueAt: string): { text: string; overdue: boolean } {
   const diff = new Date(dueAt).getTime() - Date.now();
   const days = Math.round(Math.abs(diff) / 86_400_000);
@@ -36,9 +45,12 @@ function dueLabel(dueAt: string): { text: string; overdue: boolean } {
 }
 
 /**
- * Three-column concept board (Linear-inspired): To Learn · Learning · Review.
- * Overdue reviews are flagged and float to the top of Review — no fourth
- * column. Cards drag between columns; drops map to state transitions.
+ * The board — three columns (To Learn · Learning · Review) in the original
+ * .theme-board visual system: mono column headers, bordered scrollable column
+ * bodies, holo active-column glow, and the floating dock pill at the bottom.
+ * The dock now seeds a queued concept (the DAG mapping flow is retired);
+ * drags between columns map to state transitions. Overdue reviews float to
+ * the top of Review with the amber flag.
  */
 export function Board({
   initialConcepts,
@@ -47,11 +59,11 @@ export function Board({
   history,
 }: BoardProps) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [concepts, setConcepts] = useState<Concept[]>(initialConcepts);
-  const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState({ name: "", technology: "" });
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropCol, setDropCol] = useState<ConceptState | null>(null);
+  const dockRef = useRef<HTMLTextAreaElement>(null);
 
   const columns = useMemo(() => {
     const queued = concepts.filter((c) => c.state === "queued");
@@ -61,10 +73,14 @@ export function Board({
       .sort((a, b) => {
         const ad = a.review_due_at ? new Date(a.review_due_at).getTime() : 0;
         const bd = b.review_due_at ? new Date(b.review_due_at).getTime() : 0;
-        return ad - bd; // earliest due (most overdue) first
+        return ad - bd; // most overdue first
       });
     return { queued, learning, review };
   }, [concepts]);
+
+  const anyOverdue = columns.review.some(
+    (c) => c.review_due_at && dueLabel(c.review_due_at).overdue,
+  );
 
   const patch = useCallback(
     (id: string, fields: Partial<Concept>) => {
@@ -80,7 +96,6 @@ export function Board({
     [supabase],
   );
 
-  /** State transition — the only mutation drags/buttons perform. */
   const move = useCallback(
     (c: Concept, to: ConceptState) => {
       if (c.state === to) return;
@@ -89,9 +104,7 @@ export function Board({
         patch(c.id, {
           state: "review",
           review_interval_days: days,
-          review_due_at: new Date(
-            Date.now() + days * 86_400_000,
-          ).toISOString(),
+          review_due_at: new Date(Date.now() + days * 86_400_000).toISOString(),
         });
       } else {
         patch(c.id, { state: to });
@@ -100,10 +113,11 @@ export function Board({
     [patch],
   );
 
-  /** Reviewed now → double the interval, push the due date. */
+  /** Reviewed now → double the interval, push the due date out. */
   const reviewed = useCallback(
     (c: Concept) => {
-      const days = Math.max(c.review_interval_days ?? DEFAULT_INTERVAL_DAYS, 1) * 2;
+      const days =
+        Math.max(c.review_interval_days ?? DEFAULT_INTERVAL_DAYS, 1) * 2;
       patch(c.id, {
         review_interval_days: days,
         review_due_at: new Date(Date.now() + days * 86_400_000).toISOString(),
@@ -120,22 +134,21 @@ export function Board({
     [supabase],
   );
 
-  const addConcept = useCallback(async () => {
-    const name = draft.name.trim();
+  /** Dock submit — seed a queued concept from free text. */
+  const submit = useCallback(async () => {
+    const el = dockRef.current;
+    if (!el) return;
+    const name = el.value.trim();
     if (!name) return;
-    setAdding(false);
-    setDraft({ name: "", technology: "" });
+    el.value = "";
+    fit(el);
     const { data } = await supabase
       .from("concepts")
-      .insert({
-        name,
-        technology: draft.technology.trim() || "general",
-        state: "queued",
-      } as never)
+      .insert({ name, technology: "general", state: "queued" } as never)
       .select("*")
       .single();
     if (data) setConcepts((prev) => [data as Concept, ...prev]);
-  }, [draft, supabase]);
+  }, [supabase]);
 
   const onDrop = useCallback(
     (to: ConceptState) => {
@@ -148,12 +161,59 @@ export function Board({
   );
 
   const card = (c: Concept) => {
-    const due = c.state === "review" && c.review_due_at ? dueLabel(c.review_due_at) : null;
+    const due =
+      c.state === "review" && c.review_due_at ? dueLabel(c.review_due_at) : null;
     const nb = c.notebook_id ? notebookTitles[c.notebook_id] : null;
+
+    let body: React.ReactNode = null;
+    if (c.state === "queued") {
+      body = (
+        <div className="frow">
+          <button className="btn-pri" onClick={() => move(c, "learning")}>
+            Start learning
+          </button>
+        </div>
+      );
+    } else if (c.state === "learning") {
+      body = (
+        <div className="frow">
+          {c.notebook_id ? (
+            <button
+              className="btn-pri"
+              onClick={() => router.push(`/notebooks/${c.notebook_id}`)}
+            >
+              Open notebook →
+            </button>
+          ) : null}
+          <button className="btn-ghost" onClick={() => move(c, "review")}>
+            Schedule review
+          </button>
+        </div>
+      );
+    } else {
+      body = (
+        <>
+          <div className={`sub rev${due?.overdue ? " overdue" : ""}`}>
+            {due?.overdue ? "⚑ " : "↻ "}
+            {due?.text ?? "due for review"}
+          </div>
+          <div className="frow">
+            <span className="lbl">spaced review</span>
+            <button className="btn-open" onClick={() => reviewed(c)}>
+              Reviewed ✓
+            </button>
+            <button className="btn-ghost" onClick={() => move(c, "learning")}>
+              Relearn
+            </button>
+          </div>
+        </>
+      );
+    }
+
     return (
-      <article
+      <div
         key={c.id}
-        className={`bd-card${due?.overdue ? " overdue" : ""}${dragId === c.id ? " dragging" : ""}`}
+        className={`card${due?.overdue ? " overdue" : ""}`}
         draggable
         onDragStart={() => setDragId(c.id)}
         onDragEnd={() => {
@@ -161,65 +221,31 @@ export function Board({
           setDropCol(null);
         }}
       >
-        <div className="bd-card-head">
-          <span className="bd-name">{c.name}</span>
-          <button
-            type="button"
-            className="bd-x"
-            title="Remove"
-            onClick={() => remove(c.id)}
-          >
-            ×
-          </button>
+        <button className="cx" title="Remove" onClick={() => remove(c.id)}>
+          ×
+        </button>
+        <div className="ctop">
+          <span className="nm">{c.name}</span>
+          <span className="tag">{c.technology}</span>
         </div>
-        <div className="bd-meta">
-          <span className="bd-chip">⌗ {c.technology}</span>
-          {nb && c.notebook_id ? (
-            <Link className="bd-chip link" href={`/notebooks/${c.notebook_id}`}>
-              ▤ {nb}
-            </Link>
-          ) : null}
-          {due ? (
-            <span className={`bd-chip due${due.overdue ? " flag" : ""}`}>
-              {due.overdue ? "⚑ " : "⏰ "}
-              {due.text}
-            </span>
-          ) : null}
-        </div>
-        <div className="bd-actions">
-          {c.state === "queued" ? (
-            <button type="button" onClick={() => move(c, "learning")}>
-              start
-            </button>
-          ) : null}
-          {c.state === "learning" ? (
-            <button type="button" onClick={() => move(c, "review")}>
-              schedule review
-            </button>
-          ) : null}
-          {c.state === "review" ? (
-            <>
-              <button type="button" onClick={() => reviewed(c)}>
-                reviewed
-              </button>
-              <button type="button" onClick={() => move(c, "learning")}>
-                relearn
-              </button>
-            </>
-          ) : null}
-        </div>
-      </article>
+        {nb && c.state !== "learning" ? (
+          <div className="sub">
+            ↳ from <b>{nb}</b>
+          </div>
+        ) : null}
+        {body}
+      </div>
     );
   };
 
   const column = (
     state: ConceptState,
     label: string,
-    glyph: string,
     items: Concept[],
+    active: boolean,
   ) => (
-    <section
-      className={`bd-col${dropCol === state ? " over" : ""}`}
+    <div
+      className={`col${active ? " active" : ""}${dropCol === state ? " drop" : ""}`}
       onDragOver={(e) => {
         e.preventDefault();
         setDropCol(state);
@@ -227,68 +253,72 @@ export function Board({
       onDragLeave={() => setDropCol((d) => (d === state ? null : d))}
       onDrop={() => onDrop(state)}
     >
-      <header className="bd-col-head">
-        <span className="bd-glyph">{glyph}</span>
-        <span>{label}</span>
-        <span className="bd-count">{items.length}</span>
-      </header>
-      <div className="bd-col-body">
-        {items.map(card)}
-        {state === "queued" ? (
-          adding ? (
-            <div className="bd-add-form">
-              <input
-                autoFocus
-                placeholder="concept"
-                value={draft.name}
-                onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") void addConcept();
-                  if (e.key === "Escape") setAdding(false);
-                }}
-              />
-              <input
-                placeholder="technology"
-                value={draft.technology}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, technology: e.target.value }))
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") void addConcept();
-                  if (e.key === "Escape") setAdding(false);
-                }}
-              />
-              <button type="button" onClick={() => void addConcept()}>
-                add
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              className="bd-add"
-              onClick={() => setAdding(true)}
-            >
-              ＋ concept
-            </button>
-          )
-        ) : null}
+      <div className="col-h">
+        <span className="sw" />
+        <span className="nm">{label}</span>
+        <span className="ct">{items.length}</span>
       </div>
-    </section>
+      <div className="col-b">
+        {items.length === 0 ? (
+          <div className="col-empty">nothing here yet</div>
+        ) : (
+          items.map(card)
+        )}
+      </div>
+    </div>
   );
 
+  const empty = concepts.length === 0;
+
   return (
-    <main className="theme-notebook bd-page" data-theme="light">
-      <NotebookSidebar techs={techs} history={history} />
-      <div className="bd-main">
-        <div className="bd-top">
-          <h1>Board</h1>
-        </div>
-        <div className="bd-cols">
-          {column("queued", "To Learn", "○", columns.queued)}
-          {column("learning", "Learning", "◐", columns.learning)}
-          {column("review", "Review", "⟳", columns.review)}
+    <div className="theme-board" data-theme="dark">
+      <div className="app">
+        <NotebookSidebar techs={techs} history={history} />
+        <div className="main">
+          <div className="topbar">
+            <span className="brand">
+              dev<b>mind</b> · board
+            </span>
+            <span className="spacer" />
+          </div>
+          <div className="board-wrap">
+            <div className="board">
+              {column("queued", "To Learn", columns.queued, false)}
+              {column("learning", "Learning", columns.learning, false)}
+              {column("review", "Review", columns.review, anyOverdue)}
+            </div>
+
+            {/* Dock — the floating chat input, bottom-anchored */}
+            <div className="dock">
+              {empty && (
+                <div className="dock-hint">
+                  Nothing here yet — type a concept you want to learn and it
+                  lands in To Learn.
+                </div>
+              )}
+              <div className="pill">
+                <textarea
+                  ref={dockRef}
+                  rows={1}
+                  placeholder="What do you want to learn next?"
+                  autoComplete="off"
+                  onInput={(e) => fit(e.currentTarget)}
+                  onFocus={(e) => fit(e.currentTarget)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void submit();
+                    }
+                  }}
+                />
+                <button className="send" onClick={() => void submit()}>
+                  <Arrow />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
