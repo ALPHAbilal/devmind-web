@@ -202,11 +202,12 @@
   color: var(--text-primary);
   font-weight: 600;
 }
+/* history titles read like the board's: full-strength ink, not tinted */
 .nb-sidebar .litem.hist {
-  color: color-mix(in srgb, var(--accent-yellow) 70%, var(--text-secondary));
+  color: var(--text-primary);
 }
 .nb-sidebar .litem.hist:hover {
-  color: var(--accent-yellow);
+  color: var(--text-primary);
   background: var(--bg-hover);
 }
 

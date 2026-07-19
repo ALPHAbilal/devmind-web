@@ -367,7 +367,10 @@
  * against .nb-sidebar.sb-collapsed. Everything else styles via the original
  * .theme-board .sidebar rules above. */
 .theme-board .nb-sidebar { position: relative; display: flex; flex-shrink: 0; }
-.theme-board .nb-sidebar .sidebar { height: 100%; }
+/* sidebar.css's `.nb-sidebar .sidebar` pins the border to --border-subtle,
+   which doesn't exist inside .theme-board — re-pin to --line so the same
+   subtle divider shows on the board too. */
+.theme-board .nb-sidebar .sidebar { height: 100%; border-right: 1px solid var(--line); }
 .theme-board .nb-sidebar.sb-collapsed .sidebar { width: 48px; }
 .theme-board .nb-sidebar.sb-collapsed .scrollarea { overflow: hidden; opacity: 0; pointer-events: none; transition: opacity 0.1s ease 0s; }
 .theme-board .nb-sidebar.sb-collapsed .brandrow { flex-direction: column; align-items: center; gap: 10px; height: auto; padding: 0; margin-bottom: 12px; }
