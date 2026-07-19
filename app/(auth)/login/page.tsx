@@ -59,7 +59,7 @@ function LoginSkeleton() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/notebooks/new";
+  const next = searchParams.get("next") ?? "/board";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

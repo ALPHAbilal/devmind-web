@@ -69,8 +69,8 @@ export function NotebookList({ userId, initialNotebooks }: NotebookListProps) {
         <p className="dashboard-empty-text">
           Pick a topic and DevMind will build you a custom coding notebook.
         </p>
-        <Link href="/notebooks/new" className="dashboard-primary-btn">
-          Start your first notebook
+        <Link href="/board" className="dashboard-primary-btn">
+          Open the board
         </Link>
       </div>
     );
@@ -79,8 +79,8 @@ export function NotebookList({ userId, initialNotebooks }: NotebookListProps) {
   return (
     <>
       <div className="dashboard-actions">
-        <Link href="/notebooks/new" className="dashboard-primary-btn">
-          + New notebook
+        <Link href="/board" className="dashboard-primary-btn">
+          Board
         </Link>
       </div>
       <div className="dashboard-grid">

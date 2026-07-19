@@ -124,11 +124,11 @@ export function NotebookSidebar({ techs, history }: NotebookSidebarProps) {
         </div>
 
         <div className="scrollarea">
-          <Link className="navitem" href="/notebooks/new" title="New notebook">
+          <Link className="navitem" href="/board" title="Board">
             <span className="ic">
               <Plus />
             </span>
-            <span className="sname">New notebook</span>
+            <span className="sname">Board</span>
           </Link>
 
           <div className="slabel">Technologies</div>

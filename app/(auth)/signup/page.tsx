@@ -38,7 +38,7 @@ export default function SignupPage() {
     // If email confirmation is enabled, session is null until the user clicks
     // the link. Otherwise we get a session immediately.
     if (data.session) {
-      router.push("/notebooks/new");
+      router.push("/board");
       router.refresh();
     } else {
       setInfo(

@@ -60,7 +60,7 @@ export function NotebookCard({ notebook }: NotebookCardProps) {
   const handleOpen = () => {
     if (isGenerating) return;
     if (isFailed) {
-      router.push("/notebooks/new");
+      router.push("/board");
       return;
     }
     router.push(`/notebooks/${notebook.id}`);
