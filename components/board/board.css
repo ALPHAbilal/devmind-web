@@ -1,0 +1,250 @@
+/* ============================================================================
+ * Board — three-column concept workflow (To Learn · Learning · Review).
+ * Linear-inspired density on .theme-notebook tokens; whitespace + shadows,
+ * no border lines. Overdue reviews carry a flag and float to the top.
+ * ========================================================================== */
+
+.bd-page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  overflow: hidden;
+}
+
+.bd-top {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 20px 36px 8px;
+  flex: 0 0 auto;
+}
+.bd-top h1 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.bd-back {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.bd-back:hover {
+  color: var(--accent-green);
+}
+
+/* ── columns ────────────────────────────────────────────────────────────── */
+.bd-cols {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  padding: 14px 36px 28px;
+  min-height: 0;
+}
+.bd-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  transition: background 0.15s ease;
+}
+.bd-col.over {
+  background: color-mix(in srgb, var(--accent-green) 7%, transparent);
+}
+.bd-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.bd-glyph {
+  color: var(--accent-green);
+  font-size: 13px;
+}
+.bd-count {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.bd-col-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 2px 12px;
+  min-height: 0;
+}
+
+/* ── cards ──────────────────────────────────────────────────────────────── */
+.bd-card {
+  background: var(--bg-surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+  padding: 12px 14px 10px;
+  cursor: grab;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+.bd-card:hover {
+  box-shadow:
+    var(--shadow-card),
+    0 0 0 1.5px color-mix(in srgb, var(--accent-green) 35%, transparent);
+}
+.bd-card.dragging {
+  opacity: 0.45;
+  transform: scale(0.98);
+}
+.bd-card.overdue {
+  box-shadow:
+    var(--shadow-card),
+    0 0 0 1.5px color-mix(in srgb, #c0392b 45%, transparent);
+}
+.bd-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.bd-name {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.bd-x {
+  border: 0;
+  background: none;
+  color: var(--text-quaternary, var(--text-tertiary));
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0;
+  transition: opacity 0.12s ease, color 0.12s ease;
+}
+.bd-card:hover .bd-x {
+  opacity: 1;
+}
+.bd-x:hover {
+  color: #c0392b;
+}
+
+.bd-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.bd-chip {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  border-radius: 6px;
+  padding: 2.5px 7px;
+  text-decoration: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bd-chip.link:hover {
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 10%, transparent);
+}
+.bd-chip.due {
+  color: var(--text-secondary);
+}
+.bd-chip.due.flag {
+  color: #fff;
+  background: #c0392b;
+}
+
+.bd-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 9px;
+}
+.bd-actions button {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 7px;
+  transition: color 0.13s ease, background 0.13s ease;
+}
+.bd-actions button:hover {
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 10%, transparent);
+}
+
+/* ── add concept ────────────────────────────────────────────────────────── */
+.bd-add {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 10px 12px;
+  border-radius: 12px;
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.bd-add:hover {
+  color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 8%, transparent);
+}
+.bd-add-form {
+  background: var(--bg-surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.bd-add-form input {
+  border: 0;
+  outline: 0;
+  background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--text-primary);
+}
+.bd-add-form input:focus {
+  background: color-mix(in srgb, var(--accent-green) 8%, transparent);
+}
+.bd-add-form button {
+  align-self: flex-end;
+  border: 0;
+  background: var(--accent-green);
+  color: var(--bg-surface);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
