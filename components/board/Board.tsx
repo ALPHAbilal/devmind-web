@@ -64,7 +64,7 @@ interface MergeInfo {
 
 const PAD = 22;
 const W_WORK = 300;
-const DECK_SC = 0.22;
+const DECK_SC = 0.24;
 
 interface AgentCtx {
   purpose: AgentPurpose;
@@ -585,13 +585,20 @@ export function Board({
         style.transform = `translateX(${workX - r.left}px)`;
         cls += " work";
       } else {
+        // The three parked columns hide BEHIND the agent surface — only their
+        // heads peek over its top edge, at different heights, watching.
         const i = COL_ORDER.filter((k) => k !== merge.work).indexOf(state);
         const deckW = r.width * DECK_SC;
-        const deckX = workRight ? merge.bw - PAD - deckW - 10 : PAD + 10;
-        const deckY = merge.bh - r.height * DECK_SC - 18;
-        style.transform = `translate(${deckX - r.left + i * 9}px, ${deckY - r.top + i * 7}px) scale(${DECK_SC}) rotate(${(i - 1) * 3.5}deg)`;
-        style.transitionDelay = `${i * 0.045}s`;
-        style.zIndex = 1 + i;
+        const overlap = deckW * 0.72;
+        // cluster at the panel's outer end, away from the working column
+        const baseX = workRight
+          ? PAD + 30 + i * overlap
+          : merge.bw - PAD - deckW - 30 - i * overlap;
+        const peek = [34, 50, 26][i] ?? 30; // uneven heads
+        style.transform = `translate(${baseX - r.left}px, ${merge.body.top - peek - r.top}px) scale(${DECK_SC}) rotate(${(i - 1) * 4}deg)`;
+        style.transitionDelay = `${i * 0.05}s`;
+        style.zIndex = 1 + i; // below the agent surface (z 9) — hidden by it
+        (style as Record<string, unknown>)["--bd"] = `${i * 0.9}s`;
         cls += " deck";
       }
     }
