@@ -14,6 +14,8 @@ import {
 } from "@/lib/realtime";
 import { CellRenderer, type CellMeta } from "./cells";
 import type { Cell } from "./cells";
+import { outputIsFailure } from "./cells/OutputCell";
+import { createClient } from "@/lib/supabase/client";
 import { SeamAsk } from "./SeamAsk";
 import { Thread } from "./Thread";
 import { useNotebook, type Puzzle } from "./NotebookProvider";
@@ -108,6 +110,62 @@ export function NotebookContent({
     setSessionActive(Boolean(session && session.status === "active"));
   }, [session, setSessionActive]);
 
+  // ── Puzzle mode trigger ──────────────────────────────────────────────────
+  // Puzzle mode activates itself: three failed runs of the same code cell in
+  // a row open a puzzle anchored to it. From there the flow is agent-driven.
+  // Streaks are per-visit; a passing run resets its cell's streak.
+  const failStreaks = useRef<Map<string, number>>(new Map());
+  const puzzleOpening = useRef(false);
+  const supabaseRef = useRef(createClient());
+
+  const maybeOpenPuzzle = useCallback(
+    async (codeCellId: string, outputCellId: string) => {
+      if (puzzle || puzzleOpening.current) return;
+      puzzleOpening.current = true;
+      try {
+        const supabase = supabaseRef.current;
+        const { data: userData } = await supabase.auth.getUser();
+        const uid = userData.user?.id;
+        if (!uid) return;
+        const { data } = await supabase
+          .from("puzzles")
+          .insert({
+            notebook_id: notebookId,
+            user_id: uid,
+            // stand-in id until the agent layer names real challenges
+            micro_challenge_id: codeCellId,
+            anchor: { cell_id: codeCellId, output_cell_id: outputCellId },
+            framing_text:
+              "Three runs in a row failed here. Time to debug it properly — step by step.",
+          } as never)
+          .select("*")
+          .single();
+        if (data) setPuzzle(data as Puzzle);
+      } finally {
+        puzzleOpening.current = false;
+      }
+    },
+    [puzzle, notebookId, setPuzzle],
+  );
+
+  const trackRunResult = useCallback(
+    (cell: Cell) => {
+      if (cell.kind !== "output" || !cell.attached_to) return;
+      const key = cell.attached_to;
+      if (outputIsFailure(cell.content, cell.exit_code)) {
+        const n = (failStreaks.current.get(key) ?? 0) + 1;
+        failStreaks.current.set(key, n);
+        if (n >= 3) {
+          failStreaks.current.set(key, 0);
+          void maybeOpenPuzzle(key, cell.id);
+        }
+      } else {
+        failStreaks.current.set(key, 0);
+      }
+    },
+    [maybeOpenPuzzle],
+  );
+
   const onCellChange = useCallback(
     (payload: RealtimeChangePayload<Cell>) => {
       setCells((prev) => {
@@ -130,9 +188,10 @@ export function NotebookContent({
       });
       if (payload.eventType === "INSERT") {
         notifyAgentReply();
+        trackRunResult(payload.new);
       }
     },
-    [notifyAgentReply],
+    [notifyAgentReply, trackRunResult],
   );
 
   useRealtimeChannel<Cell>(

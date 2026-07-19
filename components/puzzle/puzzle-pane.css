@@ -3,25 +3,32 @@
  * surface tokens (--bg-surface, --text-*, --accent-*) — no new colors.
  */
 
+/* Shell matches the Workspace stage (.build-stage): floating rounded panel
+ * inset from the viewport edge, flat against the background — no slide-over,
+ * no heavy glow. Same easing as the stage reveal. */
 @keyframes puzzlePaneIn {
-  from { transform: translateX(20px); opacity: 0; }
+  from { transform: translateX(48px); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
 
 .puzzle-pane {
   position: fixed;
-  top: 56px;
-  right: 0;
-  bottom: 0;
-  width: 480px;
-  max-width: 100vw;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: clamp(420px, 40vw, 560px);
+  max-width: calc(100vw - 16px);
   z-index: 40;
-  background: var(--bg-surface, #14171b);
-  border-left: 1px solid var(--border-medium, rgba(255,255,255,0.08));
+  background: var(--bg-app);
+  border: 1px solid var(--border-medium);
+  border-radius: 14px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  animation: puzzlePaneIn 200ms ease-out both;
-  box-shadow: -12px 0 24px rgba(0, 0, 0, 0.18);
+  animation: puzzlePaneIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .puzzle-pane-header {
