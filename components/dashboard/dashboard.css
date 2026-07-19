@@ -1,4 +1,4 @@
-/* Missions dashboard. Tokens from app/globals.css (.theme-notebook). */
+/* Notebooks dashboard. Tokens from app/globals.css (.theme-notebook). */
 
 .dashboard-page {
   min-height: 100vh;
@@ -39,7 +39,7 @@
 
 /* ─── Card ─────────────────────────────────────────────────────────────── */
 
-.mission-card {
+.notebook-card {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -50,28 +50,28 @@
   transition: var(--transition-fast);
 }
 
-.mission-card.is-clickable {
+.notebook-card.is-clickable {
   cursor: pointer;
 }
 
-.mission-card.is-clickable:hover {
+.notebook-card.is-clickable:hover {
   background: var(--bg-elevated);
   border-color: var(--border-medium);
   transform: translateY(-2px);
 }
 
-.mission-card[aria-disabled="true"] {
+.notebook-card[aria-disabled="true"] {
   opacity: 0.85;
 }
 
-.mission-card-top {
+.notebook-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.mission-badge {
+.notebook-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -83,12 +83,12 @@
   border-radius: var(--radius-full);
 }
 
-.mission-card-date {
+.notebook-card-date {
   font-size: 12px;
   color: var(--text-muted);
 }
 
-.mission-card-title {
+.notebook-card-title {
   font-family: var(--font-display);
   font-size: 22px;
   font-weight: 400;
@@ -98,7 +98,7 @@
   margin: 0;
 }
 
-.mission-card-meta {
+.notebook-card-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -107,18 +107,18 @@
   color: var(--text-secondary);
 }
 
-.mission-dot {
+.notebook-dot {
   color: var(--text-disabled);
 }
 
-.mission-card-error {
+.notebook-card-error {
   font-size: 13px;
   color: var(--accent-red);
   margin: 2px 0 0;
   line-height: 1.4;
 }
 
-.mission-card-hint {
+.notebook-card-hint {
   font-size: 12px;
   color: var(--text-muted);
   margin: 0;
@@ -126,16 +126,16 @@
 
 /* ─── Spinner (generating) ─────────────────────────────────────────────── */
 
-.mission-spinner {
+.notebook-spinner {
   width: 10px;
   height: 10px;
   border: 1.5px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: mission-spin 0.7s linear infinite;
+  animation: notebook-spin 0.7s linear infinite;
 }
 
-@keyframes mission-spin {
+@keyframes notebook-spin {
   to {
     transform: rotate(360deg);
   }

@@ -118,21 +118,17 @@ export function NotebookSidebar({ techs, history }: NotebookSidebarProps) {
               dev<b>mind</b>
             </span>
           </Link>
-          <Link
-            className="sbtn"
-            href="/board?view=threads"
-            title="Search conversations"
-          >
+          <Link className="sbtn" href="/board" title="Board">
             <Search />
           </Link>
         </div>
 
         <div className="scrollarea">
-          <Link className="navitem" href="/board" title="New topic">
+          <Link className="navitem" href="/notebooks/new" title="New notebook">
             <span className="ic">
               <Plus />
             </span>
-            <span className="sname">New topic</span>
+            <span className="sname">New notebook</span>
           </Link>
 
           <div className="slabel">Technologies</div>

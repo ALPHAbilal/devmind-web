@@ -22,7 +22,7 @@ export default function LoginPage() {
 
 function LoginSkeleton() {
   return (
-    <main className="theme-notebook auth-page">
+    <main className="theme-wizard auth-page">
       <div className="auth-card" aria-hidden="true">
         <div className="auth-header">
           <span className="auth-greeting">Welcome back</span>
@@ -88,7 +88,7 @@ function LoginForm() {
   }
 
   return (
-    <main className="theme-notebook auth-page">
+    <main className="theme-wizard auth-page">
       <div className="auth-card">
         <div className="auth-header">
           <span className="auth-greeting">Welcome back</span>

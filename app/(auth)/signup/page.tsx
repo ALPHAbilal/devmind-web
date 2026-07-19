@@ -49,7 +49,7 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="theme-notebook auth-page">
+    <main className="theme-wizard auth-page">
       <div className="auth-card">
         <div className="auth-header">
           <span className="auth-greeting">First time here?</span>

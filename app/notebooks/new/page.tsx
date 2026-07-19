@@ -19,7 +19,7 @@ export default async function NotebooksNewPage() {
   }
 
   return (
-    <main className="theme-notebook wizard-page">
+    <main className="theme-wizard wizard-page">
       <Wizard userEmail={user.email ?? "you@example.com"} />
     </main>
   );

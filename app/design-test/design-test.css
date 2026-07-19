@@ -1,7 +1,7 @@
 /* ============================================================================
  * /design-test — visual verifier for DESIGN_TOKENS.md
  *
- * Side-by-side with demo-mission-creation.html and demo-notebook.html,
+ * Side-by-side with demo-notebook-creation.html and demo-notebook.html,
  * every swatch / type sample / radius / brand mark on this page should look
  * identical to what those demos render.
  * ========================================================================== */
@@ -204,7 +204,7 @@
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
 }
 
-.dt-brand-mission {
+.dt-brand-notebook {
   width: 32px;
   height: 32px;
   background: linear-gradient(145deg, #7bc474, #4a8a44);
@@ -214,7 +214,7 @@
   justify-content: center;
   box-shadow: 0 2px 8px rgba(74, 138, 68, 0.3);
 }
-.dt-brand-mission svg {
+.dt-brand-notebook svg {
   width: 16px;
   height: 16px;
 }

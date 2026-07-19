@@ -332,6 +332,15 @@ export function BranchWorkspace({
         .single();
       const hl = (hlData ?? null) as Highlight | null;
       if (!hl) return;
+      // Denormalize the first clipping onto the session — the hub reads
+      // first_quote in one query instead of joining all highlights.
+      if (order === 1) {
+        void supabase
+          .from("branch_sessions")
+          .update({ first_quote: text } as never)
+          .eq("id", sessionId)
+          .then(() => undefined);
+      }
       setBranchMap((prev) => {
         const cur = prev.get(sessionId as string);
         if (!cur) return prev;

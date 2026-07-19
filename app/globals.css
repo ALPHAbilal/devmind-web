@@ -4,7 +4,7 @@
  * Source of truth: devmind_web/DESIGN_TOKENS.md
  *
  * Architecture:
- *   - Tokens are NOT on :root. They live on .theme-mission and .theme-notebook
+ *   - Tokens are NOT on :root. They live on .theme-wizard and .theme-notebook
  *     so both palettes can coexist (e.g. wizard route uses one, notebook the
  *     other). Apply the class on the route-level wrapper (see app/layout.tsx
  *     and individual page wrappers).
@@ -73,12 +73,12 @@ a {
 }
 
 /* ============================================================================
- * THEME: MISSION CREATION  (DESIGN_TOKENS.md §9.1 — verbatim)
+ * THEME: WIZARD (creation ceremony)  (DESIGN_TOKENS.md §9.1 — verbatim)
  *
  * Warm forest dark, ceremonial. Display: Instrument Serif. Body: DM Sans.
  * Used on: wizard, dashboard, auth, landing.
  * ========================================================================== */
-.theme-mission {
+.theme-wizard {
   --bg-base: #1a1d18;
   --bg-subtle: #22261f;
   --bg-elevated: #2a2f26;
@@ -120,15 +120,15 @@ a {
   font-family: var(--font-body);
 }
 
-.theme-mission ::selection {
+.theme-wizard ::selection {
   background: rgba(156, 213, 148, 0.25);
   color: #fff;
 }
 
-.theme-mission ::-webkit-scrollbar {
+.theme-wizard ::-webkit-scrollbar {
   width: 4px;
 }
-.theme-mission ::-webkit-scrollbar-thumb {
+.theme-wizard ::-webkit-scrollbar-thumb {
   background: var(--bg-elevated);
   border-radius: 2px;
 }
