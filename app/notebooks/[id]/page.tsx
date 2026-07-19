@@ -28,9 +28,10 @@ export default async function NotebookPage({
   const { id } = await params;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Local JWT verification — middleware already did the full getUser() check;
+  // RLS enforces per-row access regardless. Saves a Supabase Auth round trip.
+  const { data: claims } = await supabase.auth.getClaims();
+  const user = claims?.claims.sub ? { id: claims.claims.sub } : null;
 
   if (!user) {
     redirect(`/login?next=/notebooks/${id}`);

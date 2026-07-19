@@ -17,9 +17,10 @@ export default async function BoardPage({
 }) {
   const { tech } = await searchParams;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Local JWT verification — middleware already did the full getUser() check;
+  // RLS enforces per-row access regardless. Saves a Supabase Auth round trip.
+  const { data: claims } = await supabase.auth.getClaims();
+  const user = claims?.claims.sub ? { id: claims.claims.sub } : null;
   if (!user) redirect("/login?next=/board");
 
   const [conceptsRes, techsRes, historyRes] = await Promise.all([
