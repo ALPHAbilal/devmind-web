@@ -8,11 +8,16 @@
   position: fixed;
   inset: 0;
   display: flex;
-  flex-direction: column;
   background: var(--bg-app);
   color: var(--text-primary);
   font-family: var(--font-ui);
   overflow: hidden;
+}
+.bd-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .bd-top {

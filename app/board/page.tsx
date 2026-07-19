@@ -17,13 +17,33 @@ export default async function BoardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/board");
 
-  const { data: conceptData } = await supabase
-    .from("concepts")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("updated_at", { ascending: false });
+  const [conceptsRes, techsRes, historyRes] = await Promise.all([
+    supabase
+      .from("concepts")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("technologies")
+      .select("key, label")
+      .order("ord", { ascending: true }),
+    supabase
+      .from("notebooks")
+      .select("id, title")
+      .eq("user_id", user.id)
+      .is("parent_notebook_id", null)
+      .order("updated_at", { ascending: false })
+      .limit(12),
+  ]);
 
-  const concepts = (conceptData ?? []) as Concept[];
+  const concepts = (conceptsRes.data ?? []) as Concept[];
+  const techs = ((techsRes.data ?? []) as Array<{ key: string; label: string }>)
+    .map((t) => ({ key: t.key, label: t.label }));
+  const history = (
+    (historyRes.data ?? []) as Array<{ id: string; title: string | null }>
+  )
+    .filter((n) => n.title && n.title.trim())
+    .map((n) => ({ label: n.title as string, notebookId: n.id }));
 
   // Titles for linked notebooks (cards deep-link into the notebook).
   const notebookIds = [
@@ -41,5 +61,12 @@ export default async function BoardPage() {
     titles = Object.fromEntries(rows.map((r) => [r.id, r.title]));
   }
 
-  return <Board initialConcepts={concepts} notebookTitles={titles} />;
+  return (
+    <Board
+      initialConcepts={concepts}
+      notebookTitles={titles}
+      techs={techs}
+      history={history}
+    />
+  );
 }

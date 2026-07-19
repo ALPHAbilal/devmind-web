@@ -4,6 +4,12 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Tables } from "@/lib/supabase/types";
+import {
+  NotebookSidebar,
+  type NotebookSidebarTech,
+  type NotebookSidebarHistoryItem,
+} from "@/components/sidebar/NotebookSidebar";
+import "@/components/sidebar/sidebar.css";
 import "./board.css";
 
 export type Concept = Tables<"concepts">;
@@ -12,6 +18,8 @@ type ConceptState = Concept["state"];
 interface BoardProps {
   initialConcepts: Concept[];
   notebookTitles: Record<string, string>;
+  techs: NotebookSidebarTech[];
+  history: NotebookSidebarHistoryItem[];
 }
 
 const DEFAULT_INTERVAL_DAYS = 3;
@@ -32,7 +40,12 @@ function dueLabel(dueAt: string): { text: string; overdue: boolean } {
  * Overdue reviews are flagged and float to the top of Review — no fourth
  * column. Cards drag between columns; drops map to state transitions.
  */
-export function Board({ initialConcepts, notebookTitles }: BoardProps) {
+export function Board({
+  initialConcepts,
+  notebookTitles,
+  techs,
+  history,
+}: BoardProps) {
   const supabase = useMemo(() => createClient(), []);
   const [concepts, setConcepts] = useState<Concept[]>(initialConcepts);
   const [adding, setAdding] = useState(false);
@@ -265,16 +278,16 @@ export function Board({ initialConcepts, notebookTitles }: BoardProps) {
 
   return (
     <main className="theme-notebook bd-page" data-theme="light">
-      <div className="bd-top">
-        <Link href="/dashboard" className="bd-back">
-          ← notebooks
-        </Link>
-        <h1>Board</h1>
-      </div>
-      <div className="bd-cols">
-        {column("queued", "To Learn", "○", columns.queued)}
-        {column("learning", "Learning", "◐", columns.learning)}
-        {column("review", "Review", "⟳", columns.review)}
+      <NotebookSidebar techs={techs} history={history} />
+      <div className="bd-main">
+        <div className="bd-top">
+          <h1>Board</h1>
+        </div>
+        <div className="bd-cols">
+          {column("queued", "To Learn", "○", columns.queued)}
+          {column("learning", "Learning", "◐", columns.learning)}
+          {column("review", "Review", "⟳", columns.review)}
+        </div>
       </div>
     </main>
   );

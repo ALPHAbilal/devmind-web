@@ -60,7 +60,7 @@ export default async function BranchesPage({
     NotebookRow,
     "id" | "title" | "parent_notebook_id"
   > | null;
-  if (!notebook) redirect("/dashboard");
+  if (!notebook) redirect("/board");
   // Branch lessons are one level deep — a child has no branches of its own.
   if (notebook.parent_notebook_id) redirect(`/notebooks/${id}`);
 
