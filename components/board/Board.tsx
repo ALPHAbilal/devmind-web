@@ -388,14 +388,28 @@ export function Board({
     openAgent({ purpose: "spec_lesson", seed });
   }, [openAgent]);
 
+  /** The only legal drags — everything else moves through buttons/agent:
+   * learning → completed, completed → review. */
+  const canDrop = useCallback(
+    (to: ConceptState) => {
+      const c = concepts.find((x) => x.id === dragId);
+      if (!c) return false;
+      return (
+        (c.state === "learning" && to === "completed") ||
+        (c.state === "completed" && to === "review")
+      );
+    },
+    [concepts, dragId],
+  );
+
   const onDrop = useCallback(
     (to: ConceptState) => {
       const c = concepts.find((x) => x.id === dragId);
       setDragId(null);
       setDropCol(null);
-      if (c) move(c, to);
+      if (c && canDrop(to)) move(c, to);
     },
-    [concepts, dragId, move],
+    [concepts, dragId, move, canDrop],
   );
 
   const openNotebook = useCallback(
@@ -619,6 +633,7 @@ export function Board({
       style={m.style}
       className={`col${active ? " active" : ""}${dropCol === state ? " drop" : ""}${m.cls}`}
       onDragOver={(e) => {
+        if (!canDrop(state)) return; // illegal target — no highlight, no drop
         e.preventDefault();
         setDropCol(state);
       }}
