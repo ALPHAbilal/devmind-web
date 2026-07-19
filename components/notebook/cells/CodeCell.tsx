@@ -67,9 +67,9 @@ function isCodeAction(language: string | null): string {
 
 export function CodeCell({ cell }: { cell: Cell }) {
   // Canvas renders cells outside <NotebookProvider>; fall back to the cell's
-  // own mission_id and treat the mission as read-only there.
+  // own notebook_id and treat the notebook as read-only there.
   const nb = useNotebookOptional();
-  const missionId = nb?.missionId ?? cell.mission_id;
+  const notebookId = nb?.notebookId ?? cell.notebook_id;
   const sessionActive = nb?.sessionActive ?? false;
   const langKey = cell.language ?? "python";
   const monacoLang = MONACO_LANG[langKey] ?? "plaintext";
@@ -78,7 +78,7 @@ export function CodeCell({ cell }: { cell: Cell }) {
   const action = isCodeAction(cell.language);
 
   // Cells the agent authored (including those it dropped inside a thread) are
-  // examples, not learner workspace — keep them read-only. Paused missions are
+  // examples, not learner workspace — keep them read-only. Paused notebooks are
   // read-only across the board.
   const readOnly = !sessionActive || cell.source === "agent";
 
@@ -105,7 +105,7 @@ export function CodeCell({ cell }: { cell: Cell }) {
       lastSavedRef.current = next;
       const supabase = createClient();
       await supabase
-        .from("notebook_cells")
+        .from("cells")
         .update({ content: next } as never)
         .eq("id", cell.id);
     },
@@ -173,7 +173,7 @@ export function CodeCell({ cell }: { cell: Cell }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mission_id: missionId,
+          notebook_id: notebookId,
           cell_id: cell.id,
           file_path: cell.attached_file ?? "",
           code: content,
@@ -190,7 +190,7 @@ export function CodeCell({ cell }: { cell: Cell }) {
       // after the POST resolves — OutputCell handles its own pending state.
       setRunning(false);
     }
-  }, [cell.attached_file, cell.id, content, missionId, persist, runDisabled]);
+  }, [cell.attached_file, cell.id, content, notebookId, persist, runDisabled]);
 
   const editorOptions = useMemo(
     () => ({

@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Tables } from "@/lib/supabase/types";
 import "./session-control.css";
 
-type SessionStatus = Tables<"learning_sessions">["status"];
+/** Session lifecycle status. The learning_sessions table is parked until the
+ * real backend lands; this mirrors its old enum so the control keeps working
+ * off the notebook-status proxy routes. */
+type SessionStatus = "active" | "paused" | "completed";
 
 interface SessionControlProps {
-  missionId: string;
+  notebookId: string;
   /**
    * Live session status, read from the learning_sessions subscription that
    * already lives in NotebookContent — do NOT open a second subscription here.
@@ -24,7 +26,7 @@ interface SessionControlProps {
  * (or on error). If the Fly backend hasn't shipped /pause yet it 404s and we
  * surface a toast — harmless.
  */
-export function SessionControl({ missionId, status }: SessionControlProps) {
+export function SessionControl({ notebookId, status }: SessionControlProps) {
   const [pending, setPending] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const prevStatusRef = useRef<SessionStatus | null>(status);
@@ -43,7 +45,7 @@ export function SessionControl({ missionId, status }: SessionControlProps) {
     setPending(true);
     setToast(null);
     try {
-      const res = await fetch(`/api/missions/${missionId}/${action}`, {
+      const res = await fetch(`/api/notebooks/${notebookId}/${action}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",
@@ -72,7 +74,7 @@ export function SessionControl({ missionId, status }: SessionControlProps) {
   if (status === "completed") {
     return (
       <span className="session-control session-done" role="status">
-        ✓ Mission complete
+        ✓ Notebook complete
       </span>
     );
   }
@@ -86,15 +88,15 @@ export function SessionControl({ missionId, status }: SessionControlProps) {
         className={`session-btn ${isActive ? "session-pause" : "session-resume"}`}
         onClick={() => void act(isActive ? "pause" : "resume")}
         disabled={pending}
-        title={isActive ? "Pause this mission" : "Resume this mission"}
+        title={isActive ? "Pause this notebook" : "Resume this notebook"}
       >
         {pending
           ? isActive
             ? "Pausing…"
             : "Resuming…"
           : isActive
-            ? "Pause mission"
-            : "Resume mission"}
+            ? "Pause notebook"
+            : "Resume notebook"}
       </button>
       {toast ? (
         <span className="session-toast" role="alert">

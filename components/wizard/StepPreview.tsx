@@ -1,23 +1,23 @@
 "use client";
 
 import "./step-preview.css";
-import type { MissionGoal, MissionLevel, MissionSpec, TimeChipValue } from "./types";
+import type { NotebookGoal, NotebookLevel, NotebookSpec, TimeChipValue } from "./types";
 import { TIME_CHIPS } from "./types";
 
-const GOAL_LABELS: Record<MissionGoal, string> = {
+const GOAL_LABELS: Record<NotebookGoal, string> = {
   build: "Build something real",
   understand: "Understand concepts",
   interview: "Interview prep",
   work: "Solve a work problem",
 };
 
-const LEVEL_ICON: Record<MissionLevel, string> = {
+const LEVEL_ICON: Record<NotebookLevel, string> = {
   beginner: "🌱",
   intermediate: "🌿",
   advanced: "🌳",
 };
 
-const LEVEL_LABEL: Record<MissionLevel, string> = {
+const LEVEL_LABEL: Record<NotebookLevel, string> = {
   beginner: "Beginner",
   intermediate: "Intermediate",
   advanced: "Experienced",
@@ -28,7 +28,7 @@ function timeChipLabel(value: TimeChipValue): string {
 }
 
 interface StepPreviewProps {
-  mission: MissionSpec;
+  notebook: NotebookSpec;
   isLaunching: boolean;
   launchError: string | null;
   onLaunch: () => void;
@@ -36,28 +36,28 @@ interface StepPreviewProps {
 }
 
 export function StepPreview({
-  mission,
+  notebook,
   isLaunching,
   launchError,
   onLaunch,
   onDifferent,
 }: StepPreviewProps) {
-  const objectives = mission.concept_graph.nodes.slice(0, 5);
+  const objectives = notebook.concept_graph.nodes.slice(0, 5);
 
   return (
     <>
-      <div className="mission-header">
-        <div className="mission-badge">🎯 Your Mission</div>
-        <h1 className="mission-title">{mission.title}</h1>
+      <div className="notebook-header">
+        <div className="notebook-badge">🎯 Your Notebook</div>
+        <h1 className="notebook-title">{notebook.title}</h1>
 
         <div className="constraint-summary">
           <span className="constraint-pill">
-            ⏱ {timeChipLabel(mission.time_budget_minutes as TimeChipValue)}
+            ⏱ {timeChipLabel(notebook.time_budget_minutes as TimeChipValue)}
           </span>
           <span className="constraint-pill">
-            🎯 {GOAL_LABELS[mission.goal]}
+            🎯 {GOAL_LABELS[notebook.goal]}
           </span>
-          {mission.constraints.map((c, i) => (
+          {notebook.constraints.map((c, i) => (
             <span key={i} className="constraint-pill">
               ✎ {c.length > 48 ? c.slice(0, 48) + "…" : c}
             </span>
@@ -78,7 +78,7 @@ export function StepPreview({
 
       <div className="checkpoint-label">Checkpoints</div>
       <div className="checkpoint-list">
-        {mission.checkpoints.map((cp) => (
+        {notebook.checkpoints.map((cp) => (
           <div key={cp.id} className="checkpoint-item">
             <div className="checkpoint-circle">{cp.n}</div>
             <span>{cp.name}</span>
@@ -87,18 +87,18 @@ export function StepPreview({
       </div>
 
       {/* Per platform rule: NO minute estimates. Only count + level + topic. */}
-      <div className="mission-meta">
+      <div className="notebook-meta">
         <div className="meta-item">
           <span className="meta-icon">📚</span>
-          <span>{mission.checkpoints.length} checkpoints</span>
+          <span>{notebook.checkpoints.length} checkpoints</span>
         </div>
         <div className="meta-item">
-          <span className="meta-icon">{LEVEL_ICON[mission.level]}</span>
-          <span>{LEVEL_LABEL[mission.level]}</span>
+          <span className="meta-icon">{LEVEL_ICON[notebook.level]}</span>
+          <span>{LEVEL_LABEL[notebook.level]}</span>
         </div>
         <div className="meta-item">
           <span className="meta-icon">🧭</span>
-          <span>{mission.technology}</span>
+          <span>{notebook.technology}</span>
         </div>
       </div>
 
@@ -113,7 +113,7 @@ export function StepPreview({
             ? "✓ Provisioning sandbox…"
             : launchError
               ? "🔁 Retry Launch"
-              : "🚀 Launch Mission"}
+              : "🚀 Launch Notebook"}
         </button>
         <button
           type="button"
@@ -121,7 +121,7 @@ export function StepPreview({
           onClick={onDifferent}
           disabled={isLaunching}
         >
-          🔄 Different Mission
+          🔄 Different Notebook
         </button>
       </div>
 

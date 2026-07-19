@@ -1,16 +1,16 @@
 /**
- * Mock mission generator. Real Opus call lands in Phase 4.2 — this stays
+ * Mock notebook generator. Real Opus call lands in Phase 4.2 — this stays
  * shape-compatible with spec/FILE_SCHEMAS.md §1 so the swap is a no-op.
  *
- * Each goal has 2 variants so "Different Mission" can re-roll within the same
+ * Each goal has 2 variants so "Different Notebook" can re-roll within the same
  * goal. Variants are picked deterministically by `excludeVariants` so re-roll
  * never returns the same one twice in a row.
  */
 
 import type {
-  MissionGoal,
-  MissionLevel,
-  MissionSpec,
+  NotebookGoal,
+  NotebookLevel,
+  NotebookSpec,
   WizardState,
 } from "./types";
 
@@ -39,11 +39,11 @@ interface MockVariant {
   conceptLabels: string[];
   checkpointNames: string[];
   finalDescription: string;
-  shapeKind: MissionSpec["checkpoints"][number]["shape"]["kind"];
-  finalKind: MissionSpec["final_synthesis"]["kind"];
+  shapeKind: NotebookSpec["checkpoints"][number]["shape"]["kind"];
+  finalKind: NotebookSpec["final_synthesis"]["kind"];
 }
 
-const VARIANTS: Record<MissionGoal, MockVariant[]> = {
+const VARIANTS: Record<NotebookGoal, MockVariant[]> = {
   build: [
     {
       variantId: "build_cli_todo",
@@ -231,7 +231,7 @@ const VARIANTS: Record<MissionGoal, MockVariant[]> = {
 };
 
 function pickVariant(
-  goal: MissionGoal,
+  goal: NotebookGoal,
   excludeVariants: string[],
 ): MockVariant {
   const all = VARIANTS[goal];
@@ -239,13 +239,13 @@ function pickVariant(
   return remaining.length > 0 ? remaining[0]! : all[0]!;
 }
 
-/** Build a MissionSpec from a chosen variant + the user's wizard answers. */
-export function buildMockMission(
+/** Build a NotebookSpec from a chosen variant + the user's wizard answers. */
+export function buildMockNotebook(
   state: WizardState,
   excludeVariants: string[] = [],
-): MissionSpec {
-  const goal: MissionGoal = state.goal ?? "build";
-  const level: MissionLevel = state.level ?? "beginner";
+): NotebookSpec {
+  const goal: NotebookGoal = state.goal ?? "build";
+  const level: NotebookLevel = state.level ?? "beginner";
   const variant = pickVariant(goal, excludeVariants);
 
   const constraints: string[] = [];
@@ -256,18 +256,18 @@ export function buildMockMission(
     constraints.push(state.customConstraint.trim());
   }
 
-  const nodes: MissionSpec["concept_graph"]["nodes"] =
+  const nodes: NotebookSpec["concept_graph"]["nodes"] =
     variant.conceptLabels.map((label, i) => ({
       id: `c_${variant.variantId}_${i + 1}`,
       label,
     }));
 
   // Linear edges — node[i] → node[i+1] — simplest valid DAG.
-  const edges: MissionSpec["concept_graph"]["edges"] = nodes
+  const edges: NotebookSpec["concept_graph"]["edges"] = nodes
     .slice(0, -1)
     .map((n, i) => ({ from: n.id, to: nodes[i + 1]!.id }));
 
-  const checkpoints: MissionSpec["checkpoints"] = variant.checkpointNames.map(
+  const checkpoints: NotebookSpec["checkpoints"] = variant.checkpointNames.map(
     (name, i) => ({
       n: i + 1,
       id: `ck_${variant.variantId}_${i + 1}`,
@@ -290,7 +290,7 @@ export function buildMockMission(
   );
 
   return {
-    mission_id: fakeUuid(variant.variantId),
+    notebook_id: fakeUuid(variant.variantId),
     title: variant.title,
     technology: variant.technology,
     path_card: variant.path_card,
@@ -307,9 +307,9 @@ export function buildMockMission(
   };
 }
 
-/** Used by "Different Mission" — returns the variantId we just rendered so
+/** Used by "Different Notebook" — returns the variantId we just rendered so
  *  the caller can pass it to excludeVariants next time. */
-export function variantIdOf(spec: MissionSpec): string {
+export function variantIdOf(spec: NotebookSpec): string {
   // We stash the variantId in the checkpoint id prefix: ck_<variantId>_<n>
   const ckp = spec.checkpoints[0]?.id ?? "";
   const m = ckp.match(/^ck_(.+)_\d+$/);

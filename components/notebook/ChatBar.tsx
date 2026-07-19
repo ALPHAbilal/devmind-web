@@ -21,7 +21,7 @@ const PLACEHOLDERS: Record<ChatMode, string> = {
 const MAX_HEIGHT_PX = 120;
 
 export function ChatBar() {
-  const { missionId, sessionActive, thinking, beginThinking, endThinking } =
+  const { notebookId, sessionActive, thinking, beginThinking, endThinking } =
     useNotebook();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
@@ -55,7 +55,7 @@ export function ChatBar() {
     const trimmed = value.trim();
     if (!trimmed || inFlightRef.current) return;
     if (!sessionActive) {
-      setError("Start the mission first.");
+      setError("Start the notebook first.");
       return;
     }
 
@@ -72,7 +72,7 @@ export function ChatBar() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mission_id: missionId,
+          notebook_id: notebookId,
           content: submitted,
           mode: submittedMode,
           anchor: { kind: "none" },
@@ -82,8 +82,8 @@ export function ChatBar() {
         const body = await res.json().catch(() => ({}));
         const code = body?.error?.code;
         const message: string =
-          code === "mission_not_started" || code === "conflict"
-            ? "Start the mission first."
+          code === "notebook_not_started" || code === "conflict"
+            ? "Start the notebook first."
             : body?.error?.message || `Send failed (${res.status})`;
         endThinking();
         setError(message);
@@ -141,7 +141,7 @@ export function ChatBar() {
           className="chat-input"
           rows={1}
           placeholder={
-            sessionActive ? PLACEHOLDERS[mode] : "Start the mission to chat…"
+            sessionActive ? PLACEHOLDERS[mode] : "Start the notebook to chat…"
           }
           value={value}
           onChange={handleChange}

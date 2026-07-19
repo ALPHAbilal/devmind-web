@@ -11,7 +11,7 @@
  *  • live  — seeds from the SSR `initialData`, subscribes Realtime on
  *            concepts/question_threads/thread_concepts (RLS-scoped to the user),
  *            and the verbs hit the DB: ask → POST /threads, create/build → POST
- *            /missions/generate, mark-known → direct Supabase UPDATE.
+ *            /notebooks/generate, mark-known → direct Supabase UPDATE.
  */
 import {
   useCallback,
@@ -53,16 +53,16 @@ interface BoardShellProps {
   mock?: boolean;
 }
 
-/** POST the generator proxy. Returns the new mission id (202) or null. */
+/** POST the generator proxy. Returns the new notebook id (202) or null. */
 async function postGenerate(body: Record<string, unknown>): Promise<string | null> {
   try {
-    const res = await fetch("/api/missions/generate", {
+    const res = await fetch("/api/notebooks/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const j = (await res.json().catch(() => ({}))) as { mission_id?: string };
-    return res.status === 202 && j.mission_id ? j.mission_id : null;
+    const j = (await res.json().catch(() => ({}))) as { notebook_id?: string };
+    return res.status === 202 && j.notebook_id ? j.notebook_id : null;
   } catch {
     return null;
   }
@@ -194,7 +194,7 @@ export function BoardShell({ initialData, userId, mock = false }: BoardShellProp
             origin_thread_id: threadId,
             is_thread_target: true,
           });
-          if (mid) router.push(`/missions/${mid}`);
+          if (mid) router.push(`/notebooks/${mid}`);
           return;
         }
         const conceptId = cfg.prereqId ?? cfg.conceptId;
@@ -245,7 +245,7 @@ export function BoardShell({ initialData, userId, mock = false }: BoardShellProp
         dispatch({ type: "openSheet", cfg: { mode: "open", title: c.name, conceptId: c.id } });
         return;
       }
-      if (c.missionId) router.push(`/missions/${c.missionId}`);
+      if (c.notebookId) router.push(`/notebooks/${c.notebookId}`);
     },
     [mock, router],
   );
@@ -257,7 +257,7 @@ export function BoardShell({ initialData, userId, mock = false }: BoardShellProp
         return;
       }
       const mid = initialData.historyLinks?.[item];
-      if (mid) router.push(`/missions/${mid}`);
+      if (mid) router.push(`/notebooks/${mid}`);
     },
     [mock, router, initialData.historyLinks],
   );

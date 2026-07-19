@@ -3,10 +3,10 @@
 import { useMemo } from "react";
 import "./step-cards.css";
 import { LogoMark } from "@/components/sidebar/icons";
-import type { MissionLevel } from "./types";
+import type { NotebookLevel } from "./types";
 
 const LEVELS: Array<{
-  key: MissionLevel;
+  key: NotebookLevel;
   emoji: string;
   title: string;
   desc: string;
@@ -43,12 +43,12 @@ const TOPIC_HINTS: Array<[RegExp, string]> = [
 function aiBubbleHtml(topic: string): string {
   const trimmed = topic.trim();
   if (!trimmed) {
-    return "Tell me what you want to learn and I'll shape a mission around it.";
+    return "Tell me what you want to learn and I'll shape a notebook around it.";
   }
   for (const [pat, msg] of TOPIC_HINTS) {
     if (pat.test(trimmed)) return msg;
   }
-  return `<strong>${escapeHtml(trimmed)}</strong> — good pick. Let's shape a mission around it.`;
+  return `<strong>${escapeHtml(trimmed)}</strong> — good pick. Let's shape a notebook around it.`;
 }
 
 function escapeHtml(s: string): string {
@@ -61,8 +61,8 @@ function escapeHtml(s: string): string {
 
 interface StepLevelProps {
   topic: string;
-  selected: MissionLevel | null;
-  onPick: (level: MissionLevel) => void;
+  selected: NotebookLevel | null;
+  onPick: (level: NotebookLevel) => void;
   onEdit: () => void;
 }
 

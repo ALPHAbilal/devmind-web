@@ -12,10 +12,10 @@ import "./app-shell.css";
 /**
  * Notebook shell. Server component; only NotebookSidebar, NotebookProvider,
  * and ChatBar are client-side. The sidebar mirrors the board's (flat list +
- * collapse); its data is fetched by the mission page and passed through here.
+ * collapse); its data is fetched by the notebook page and passed through here.
  */
 interface AppShellProps {
-  missionId: string;
+  notebookId: string;
   initialSessionActive: boolean;
   techs: NotebookSidebarTech[];
   history: NotebookSidebarHistoryItem[];
@@ -23,7 +23,7 @@ interface AppShellProps {
 }
 
 export function AppShell({
-  missionId,
+  notebookId,
   initialSessionActive,
   techs,
   history,
@@ -36,7 +36,7 @@ export function AppShell({
 
         <div className="app-shell-main">
           <NotebookProvider
-            missionId={missionId}
+            notebookId={notebookId}
             initialSessionActive={initialSessionActive}
           >
             <div className="app-shell-content">{children}</div>

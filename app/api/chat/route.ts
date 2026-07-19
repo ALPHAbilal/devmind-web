@@ -13,7 +13,7 @@ type AnchorIn =
   | null;
 
 interface ChatBody {
-  mission_id?: unknown;
+  notebook_id?: unknown;
   content?: unknown;
   mode?: unknown;
   anchor?: unknown;
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const missionId = typeof body.mission_id === "string" ? body.mission_id : "";
+  const notebookId = typeof body.notebook_id === "string" ? body.notebook_id : "";
   const content = typeof body.content === "string" ? body.content.trim() : "";
   const mode = body.mode === "error" ? "error" : "chat";
   const anchor: AnchorIn =
@@ -49,12 +49,12 @@ export async function POST(req: Request) {
       ? (body.anchor as AnchorIn)
       : { kind: "none" };
 
-  if (!missionId || !content) {
+  if (!notebookId || !content) {
     return NextResponse.json(
       {
         error: {
           code: "validation_failed",
-          message: "mission_id and content are required",
+          message: "notebook_id and content are required",
         },
       },
       { status: 400 },
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
 
   try {
     const { status, data } = await postToFly(`/chat`, user.id, {
-      mission_id: missionId,
+      notebook_id: notebookId,
       content,
       mode,
       anchor,

@@ -41,7 +41,7 @@ export default async function BoardPage({
   if (!user) redirect("/login?next=/board");
 
   // One owner-scoped fetch of everything the board paints (RLS double-gates).
-  const [concepts, edges, threads, threadConcepts, technologies, sections, missions] =
+  const [concepts, edges, threads, threadConcepts, technologies, sections, notebooks] =
     await Promise.all([
       supabase.from("concepts").select("*").eq("user_id", user.id),
       supabase.from("concept_edges").select("*").eq("user_id", user.id),
@@ -54,7 +54,7 @@ export default async function BoardPage({
       supabase.from("technologies").select("*").order("ord", { ascending: true }),
       supabase.from("tech_sections").select("*").order("ord", { ascending: true }),
       supabase
-        .from("missions")
+        .from("notebooks")
         .select("id, title")
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false })
@@ -70,7 +70,7 @@ export default async function BoardPage({
     threadConcepts: (threadConcepts.data ?? []) as Tables<"thread_concepts">[],
     technologies: (technologies.data ?? []) as Tables<"technologies">[],
     sections: (sections.data ?? []) as Tables<"tech_sections">[],
-    recentMissions: (missions.data ?? []) as Pick<Tables<"missions">, "id" | "title">[],
+    recentNotebooks: (notebooks.data ?? []) as Pick<Tables<"notebooks">, "id" | "title">[],
   };
 
   const data = resolveBoardData(false, rows, new Date());

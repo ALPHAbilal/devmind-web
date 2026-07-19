@@ -4,7 +4,7 @@
  * NotebookSidebar — the board's flat sidebar, ported to the notebook surface.
  * Same content and behaviour as components/board/Sidebar.tsx + EdgeTab, but
  * self-contained: it holds its own collapse state instead of the board reducer,
- * and its data (technologies + history) is fed as props from the mission page.
+ * and its data (technologies + history) is fed as props from the notebook page.
  * The old icon-rail + slide-over panels are gone.
  */
 import { useEffect, useRef, useState, type PointerEvent } from "react";
@@ -33,7 +33,7 @@ export interface NotebookSidebarTech {
 }
 export interface NotebookSidebarHistoryItem {
   label: string;
-  missionId: string;
+  notebookId: string;
 }
 
 interface NotebookSidebarProps {
@@ -149,9 +149,9 @@ export function NotebookSidebar({ techs, history }: NotebookSidebarProps) {
           <div className="slabel">History</div>
           {history.map((h) => (
             <button
-              key={h.missionId}
+              key={h.notebookId}
               className="litem hist"
-              onClick={() => router.push(`/missions/${h.missionId}`)}
+              onClick={() => router.push(`/notebooks/${h.notebookId}`)}
             >
               {h.label}
             </button>

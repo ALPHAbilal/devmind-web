@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 interface OpenBody {
-  mission_id?: unknown;
+  notebook_id?: unknown;
   micro_challenge_id?: unknown;
   anchor?: unknown;
 }
@@ -33,16 +33,16 @@ export async function POST(req: Request) {
     );
   }
 
-  const missionId =
-    typeof body.mission_id === "string" ? body.mission_id : "";
+  const notebookId =
+    typeof body.notebook_id === "string" ? body.notebook_id : "";
   const microChallengeId =
     typeof body.micro_challenge_id === "string" ? body.micro_challenge_id : "";
-  if (!missionId || !microChallengeId) {
+  if (!notebookId || !microChallengeId) {
     return NextResponse.json(
       {
         error: {
           code: "validation_failed",
-          message: "mission_id and micro_challenge_id are required",
+          message: "notebook_id and micro_challenge_id are required",
         },
       },
       { status: 400 },
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
   try {
     const { status, data } = await postToFly(`/puzzle/open`, user.id, {
-      mission_id: missionId,
+      notebook_id: notebookId,
       micro_challenge_id: microChallengeId,
       anchor: body.anchor ?? null,
     });

@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 interface RunsBody {
-  mission_id?: unknown;
+  notebook_id?: unknown;
   cell_id?: unknown;
   file_path?: unknown;
   code?: unknown;
@@ -34,17 +34,17 @@ export async function POST(req: Request) {
     );
   }
 
-  const missionId = typeof body.mission_id === "string" ? body.mission_id : "";
+  const notebookId = typeof body.notebook_id === "string" ? body.notebook_id : "";
   const cellId = typeof body.cell_id === "string" ? body.cell_id : "";
   const filePath = typeof body.file_path === "string" ? body.file_path : "";
   const code = typeof body.code === "string" ? body.code : "";
 
-  if (!missionId || !cellId || !filePath) {
+  if (!notebookId || !cellId || !filePath) {
     return NextResponse.json(
       {
         error: {
           code: "validation_failed",
-          message: "mission_id, cell_id, and file_path are required",
+          message: "notebook_id, cell_id, and file_path are required",
         },
       },
       { status: 400 },
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 
   try {
     const { status, data } = await postToFly(`/runs`, user.id, {
-      mission_id: missionId,
+      notebook_id: notebookId,
       cell_id: cellId,
       file_path: filePath,
       code,

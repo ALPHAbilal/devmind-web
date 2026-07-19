@@ -3,16 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Supabase emails the user a link like:
- *   ${origin}/api/auth/callback?code=<one-time-code>&next=/missions/new
+ *   ${origin}/api/auth/callback?code=<one-time-code>&next=/notebooks/new
  *
  * We exchange the code for a session (writing cookies), then redirect to
- * `next` (default /missions/new). Used for email confirmation and any
+ * `next` (default /notebooks/new). Used for email confirmation and any
  * future OAuth flows.
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/missions/new";
+  const next = searchParams.get("next") ?? "/notebooks/new";
 
   if (code) {
     const supabase = await createClient();

@@ -2,10 +2,10 @@
 
 import { useState, type KeyboardEvent } from "react";
 import "./step-shape.css";
-import { TIME_CHIPS, type MissionGoal, type TimeChipValue } from "./types";
+import { TIME_CHIPS, type NotebookGoal, type TimeChipValue } from "./types";
 
 const GOALS: Array<{
-  key: MissionGoal;
+  key: NotebookGoal;
   icon: string;
   name: string;
   desc: string;
@@ -54,12 +54,12 @@ function suggestionsFor(topic: string): string[] {
 interface StepShapeProps {
   topic: string;
   time: TimeChipValue;
-  goal: MissionGoal | null;
+  goal: NotebookGoal | null;
   known: string[];
   customConstraint: string;
   onCommit: (next: {
     time: TimeChipValue;
-    goal: MissionGoal | null;
+    goal: NotebookGoal | null;
     known: string[];
     customConstraint: string;
   }) => void;
@@ -76,7 +76,7 @@ export function StepShape({
   onSkip,
 }: StepShapeProps) {
   const [localTime, setLocalTime] = useState<TimeChipValue>(time);
-  const [localGoal, setLocalGoal] = useState<MissionGoal | null>(goal);
+  const [localGoal, setLocalGoal] = useState<NotebookGoal | null>(goal);
   const [tags, setTags] = useState<string[]>(known);
   const [tagDraft, setTagDraft] = useState("");
   const [constraint, setConstraint] = useState(customConstraint);
@@ -122,9 +122,9 @@ export function StepShape({
   return (
     <>
       <div className="constraints-header">
-        <h1 className="constraints-title">Shape your mission</h1>
+        <h1 className="constraints-title">Shape your notebook</h1>
         <p className="constraints-subtitle">
-          Set constraints so the AI builds a mission that fits your reality. Everything here is optional.
+          Set constraints so the AI builds a notebook that fits your reality. Everything here is optional.
         </p>
       </div>
 
@@ -235,7 +235,7 @@ export function StepShape({
           onClick={generate}
           disabled={!canGenerate}
         >
-          ✨ Generate Mission
+          ✨ Generate Notebook
         </button>
       </div>
       <button type="button" className="wizard-skip-link" onClick={onSkip}>

@@ -17,7 +17,7 @@ export default async function LandingPage() {
 
   return (
     <main
-      className="theme-mission"
+      className="theme-notebook"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -66,7 +66,7 @@ export default async function LandingPage() {
           }}
         >
           Pick a topic you want to learn. DevMind builds you a custom coding
-          mission, drops you into a real sandbox, and stays nearby — answering
+          notebook, drops you into a real sandbox, and stays nearby — answering
           questions, giving hints, and running a structured debugger when you
           get stuck.
         </p>
@@ -95,7 +95,7 @@ export default async function LandingPage() {
               transition: "var(--transition-fast)",
             }}
           >
-            Start your first mission
+            Start your first notebook
           </Link>
 
           <Link

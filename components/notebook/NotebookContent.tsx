@@ -29,27 +29,33 @@ import type {
 import type { Tables } from "@/lib/supabase/types";
 import "./notebook-content.css";
 
-type LearningSession = Tables<"learning_sessions">;
+/** Parked shape — the learning_sessions table is dropped until the real
+ * backend lands. Local type keeps the session-driven UI paths compiling;
+ * `session` stays null at runtime for now. */
+type LearningSession = {
+  status: "active" | "paused" | "completed";
+  state_json: Tables<"notebooks">["spec_json"];
+};
 
 interface NotebookContentProps {
-  missionId: string;
+  notebookId: string;
   currentCheckpointId: string | null;
   initialCells: Cell[];
   initialState: LearningSession | null;
-  /** mission.spec_json.concept_graph — null when the spec has none. */
+  /** notebook.spec_json.concept_graph — null when the spec has none. */
   conceptGraph: ConceptGraphSpec | null;
-  /** Trimmed mission.spec_json.checkpoints, for node mastery coloring. */
+  /** Trimmed notebook.spec_json.checkpoints, for node mastery coloring. */
   checkpoints: CheckpointLite[];
-  /** mission.spec_json.title — shown in the warm opening state. */
-  missionTitle?: string | null;
-  /** Set when THIS mission is a child — renders the back-crumb and disables
+  /** notebook.spec_json.title — shown in the warm opening state. */
+  notebookTitle?: string | null;
+  /** Set when THIS notebook is a child — renders the back-crumb and disables
    *  further branching (one depth only). */
-  parentMission?: { id: string; title: string } | null;
+  parentNotebook?: { id: string; title: string } | null;
 }
 
 /**
  * Live notebook renderer. SSR seeds initial cells + session; client subscribes
- * to Realtime on notebook_cells + learning_sessions. New rows merge into local
+ * to Realtime on cells + learning_sessions. New rows merge into local
  * state (INSERT may arrive out of order so we re-sort by `ord`).
  *
  * Beyond rendering, this component:
@@ -62,12 +68,12 @@ interface NotebookContentProps {
  *     bottom — so reading earlier cells isn't disrupted.
  */
 export function NotebookContent({
-  missionId,
+  notebookId,
   currentCheckpointId,
   initialCells,
   initialState,
-  missionTitle,
-  parentMission = null,
+  notebookTitle,
+  parentNotebook = null,
 }: NotebookContentProps) {
   const {
     setSessionActive,
@@ -82,7 +88,7 @@ export function NotebookContent({
   } = useNotebook();
 
   const [cells, setCells] = useState<Cell[]>(initialCells);
-  const [session, setSession] = useState<LearningSession | null>(initialState);
+  const [session] = useState<LearningSession | null>(initialState);
   /** thread_id -> anchor cell_id, for inline thread mounts opened via SeamAsk. */
   const [openThreadsByCell, setOpenThreadsByCell] = useState<
     Record<string, string[]>
@@ -129,29 +135,11 @@ export function NotebookContent({
     [notifyAgentReply],
   );
 
-  const onSessionChange = useCallback(
-    (payload: RealtimeChangePayload<LearningSession>) => {
-      if (payload.eventType === "DELETE") {
-        setSession(null);
-        return;
-      }
-      setSession(payload.new);
-    },
-    [],
-  );
-
   useRealtimeChannel<Cell>(
-    "notebook_cells",
-    { filter: { column: "mission_id", value: missionId } },
+    "cells",
+    { filter: { column: "notebook_id", value: notebookId } },
     onCellChange,
-    [missionId],
-  );
-
-  useRealtimeChannel<LearningSession>(
-    "learning_sessions",
-    { filter: { column: "mission_id", value: missionId } },
-    onSessionChange,
-    [missionId],
+    [notebookId],
   );
 
   const onPuzzleChange = useCallback(
@@ -167,9 +155,9 @@ export function NotebookContent({
 
   useRealtimeChannel<Puzzle>(
     "puzzles",
-    { filter: { column: "mission_id", value: missionId } },
+    { filter: { column: "notebook_id", value: notebookId } },
     onPuzzleChange,
-    [missionId],
+    [notebookId],
   );
 
   // Derive current micro-challenge id from session.state_json so StuckButton
@@ -299,16 +287,16 @@ export function NotebookContent({
       <div
         className="notebook-progress"
         role="status"
-        aria-label="Mission progress"
+        aria-label="Notebook progress"
       >
-        {parentMission ? (
+        {parentNotebook ? (
           <Link
-            href={`/missions/${parentMission.id}`}
+            href={`/notebooks/${parentNotebook.id}`}
             className="branch-crumb"
-            title={`Back to ${parentMission.title}`}
+            title={`Back to ${parentNotebook.title}`}
           >
             <ArrowLeft size={13} strokeWidth={2.2} aria-hidden />
-            <span className="branch-crumb-title">{parentMission.title}</span>
+            <span className="branch-crumb-title">{parentNotebook.title}</span>
           </Link>
         ) : null}
         {session ? (
@@ -320,7 +308,7 @@ export function NotebookContent({
           </span>
         ) : null}
         <SessionControl
-          missionId={missionId}
+          notebookId={notebookId}
           status={session?.status ?? null}
         />
         <button
@@ -332,9 +320,9 @@ export function NotebookContent({
         >
           ⧉ Workspace
         </button>
-        {!parentMission ? (
+        {!parentNotebook ? (
           <Link
-            href={`/missions/${missionId}/branches`}
+            href={`/notebooks/${notebookId}/branches`}
             className="branches-toggle"
             title="Open branches — grow mini notebooks from highlights"
           >
@@ -352,8 +340,8 @@ export function NotebookContent({
                 <span className="notebook-opening-sparkle">✨</span>
               </div>
               <div className="notebook-opening-title">
-                {missionTitle
-                  ? `Writing your lesson on ${missionTitle}…`
+                {notebookTitle
+                  ? `Writing your lesson on ${notebookTitle}…`
                   : "Writing your lesson…"}
               </div>
               <div className="notebook-opening-shimmer" aria-hidden="true" />

@@ -6,7 +6,7 @@ import { useNotebook } from "./NotebookProvider";
 const ACTIVE_STATUSES = new Set(["active"]);
 
 export function StuckButton() {
-  const { missionId, puzzle, currentMicroChallengeId, sessionActive } =
+  const { notebookId, puzzle, currentMicroChallengeId, sessionActive } =
     useNotebook();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export function StuckButton() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mission_id: missionId,
+          notebook_id: notebookId,
           micro_challenge_id: currentMicroChallengeId,
           anchor: null,
         }),
@@ -47,7 +47,7 @@ export function StuckButton() {
   const title = puzzleOpen
     ? "A puzzle is already open"
     : !sessionActive
-      ? "Start the mission first"
+      ? "Start the notebook first"
       : !currentMicroChallengeId
         ? "No active micro-challenge yet"
         : "Open a puzzle for the current step";

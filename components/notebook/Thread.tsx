@@ -42,7 +42,7 @@ export function Thread({
   anchorPreview,
   defaultCollapsed = false,
 }: ThreadProps) {
-  const { missionId, notifyAgentReply } = useNotebook();
+  const { notebookId, notifyAgentReply } = useNotebook();
   const [messages, setMessages] = useState<ThreadMessage[]>([]);
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [value, setValue] = useState("");
@@ -118,7 +118,7 @@ export function Thread({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mission_id: missionId,
+          notebook_id: notebookId,
           content: trimmed,
           mode: "chat",
           anchor: { kind: "in_thread", thread_id: threadId },

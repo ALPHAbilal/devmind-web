@@ -21,9 +21,9 @@ export async function GET(
   }
 
   const { data, error } = await supabase
-    .from("notebook_cells")
+    .from("cells")
     .select("*")
-    .eq("mission_id", id)
+    .eq("notebook_id", id)
     .order("ord", { ascending: true });
 
   if (error) {

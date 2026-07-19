@@ -11,13 +11,13 @@ import "../realtime-test.css";
 
 /**
  * Smoke test for the full cell-rendering pipeline: subscribes to
- * notebook_cells against a hardcoded mission_id and renders incoming rows
+ * cells against a hardcoded notebook_id and renders incoming rows
  * through CellRenderer. Useful for verifying deploys without juggling auth.
  *
- * Open Supabase Studio → notebook_cells → Insert with the matching
- * mission_id and watch the cell appear here within ~1s.
+ * Open Supabase Studio → cells → Insert with the matching
+ * notebook_id and watch the cell appear here within ~1s.
  */
-const TEST_MISSION_ID = "00000000-0000-0000-0000-0000000000aa";
+const TEST_NOTEBOOK_ID = "00000000-0000-0000-0000-0000000000aa";
 
 export default function RealtimeCellsTestPage() {
   const [cells, setCells] = useState<Cell[]>([]);
@@ -40,8 +40,8 @@ export default function RealtimeCellsTestPage() {
   }, []);
 
   useRealtimeChannel<Cell>(
-    "notebook_cells",
-    { filter: { column: "mission_id", value: TEST_MISSION_ID } },
+    "cells",
+    { filter: { column: "notebook_id", value: TEST_NOTEBOOK_ID } },
     onChange,
     [],
   );
@@ -53,7 +53,7 @@ export default function RealtimeCellsTestPage() {
           <span className="rt-eyebrow">Realtime cell-rendering test</span>
           <h1 className="rt-title">Live CellRenderer feed</h1>
           <p className="rt-sub">
-            Filter: <code>mission_id=eq.{TEST_MISSION_ID}</code>
+            Filter: <code>notebook_id=eq.{TEST_NOTEBOOK_ID}</code>
           </p>
         </header>
 
@@ -61,7 +61,7 @@ export default function RealtimeCellsTestPage() {
           {cells.length === 0 ? (
             <p className="notebook-empty">
               Waiting for cells… insert one in Supabase Studio with the
-              mission_id above.
+              notebook_id above.
             </p>
           ) : (
             cells.map((cell) => <CellRenderer key={cell.id} cell={cell} />)

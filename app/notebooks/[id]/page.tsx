@@ -13,15 +13,14 @@ import type { Tables } from "@/lib/supabase/types";
 // returns a 3-generic SupabaseClient while @supabase/supabase-js expects 5,
 // so chained .select()/.maybeSingle() resolve to `never`. We cast the row
 // values back to the generated Tables<> shapes — RLS still gates the read.
-type MissionRow = Tables<"missions">;
-type LearningSessionRow = Tables<"learning_sessions">;
+type NotebookRow = Tables<"notebooks">;
 
 /**
  * Notebook route — SSR seeds the initial cells + session row, then
  * NotebookContent attaches Realtime subscriptions on the client. RLS gates
  * both reads; a non-owner sees an empty notebook rather than a 403.
  */
-export default async function MissionPage({
+export default async function NotebookPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -34,24 +33,19 @@ export default async function MissionPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(`/login?next=/missions/${id}`);
+    redirect(`/login?next=/notebooks/${id}`);
   }
 
-  const [cellsRes, sessionRes, missionRes, techsRes, historyRes] =
+  const [cellsRes, notebookRes, techsRes, historyRes] =
     await Promise.all([
       supabase
-        .from("notebook_cells")
+        .from("cells")
         .select("*")
-        .eq("mission_id", id)
+        .eq("notebook_id", id)
         .order("ord", { ascending: true }),
       supabase
-        .from("learning_sessions")
-        .select("*")
-        .eq("mission_id", id)
-        .maybeSingle(),
-      supabase
-        .from("missions")
-        .select("current_checkpoint_id, spec_json, parent_mission_id")
+        .from("notebooks")
+        .select("current_checkpoint_id, spec_json, parent_notebook_id")
         .eq("id", id)
         .maybeSingle(),
       // Same GLOBAL taxonomy + user history the board sidebar shows.
@@ -60,7 +54,7 @@ export default async function MissionPage({
         .select("key, label")
         .order("ord", { ascending: true }),
       supabase
-        .from("missions")
+        .from("notebooks")
         .select("id, title")
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false })
@@ -77,58 +71,59 @@ export default async function MissionPage({
     title: string | null;
   }>)
     .filter((m) => m.title && m.title.trim())
-    .map((m) => ({ label: m.title as string, missionId: m.id }));
+    .map((m) => ({ label: m.title as string, notebookId: m.id }));
 
   const initialCells = (cellsRes.data ?? []) as Cell[];
-  const initialState = (sessionRes.data ?? null) as LearningSessionRow | null;
-  const missionRow = (missionRes.data ?? null) as Pick<
-    MissionRow,
-    "current_checkpoint_id" | "spec_json" | "parent_mission_id"
+  // learning_sessions is parked until the real backend lands — no session row.
+  const initialState = null;
+  const notebookRow = (notebookRes.data ?? null) as Pick<
+    NotebookRow,
+    "current_checkpoint_id" | "spec_json" | "parent_notebook_id"
   > | null;
-  const currentCheckpointId = missionRow?.current_checkpoint_id ?? null;
+  const currentCheckpointId = notebookRow?.current_checkpoint_id ?? null;
 
   // Child notebook → fetch the parent's title for the back-crumb.
-  let parentMission: { id: string; title: string } | null = null;
-  if (missionRow?.parent_mission_id) {
+  let parentNotebook: { id: string; title: string } | null = null;
+  if (notebookRow?.parent_notebook_id) {
     const { data: parentData } = await supabase
-      .from("missions")
+      .from("notebooks")
       .select("id, title")
-      .eq("id", missionRow.parent_mission_id)
+      .eq("id", notebookRow.parent_notebook_id)
       .maybeSingle();
     const p = (parentData ?? null) as { id: string; title: string } | null;
-    if (p) parentMission = { id: p.id, title: p.title };
+    if (p) parentNotebook = { id: p.id, title: p.title };
   }
 
-  const { conceptGraph, checkpoints } = extractGraph(missionRow?.spec_json);
-  const missionTitle = extractTitle(missionRow?.spec_json);
+  const { conceptGraph, checkpoints } = extractGraph(notebookRow?.spec_json);
+  const notebookTitle = extractTitle(notebookRow?.spec_json);
 
-  const initialSessionActive = initialState?.status === "active";
+  const initialSessionActive = false;
 
   return (
     <AppShell
-      missionId={id}
+      notebookId={id}
       initialSessionActive={initialSessionActive}
       techs={techs}
       history={history}
     >
       <NotebookContent
-        missionId={id}
+        notebookId={id}
         currentCheckpointId={currentCheckpointId}
         initialCells={initialCells}
         initialState={initialState}
         conceptGraph={conceptGraph}
         checkpoints={checkpoints}
-        missionTitle={missionTitle}
-        parentMission={parentMission}
+        notebookTitle={notebookTitle}
+        parentNotebook={parentNotebook}
       />
     </AppShell>
   );
 }
 
-/** Best-effort mission title from spec_json, for the warm "Writing your
+/** Best-effort notebook title from spec_json, for the warm "Writing your
  * lesson on …" opening state. Returns null when the spec lacks one. */
 function extractTitle(
-  specJson: Tables<"missions">["spec_json"] | undefined,
+  specJson: Tables<"notebooks">["spec_json"] | undefined,
 ): string | null {
   if (!specJson || typeof specJson !== "object" || Array.isArray(specJson)) {
     return null;
@@ -138,11 +133,11 @@ function extractTitle(
 }
 
 /**
- * Pull concept_graph + a trimmed checkpoints list out of mission.spec_json.
+ * Pull concept_graph + a trimmed checkpoints list out of notebook.spec_json.
  * spec_json is typed as Json; we defensively narrow rather than trust shape.
- * Returns nulls/empties when the spec lacks a usable graph (older missions).
+ * Returns nulls/empties when the spec lacks a usable graph (older notebooks).
  */
-function extractGraph(specJson: Tables<"missions">["spec_json"] | undefined): {
+function extractGraph(specJson: Tables<"notebooks">["spec_json"] | undefined): {
   conceptGraph: ConceptGraphSpec | null;
   checkpoints: CheckpointLite[];
 } {

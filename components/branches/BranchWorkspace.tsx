@@ -9,7 +9,7 @@
  *
  * Data flow is identical to the old canvas: picks/turns persist as they
  * happen, the exchange runs through the ExchangeAgent seam (ScriptedAgent
- * today, Claude-backed later), and /api/branches grows the child mission.
+ * today, Claude-backed later), and /api/branches grows the child notebook.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -36,8 +36,8 @@ interface BranchState extends Branch {
 }
 
 export interface BranchWorkspaceProps {
-  missionId: string;
-  missionTitle: string;
+  notebookId: string;
+  notebookTitle: string;
   cells: Cell[];
   branches: Branch[];
 }
@@ -56,8 +56,8 @@ function chip(status: BranchStatus): { cls: string; label: string } {
 }
 
 export function BranchWorkspace({
-  missionId,
-  missionTitle,
+  notebookId,
+  notebookTitle,
   cells,
   branches: initialBranches,
 }: BranchWorkspaceProps) {
@@ -255,7 +255,7 @@ export function BranchWorkspace({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            parent_mission_id: missionId,
+            parent_notebook_id: notebookId,
             session_id: sessionId,
             note: b?.session.note ?? "",
             title: b?.agreedTitle ?? undefined,
@@ -264,7 +264,7 @@ export function BranchWorkspace({
         const data = await res.json().catch(() => ({}));
         if (!res.ok)
           throw new Error(data?.error?.message ?? `Failed (${res.status})`);
-        const child = data.child_mission as {
+        const child = data.child_notebook as {
           id: string;
           title: string;
           status: string;
@@ -279,7 +279,7 @@ export function BranchWorkspace({
         setSessionStatus(sessionId, "flagged");
       }
     },
-    [missionId, patchBranch, branchMap, setSessionStatus],
+    [notebookId, patchBranch, branchMap, setSessionStatus],
   );
 
   /* ── picking ───────────────────────────────────────────────────────────── */
@@ -293,7 +293,7 @@ export function BranchWorkspace({
         const { data } = await supabase
           .from("branch_sessions")
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .insert({ parent_mission_id: missionId, status: "collecting" } as any)
+          .insert({ parent_notebook_id: notebookId, status: "collecting" } as any)
           .select("*")
           .single();
         const session = (data ?? null) as BranchSession | null;
@@ -319,9 +319,9 @@ export function BranchWorkspace({
 
       const order = (branchMap.get(sessionId)?.picks.length ?? 0) + 1;
       const { data: hlData } = await supabase
-        .from("mission_highlights")
+        .from("highlights")
         .insert({
-          parent_mission_id: missionId,
+          parent_notebook_id: notebookId,
           cell_id: cellId,
           selected_text: text,
           session_id: sessionId,
@@ -340,13 +340,13 @@ export function BranchWorkspace({
         return next;
       });
     },
-    [view, branchMap, supabase, missionId],
+    [view, branchMap, supabase, notebookId],
   );
 
   const onRemovePick = useCallback(
     (sessionId: string, highlightId: string) => {
       void supabase
-        .from("mission_highlights")
+        .from("highlights")
         .delete()
         .eq("id", highlightId)
         .then(() => undefined);
@@ -409,7 +409,7 @@ export function BranchWorkspace({
             <button
               type="button"
               className="br-back"
-              onClick={() => router.push(`/missions/${missionId}`)}
+              onClick={() => router.push(`/notebooks/${notebookId}`)}
             >
               <ArrowLeft size={13} strokeWidth={2.2} aria-hidden />
               Notebook
@@ -431,7 +431,7 @@ export function BranchWorkspace({
           <div className="br-hub">
             <div className="br-hub-inner">
               <div className="br-hub-top">
-                <h1>{missionTitle}</h1>
+                <h1>{notebookTitle}</h1>
                 <span className="n">
                   {branchesArr.length} branch{branchesArr.length === 1 ? "" : "es"}
                 </span>
@@ -488,7 +488,7 @@ export function BranchWorkspace({
               <ArrowLeft size={13} strokeWidth={2.2} aria-hidden />
               Branches
             </button>
-            <span className="br-mission">{missionTitle}</span>
+            <span className="br-notebook">{notebookTitle}</span>
             <span className={`br-status ${chip(activeStatus).cls}`}>
               {chip(activeStatus).label}
             </span>
@@ -509,7 +509,7 @@ export function BranchWorkspace({
 
           <div className={`br-work${nbOpen ? " nb-open" : ""}`}>
             <NotebookPanel
-              title={missionTitle}
+              title={notebookTitle}
               cells={cells}
               open={nbOpen}
               onOpen={() => setNbOpen(true)}
@@ -680,7 +680,7 @@ export function BranchWorkspace({
                     <button
                       type="button"
                       className="br-open-mini"
-                      onClick={() => router.push(`/missions/${active.child!.id}`)}
+                      onClick={() => router.push(`/notebooks/${active.child!.id}`)}
                     >
                       Open notebook
                     </button>

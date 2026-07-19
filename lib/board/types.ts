@@ -17,7 +17,7 @@ export interface Concept {
   by?: Verifier; // set once `state==='known'`
   ev?: string; // "verified in <b>…</b>"
   nb?: number; // has a notebook
-  missionId?: string; // last_mission_id → "Open notebook →" navigates to /missions/[id]
+  notebookId?: string; // last_notebook_id → "Open notebook →" navigates to /notebooks/[id]
   due?: number; // truthy ⇒ surfaces in the Review column
   review?: string; // "due today · 9-day interval"
   built?: string; // the "↳ built out of …" line

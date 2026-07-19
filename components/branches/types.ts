@@ -2,7 +2,7 @@ import type { Tables } from "@/lib/supabase/types";
 
 export type BranchSession = Tables<"branch_sessions">;
 export type BranchTurn = Tables<"branch_session_turns">;
-export type Highlight = Tables<"mission_highlights">;
+export type Highlight = Tables<"highlights">;
 
 export type BranchStatus =
   | "collecting"

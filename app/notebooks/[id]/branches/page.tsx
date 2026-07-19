@@ -10,7 +10,7 @@ import type {
 } from "@/components/branches/types";
 import type { Tables } from "@/lib/supabase/types";
 
-type MissionRow = Tables<"missions">;
+type NotebookRow = Tables<"notebooks">;
 
 /**
  * Branch workspace route — hub of branches grown from this notebook plus the
@@ -29,49 +29,49 @@ export default async function BranchesPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    redirect(`/login?next=/missions/${id}/branches`);
+    redirect(`/login?next=/notebooks/${id}/branches`);
   }
 
-  const [missionRes, cellsRes, sessionsRes, hlRes] = await Promise.all([
+  const [notebookRes, cellsRes, sessionsRes, hlRes] = await Promise.all([
     supabase
-      .from("missions")
-      .select("id, title, parent_mission_id")
+      .from("notebooks")
+      .select("id, title, parent_notebook_id")
       .eq("id", id)
       .maybeSingle(),
     supabase
-      .from("notebook_cells")
+      .from("cells")
       .select("*")
-      .eq("mission_id", id)
+      .eq("notebook_id", id)
       .order("ord", { ascending: true }),
     supabase
       .from("branch_sessions")
       .select("*")
-      .eq("parent_mission_id", id)
+      .eq("parent_notebook_id", id)
       .neq("status", "abandoned")
       .order("created_at", { ascending: true }),
     supabase
-      .from("mission_highlights")
+      .from("highlights")
       .select("*")
-      .eq("parent_mission_id", id)
+      .eq("parent_notebook_id", id)
       .order("pick_order", { ascending: true }),
   ]);
 
-  const mission = (missionRes.data ?? null) as Pick<
-    MissionRow,
-    "id" | "title" | "parent_mission_id"
+  const notebook = (notebookRes.data ?? null) as Pick<
+    NotebookRow,
+    "id" | "title" | "parent_notebook_id"
   > | null;
-  if (!mission) redirect("/dashboard");
+  if (!notebook) redirect("/dashboard");
   // Branch lessons are one level deep — a child has no branches of its own.
-  if (mission.parent_mission_id) redirect(`/missions/${id}`);
+  if (notebook.parent_notebook_id) redirect(`/notebooks/${id}`);
 
   const cells = (cellsRes.data ?? []) as Cell[];
   const sessions = (sessionsRes.data ?? []) as BranchSession[];
   const highlights = (hlRes.data ?? []) as Highlight[];
 
-  // Turns + child missions for all sessions in two queries.
+  // Turns + child notebooks for all sessions in two queries.
   const sessionIds = sessions.map((s) => s.id);
   const childIds = sessions
-    .map((s) => s.child_mission_id)
+    .map((s) => s.child_notebook_id)
     .filter((c): c is string => !!c);
 
   const [turnsRes, kidsRes] = await Promise.all([
@@ -83,7 +83,7 @@ export default async function BranchesPage({
           .order("seq", { ascending: true })
       : Promise.resolve({ data: [] }),
     childIds.length > 0
-      ? supabase.from("missions").select("id, title, status").in("id", childIds)
+      ? supabase.from("notebooks").select("id, title, status").in("id", childIds)
       : Promise.resolve({ data: [] }),
   ]);
 
@@ -101,15 +101,15 @@ export default async function BranchesPage({
       .filter((h) => h.session_id === session.id)
       .sort((a, b) => (a.pick_order ?? 0) - (b.pick_order ?? 0)),
     turns: turns.filter((t) => t.session_id === session.id),
-    child: session.child_mission_id
-      ? (kidById.get(session.child_mission_id) ?? null)
+    child: session.child_notebook_id
+      ? (kidById.get(session.child_notebook_id) ?? null)
       : null,
   }));
 
   return (
     <BranchWorkspace
-      missionId={id}
-      missionTitle={mission.title}
+      notebookId={id}
+      notebookTitle={notebook.title}
       cells={cells}
       branches={branches}
     />

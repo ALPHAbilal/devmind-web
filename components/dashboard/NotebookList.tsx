@@ -4,18 +4,18 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRealtimeChannel } from "@/lib/realtime";
 import type { Tables } from "@/lib/supabase/types";
-import { MissionCard } from "./MissionCard";
+import { NotebookCard } from "./NotebookCard";
 
-type MissionRow = Tables<"missions">;
-type MissionStatus = MissionRow["status"];
+type NotebookRow = Tables<"notebooks">;
+type NotebookStatus = NotebookRow["status"];
 
-interface MissionListProps {
+interface NotebookListProps {
   userId: string;
-  initialMissions: MissionRow[];
+  initialNotebooks: NotebookRow[];
 }
 
 // Active work on top; finished/dead at the bottom.
-const STATUS_ORDER: Record<MissionStatus, number> = {
+const STATUS_ORDER: Record<NotebookStatus, number> = {
   in_progress: 0,
   draft: 1,
   generating: 2,
@@ -24,7 +24,7 @@ const STATUS_ORDER: Record<MissionStatus, number> = {
   failed: 5,
 };
 
-function sortMissions(rows: MissionRow[]): MissionRow[] {
+function sortNotebooks(rows: NotebookRow[]): NotebookRow[] {
   return [...rows].sort((a, b) => {
     const byStatus = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
     if (byStatus !== 0) return byStatus;
@@ -35,16 +35,16 @@ function sortMissions(rows: MissionRow[]): MissionRow[] {
   });
 }
 
-export function MissionList({ userId, initialMissions }: MissionListProps) {
-  const [missions, setMissions] = useState<MissionRow[]>(() =>
-    sortMissions(initialMissions),
+export function NotebookList({ userId, initialNotebooks }: NotebookListProps) {
+  const [notebooks, setNotebooks] = useState<NotebookRow[]>(() =>
+    sortNotebooks(initialNotebooks),
   );
 
-  useRealtimeChannel<MissionRow>(
-    "missions",
+  useRealtimeChannel<NotebookRow>(
+    "notebooks",
     { filter: { column: "user_id", value: userId } },
     (payload) => {
-      setMissions((prev) => {
+      setNotebooks((prev) => {
         if (payload.eventType === "DELETE") {
           const goneId = payload.old?.id;
           return prev.filter((m) => m.id !== goneId);
@@ -56,21 +56,21 @@ export function MissionList({ userId, initialMissions }: MissionListProps) {
           idx === -1
             ? [...prev, row]
             : prev.map((m) => (m.id === row.id ? row : m));
-        return sortMissions(next);
+        return sortNotebooks(next);
       });
     },
     [userId],
   );
 
-  if (missions.length === 0) {
+  if (notebooks.length === 0) {
     return (
       <div className="dashboard-empty">
-        <p className="dashboard-empty-title">No missions yet</p>
+        <p className="dashboard-empty-title">No notebooks yet</p>
         <p className="dashboard-empty-text">
-          Pick a topic and DevMind will build you a custom coding mission.
+          Pick a topic and DevMind will build you a custom coding notebook.
         </p>
-        <Link href="/missions/new" className="dashboard-primary-btn">
-          Start your first mission
+        <Link href="/notebooks/new" className="dashboard-primary-btn">
+          Start your first notebook
         </Link>
       </div>
     );
@@ -79,13 +79,13 @@ export function MissionList({ userId, initialMissions }: MissionListProps) {
   return (
     <>
       <div className="dashboard-actions">
-        <Link href="/missions/new" className="dashboard-primary-btn">
-          + New mission
+        <Link href="/notebooks/new" className="dashboard-primary-btn">
+          + New notebook
         </Link>
       </div>
       <div className="dashboard-grid">
-        {missions.map((mission) => (
-          <MissionCard key={mission.id} mission={mission} />
+        {notebooks.map((notebook) => (
+          <NotebookCard key={notebook.id} notebook={notebook} />
         ))}
       </div>
     </>

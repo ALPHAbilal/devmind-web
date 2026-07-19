@@ -12,9 +12,9 @@ import "@/components/notebook/cells/cells.css";
  * output should match the demo's `.cell-*` styling.
  * ========================================================================== */
 
-const MOCK_MISSION = "00000000-0000-0000-0000-000000000000";
+const MOCK_NOTEBOOK = "00000000-0000-0000-0000-000000000000";
 const baseMeta = {
-  mission_id: MOCK_MISSION,
+  notebook_id: MOCK_NOTEBOOK,
   source: "agent" as const,
   created_at: "2026-05-28T00:00:00Z",
   updated_at: "2026-05-28T00:00:00Z",

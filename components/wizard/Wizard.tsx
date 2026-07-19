@@ -11,13 +11,13 @@ import { StepLevel } from "./StepLevel";
 import { StepShape } from "./StepShape";
 import { StepPreview } from "./StepPreview";
 import { GenerationProgress } from "./GenerationProgress";
-import { buildMockMission } from "./mock";
+import { buildMockNotebook } from "./mock";
 import {
   INITIAL_STATE,
   type GeneratePayload,
-  type MissionGoal,
-  type MissionLevel,
-  type MissionSpec,
+  type NotebookGoal,
+  type NotebookLevel,
+  type NotebookSpec,
   type TimeChipValue,
   type WizardState,
 } from "./types";
@@ -27,21 +27,21 @@ const MOCK_DELAY_MS = 1500;
 /** No terminal Realtime update within this window → surface a timeout error. */
 const GEN_TIMEOUT_MS = 120_000;
 
-/** Subset of the `missions` row we read off the Realtime payload. */
-type MissionRow = Pick<
-  Database["public"]["Tables"]["missions"]["Row"],
+/** Subset of the `notebooks` row we read off the Realtime payload. */
+type NotebookRow = Pick<
+  Database["public"]["Tables"]["notebooks"]["Row"],
   "id" | "status" | "spec_json"
 >;
 
 /** Shape the backend writes into spec_json on failure. */
-type MissionFailureSpec = {
+type NotebookFailureSpec = {
   error?: { code?: string; message?: string; errors?: string[] };
 };
 
 /**
  * Wizard orchestrator. All state lives here as a single `WizardState`.
  *
- * Step 4 calls `POST /api/missions/generate` (Vercel proxy → Fly HMAC →
+ * Step 4 calls `POST /api/notebooks/generate` (Vercel proxy → Fly HMAC →
  * Opus). The wizard never talks to Fly directly. The mock generator stays
  * in tree behind `?mock=true` for offline dev.
  */
@@ -81,14 +81,14 @@ export function Wizard({ userEmail }: WizardProps) {
   const router = useRouter();
   const [state, setState] = useState<WizardState>(INITIAL_STATE);
   const [generating, setGenerating] = useState(false);
-  const [mission, setMission] = useState<MissionSpec | null>(null);
+  const [notebook, setNotebook] = useState<NotebookSpec | null>(null);
   const [excludeVariants, setExcludeVariants] = useState<string[]>([]);
   const [error, setError] = useState<GenError | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<LaunchError | null>(null);
 
-  // mission_id returned by the 202; we subscribe to its row for the result.
-  const [pendingMissionId, setPendingMissionId] = useState<string | null>(null);
+  // notebook_id returned by the 202; we subscribe to its row for the result.
+  const [pendingNotebookId, setPendingNotebookId] = useState<string | null>(null);
 
   // Latest wizard inputs + attempt, so the Realtime callback can transparently
   // retry once on a validation failure without going stale across renders.
@@ -110,11 +110,11 @@ export function Wizard({ userEmail }: WizardProps) {
 
   useEffect(() => clearGenTimeout, []);
 
-  // Subscribe to the pending mission row. With an empty value the filter is
+  // Subscribe to the pending notebook row. With an empty value the filter is
   // `id=eq.` which matches nothing — harmless until a generation starts.
-  useRealtimeChannel<MissionRow>(
-    "missions",
-    { filter: { column: "id", value: pendingMissionId ?? "" } },
+  useRealtimeChannel<NotebookRow>(
+    "notebooks",
+    { filter: { column: "id", value: pendingNotebookId ?? "" } },
     (payload) => {
       if (payload.eventType !== "UPDATE") return;
       const row = payload.new;
@@ -123,21 +123,21 @@ export function Wizard({ userEmail }: WizardProps) {
       clearGenTimeout();
 
       if (row.status === "draft") {
-        const spec = row.spec_json as unknown as MissionSpec;
-        if (!spec.mission_id) spec.mission_id = row.id;
-        setMission(spec);
+        const spec = row.spec_json as unknown as NotebookSpec;
+        if (!spec.notebook_id) spec.notebook_id = row.id;
+        setNotebook(spec);
         setError(null);
         setGenerating(false);
-        setPendingMissionId(null);
+        setPendingNotebookId(null);
         return;
       }
 
       // status === "failed"
-      const fail = (row.spec_json as MissionFailureSpec | null)?.error;
+      const fail = (row.spec_json as NotebookFailureSpec | null)?.error;
       const ctx = genCtxRef.current;
       if (fail?.code === "validation_failed" && ctx && ctx.attempt === 1) {
         // Transparent single retry on validation failure.
-        setPendingMissionId(null);
+        setPendingNotebookId(null);
         runGeneration(ctx.state, ctx.exclude, 2);
         return;
       }
@@ -146,14 +146,14 @@ export function Wizard({ userEmail }: WizardProps) {
         message:
           fail?.message ??
           (fail?.code === "validation_failed"
-            ? "We couldn't generate a mission. Try a different topic or simpler constraints."
-            : "Something went wrong generating your mission."),
+            ? "We couldn't generate a notebook. Try a different topic or simpler constraints."
+            : "Something went wrong generating your notebook."),
         attempt: ctx?.attempt ?? 1,
       });
       setGenerating(false);
-      setPendingMissionId(null);
+      setPendingNotebookId(null);
     },
-    [pendingMissionId],
+    [pendingNotebookId],
   );
 
   function patch<K extends keyof WizardState>(key: K, value: WizardState[K]) {
@@ -164,13 +164,13 @@ export function Wizard({ userEmail }: WizardProps) {
     setState((s) => ({ ...s, topic, step: 2 }));
   }
 
-  function handleLevelPick(level: MissionLevel) {
+  function handleLevelPick(level: NotebookLevel) {
     setState((s) => ({ ...s, level, step: 3 }));
   }
 
   function handleShapeCommit(next: {
     time: TimeChipValue;
-    goal: MissionGoal | null;
+    goal: NotebookGoal | null;
     known: string[];
     customConstraint: string;
   }) {
@@ -197,12 +197,12 @@ export function Wizard({ userEmail }: WizardProps) {
   ): Promise<{
     status: number;
     body: {
-      mission_id?: string;
+      notebook_id?: string;
       status?: string;
       error?: { code?: string; message?: string };
     };
   }> {
-    const res = await fetch("/api/missions/generate", {
+    const res = await fetch("/api/notebooks/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -214,15 +214,15 @@ export function Wizard({ userEmail }: WizardProps) {
   async function runGeneration(s: WizardState, exclude: string[], attempt = 1) {
     clearGenTimeout();
     setGenerating(true);
-    setMission(null);
+    setNotebook(null);
     setError(null);
-    setPendingMissionId(null);
+    setPendingNotebookId(null);
     setExcludeVariants(exclude);
     genCtxRef.current = { state: s, exclude, attempt };
 
     if (isMockMode()) {
       window.setTimeout(() => {
-        setMission(buildMockMission(s, exclude));
+        setNotebook(buildMockNotebook(s, exclude));
         setGenerating(false);
       }, MOCK_DELAY_MS);
       return;
@@ -232,21 +232,21 @@ export function Wizard({ userEmail }: WizardProps) {
       const payload = buildPayload(s, exclude);
       const { status, body } = await callGenerate(payload);
 
-      // New async contract: 202 + { mission_id, status: "generating" }.
+      // New async contract: 202 + { notebook_id, status: "generating" }.
       // The result arrives later via the Realtime subscription on this row.
-      if (status === 202 && body.mission_id) {
+      if (status === 202 && body.notebook_id) {
         genTimeoutRef.current = window.setTimeout(() => {
           genTimeoutRef.current = null;
           setError({
             kind: "server",
             message:
-              "Mission generation is taking longer than expected. Please try again.",
+              "Notebook generation is taking longer than expected. Please try again.",
             attempt,
           });
           setGenerating(false);
-          setPendingMissionId(null);
+          setPendingNotebookId(null);
         }, GEN_TIMEOUT_MS);
-        setPendingMissionId(body.mission_id);
+        setPendingNotebookId(body.notebook_id);
         return;
       }
 
@@ -261,7 +261,7 @@ export function Wizard({ userEmail }: WizardProps) {
         setError({
           kind: "server",
           message:
-            body.error?.message ?? "Something went wrong generating your mission.",
+            body.error?.message ?? "Something went wrong generating your notebook.",
           attempt,
         });
       }
@@ -281,12 +281,12 @@ export function Wizard({ userEmail }: WizardProps) {
   }
 
   async function handleLaunch() {
-    if (!mission || isLaunching) return;
+    if (!notebook || isLaunching) return;
     setIsLaunching(true);
     setLaunchError(null);
 
     try {
-      const res = await fetch(`/api/missions/${mission.mission_id}/start`, {
+      const res = await fetch(`/api/notebooks/${notebook.notebook_id}/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",
@@ -294,7 +294,7 @@ export function Wizard({ userEmail }: WizardProps) {
       const body = await res.json().catch(() => ({}));
 
       if (res.status === 200) {
-        router.push(`/missions/${mission.mission_id}`);
+        router.push(`/notebooks/${notebook.notebook_id}`);
         return;
       }
 
@@ -332,13 +332,13 @@ export function Wizard({ userEmail }: WizardProps) {
   }
 
   function handleDifferent() {
-    if (!mission) return;
+    if (!notebook) return;
     setLaunchError(null);
-    const checkpointIds = mission.checkpoints.map((cp) => cp.id);
+    const checkpointIds = notebook.checkpoints.map((cp) => cp.id);
     runGeneration(state, [...excludeVariants, ...checkpointIds], 1);
   }
 
-  const showSpinner = generating || (!mission && !error);
+  const showSpinner = generating || (!notebook && !error);
 
   return (
     <div className="wizard-step" key={state.step}>
@@ -378,13 +378,13 @@ export function Wizard({ userEmail }: WizardProps) {
           {showSpinner && (
             <div className="wizard-generating">
               <div className="wizard-gen-spinner" />
-              <div className="wizard-gen-text">Crafting your mission…</div>
+              <div className="wizard-gen-text">Crafting your notebook…</div>
               <GenerationProgress active={generating} topic={state.topic} />
             </div>
           )}
           {!showSpinner && error && (
             <div className="wizard-error" role="alert">
-              <div className="wizard-error-title">Mission generation failed</div>
+              <div className="wizard-error-title">Notebook generation failed</div>
               <div className="wizard-error-msg">{error.message}</div>
               <button
                 type="button"
@@ -395,9 +395,9 @@ export function Wizard({ userEmail }: WizardProps) {
               </button>
             </div>
           )}
-          {!showSpinner && mission && !error && (
+          {!showSpinner && notebook && !error && (
             <StepPreview
-              mission={mission}
+              notebook={notebook}
               isLaunching={isLaunching}
               launchError={launchError?.message ?? null}
               onLaunch={handleLaunch}

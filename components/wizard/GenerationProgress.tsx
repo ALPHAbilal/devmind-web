@@ -7,10 +7,10 @@ const STAGE_MS = 7000;
 
 /**
  * Plain-English generation stages, personalized with the learner's topic.
- * The last item holds until the mission actually arrives (the cycle clamps).
+ * The last item holds until the notebook actually arrives (the cycle clamps).
  *
  * SEAM (SCOPE_DOCS_PIPELINE D1): when generation becomes agentic the backend
- * can emit real step events over the `missions:id=<id>` Realtime channel. Swap
+ * can emit real step events over the `notebooks:id=<id>` Realtime channel. Swap
  * this timed cycle for those events here — callers only see the returned label.
  */
 function buildStages(topic: string): string[] {

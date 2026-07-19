@@ -2,7 +2,7 @@
 
 /**
  * FullView — the full-screen notebook page (the demo's `fullView`). In
- * production this is where the board hands off to the existing /missions/[id]
+ * production this is where the board hands off to the existing /notebooks/[id]
  * surface; here it shows the same shared preview content. Lagging local title so
  * the fade-out can finish before unmounting (mirrors the demo).
  */
@@ -36,7 +36,7 @@ export function FullView() {
               <Back /> Back to board
             </button>
             <span className="fv-t">{title}</span>
-            <span className="fv-tag">production notebook · /missions/[id]</span>
+            <span className="fv-tag">production notebook · /notebooks/[id]</span>
           </div>
           <div className="fv-body">
             <NotebookCells title={title} />

@@ -22,7 +22,7 @@ export default function LoginPage() {
 
 function LoginSkeleton() {
   return (
-    <main className="theme-mission auth-page">
+    <main className="theme-notebook auth-page">
       <div className="auth-card" aria-hidden="true">
         <div className="auth-header">
           <span className="auth-greeting">Welcome back</span>
@@ -59,7 +59,7 @@ function LoginSkeleton() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/missions/new";
+  const next = searchParams.get("next") ?? "/notebooks/new";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -88,7 +88,7 @@ function LoginForm() {
   }
 
   return (
-    <main className="theme-mission auth-page">
+    <main className="theme-notebook auth-page">
       <div className="auth-card">
         <div className="auth-header">
           <span className="auth-greeting">Welcome back</span>

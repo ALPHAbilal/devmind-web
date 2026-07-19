@@ -10,19 +10,19 @@ import "./realtime-test.css";
 
 /**
  * Public test page for the useRealtimeChannel hook. Subscribes to
- * notebook_cells filtered by a hardcoded mission_id, logs every event to a
+ * cells filtered by a hardcoded notebook_id, logs every event to a
  * <ul>, and exposes a button that INSERTs a dummy row (which will RLS-fail
- * because nobody owns this mission — that's expected; the wiring test is
+ * because nobody owns this notebook — that's expected; the wiring test is
  * the subscription, not the write).
  */
 
-// Any valid UUID works — non-existent missions still produce a working
+// Any valid UUID works — non-existent notebooks still produce a working
 // subscription (Realtime publishes by filter, not by FK).
-const TEST_MISSION_ID = "00000000-0000-0000-0000-0000000000aa";
+const TEST_NOTEBOOK_ID = "00000000-0000-0000-0000-0000000000aa";
 
 type NotebookCellRow = {
   id: string;
-  mission_id: string;
+  notebook_id: string;
   kind: string;
   source: string;
   content: string;
@@ -51,15 +51,15 @@ export default function RealtimeTestPage() {
   useEffect(() => {
     append({
       kind: "info",
-      text: `Subscribed to notebook_cells where mission_id=${TEST_MISSION_ID}. Open Supabase Studio → notebook_cells → Insert a row with this mission_id to see an event arrive.`,
+      text: `Subscribed to cells where notebook_id=${TEST_NOTEBOOK_ID}. Open Supabase Studio → cells → Insert a row with this notebook_id to see an event arrive.`,
     });
     // Run once on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useRealtimeChannel<NotebookCellRow>(
-    "notebook_cells",
-    { filter: { column: "mission_id", value: TEST_MISSION_ID } },
+    "cells",
+    { filter: { column: "notebook_id", value: TEST_NOTEBOOK_ID } },
     (payload: RealtimeChangePayload<NotebookCellRow>) => {
       append({
         kind: "event",
@@ -68,13 +68,13 @@ export default function RealtimeTestPage() {
         )}`,
       });
     },
-    [TEST_MISSION_ID],
+    [TEST_NOTEBOOK_ID],
   );
 
   async function insertDummyCell() {
     const supabase = createClient();
     const payload = {
-      mission_id: TEST_MISSION_ID,
+      notebook_id: TEST_NOTEBOOK_ID,
       kind: "markdown",
       source: "learner",
       content: "Dummy cell from /realtime-test",
@@ -87,7 +87,7 @@ export default function RealtimeTestPage() {
     // Resolve properly by bumping @supabase/ssr when it reaches a 5-generic
     // release.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from("notebook_cells") as any).insert(
+    const { error } = await (supabase.from("cells") as any).insert(
       payload,
     );
     if (error) {
@@ -102,10 +102,10 @@ export default function RealtimeTestPage() {
       <div className="rt-card">
         <header className="rt-header">
           <span className="rt-eyebrow">Realtime subscription test</span>
-          <h1 className="rt-title">notebook_cells live feed</h1>
+          <h1 className="rt-title">cells live feed</h1>
           <p className="rt-sub">
             Filter:&nbsp;
-            <code>mission_id=eq.{TEST_MISSION_ID}</code>
+            <code>notebook_id=eq.{TEST_NOTEBOOK_ID}</code>
           </p>
         </header>
 

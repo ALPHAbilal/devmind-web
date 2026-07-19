@@ -14,8 +14,8 @@ import type { Tables } from "@/lib/supabase/types";
 export type Puzzle = Tables<"puzzles">;
 
 interface NotebookContextValue {
-  missionId: string;
-  /** Whether the mission's learning_session exists and is active. */
+  notebookId: string;
+  /** Whether the notebook's learning_session exists and is active. */
   sessionActive: boolean;
   setSessionActive: (active: boolean) => void;
   /** True between submit and the first new cell or thread message arriving. */
@@ -26,7 +26,7 @@ interface NotebookContextValue {
   endThinking: () => void;
   /** NotebookContent calls this on cell/thread-message INSERT to settle the spinner. */
   notifyAgentReply: () => void;
-  /** Latest puzzle row for this mission (any status). NotebookContent owns it. */
+  /** Latest puzzle row for this notebook (any status). NotebookContent owns it. */
   puzzle: Puzzle | null;
   setPuzzle: (p: Puzzle | null) => void;
   /** mc_id of the current in-progress micro-challenge, derived from session.state_json. */
@@ -44,11 +44,11 @@ interface NotebookContextValue {
 const NotebookContext = createContext<NotebookContextValue | null>(null);
 
 export function NotebookProvider({
-  missionId,
+  notebookId,
   initialSessionActive,
   children,
 }: {
-  missionId: string;
+  notebookId: string;
   initialSessionActive: boolean;
   children: ReactNode;
 }) {
@@ -94,7 +94,7 @@ export function NotebookProvider({
 
   const value = useMemo<NotebookContextValue>(
     () => ({
-      missionId,
+      notebookId,
       sessionActive,
       setSessionActive,
       thinking,
@@ -112,7 +112,7 @@ export function NotebookProvider({
       toggleStageExpanded,
     }),
     [
-      missionId,
+      notebookId,
       sessionActive,
       thinking,
       beginThinking,

@@ -3,7 +3,7 @@ import type { Cell } from "./types";
 /**
  * Output cell — renders captured stdout/stderr from Lane L's POST /runs.
  *
- * The notebook_cells row stores raw text in `content`. Lane L formats this
+ * The cells row stores raw text in `content`. Lane L formats this
  * via the pytest test runner, so we parse the textual summary line for the
  * status pill / duration / counts rather than introducing a parallel schema.
  *

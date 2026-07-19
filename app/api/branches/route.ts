@@ -5,11 +5,11 @@ import type { Tables } from "@/lib/supabase/types";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-type MissionRow = Tables<"missions">;
-type HighlightRow = Tables<"mission_highlights">;
+type NotebookRow = Tables<"notebooks">;
+type HighlightRow = Tables<"highlights">;
 
 interface BranchBody {
-  parent_mission_id?: unknown;
+  parent_notebook_id?: unknown;
   note?: unknown;
   highlights?: unknown;
   /** Branch-canvas road: when set, the child links to this session and the
@@ -22,7 +22,7 @@ interface BranchBody {
 /**
  * POST /api/branches — create a child notebook ("branch lesson") from a set of
  * highlights in the parent notebook. One depth only: refuses when the parent
- * is itself a child. The child mission is created as a draft; agent generation
+ * is itself a child. The child notebook is created as a draft; agent generation
  * of its cells is wired later — the highlights + note are stored in spec_json
  * so the generator has full context.
  */
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   }
 
   const parentId =
-    typeof body.parent_mission_id === "string" ? body.parent_mission_id : "";
+    typeof body.parent_notebook_id === "string" ? body.parent_notebook_id : "";
   const note = typeof body.note === "string" ? body.note.trim() : "";
   const highlights = Array.isArray(body.highlights)
     ? (body.highlights as Array<{ cell_id?: unknown; text?: unknown }>)
@@ -69,12 +69,12 @@ export async function POST(req: Request) {
   const explicitTitle =
     typeof body.title === "string" && body.title.trim() ? body.title.trim() : null;
 
-  // Session mode: highlights already live in mission_highlights (written as
+  // Session mode: highlights already live in highlights (written as
   // the user picked them); load them instead of requiring them in the body.
   let sessionHighlights: HighlightRow[] = [];
   if (sessionId) {
     const { data: shData } = await supabase
-      .from("mission_highlights")
+      .from("highlights")
       .select("*")
       .eq("session_id", sessionId)
       .order("pick_order", { ascending: true });
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
       {
         error: {
           code: "validation_failed",
-          message: "parent_mission_id and at least one highlight are required",
+          message: "parent_notebook_id and at least one highlight are required",
         },
       },
       { status: 400 },
@@ -97,20 +97,20 @@ export async function POST(req: Request) {
   }
 
   const { data: parentData } = await supabase
-    .from("missions")
+    .from("notebooks")
     .select("*")
     .eq("id", parentId)
     .eq("user_id", user.id)
     .maybeSingle();
-  const parent = (parentData ?? null) as MissionRow | null;
+  const parent = (parentData ?? null) as NotebookRow | null;
 
   if (!parent) {
     return NextResponse.json(
-      { error: { code: "not_found", message: "Parent mission not found" } },
+      { error: { code: "not_found", message: "Parent notebook not found" } },
       { status: 404 },
     );
   }
-  if (parent.parent_mission_id) {
+  if (parent.parent_notebook_id) {
     return NextResponse.json(
       {
         error: {
@@ -131,10 +131,10 @@ export async function POST(req: Request) {
       : `Deep dive: ${truncate(highlights[0].text, 60)}`);
 
   const { data: childData, error: childErr } = await supabase
-    .from("missions")
+    .from("notebooks")
     .insert({
       user_id: user.id,
-      parent_mission_id: parent.id,
+      parent_notebook_id: parent.id,
       title,
       technology: parent.technology,
       goal: parent.goal,
@@ -145,7 +145,7 @@ export async function POST(req: Request) {
       spec_json: {
         title,
         branch: {
-          parent_mission_id: parent.id,
+          parent_notebook_id: parent.id,
           note: note || null,
           highlights,
         },
@@ -155,7 +155,7 @@ export async function POST(req: Request) {
     .select("*")
     .single();
 
-  const child = (childData ?? null) as MissionRow | null;
+  const child = (childData ?? null) as NotebookRow | null;
   if (childErr || !child) {
     return NextResponse.json(
       {
@@ -172,9 +172,9 @@ export async function POST(req: Request) {
   if (sessionId) {
     // Adopt the session's highlights and close the road.
     const { data: updData, error: updErr } = await supabase
-      .from("mission_highlights")
+      .from("highlights")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ child_mission_id: child.id } as never)
+      .update({ child_notebook_id: child.id } as never)
       .eq("session_id", sessionId)
       .select("*");
     if (updErr) {
@@ -188,7 +188,7 @@ export async function POST(req: Request) {
       .from("branch_sessions")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({
-        child_mission_id: child.id,
+        child_notebook_id: child.id,
         status: "generated",
         note: note || null,
         updated_at: new Date().toISOString(),
@@ -197,12 +197,12 @@ export async function POST(req: Request) {
       .eq("id", sessionId);
   } else {
     const { data: hlData, error: hlErr } = await supabase
-      .from("mission_highlights")
+      .from("highlights")
       .insert(
         highlights.map((h) => ({
           user_id: user.id,
-          parent_mission_id: parent.id,
-          child_mission_id: child.id,
+          parent_notebook_id: parent.id,
+          child_notebook_id: child.id,
           cell_id: h.cell_id,
           selected_text: h.text,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -220,7 +220,7 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({
-    child_mission: child,
+    child_notebook: child,
     highlights: outHighlights,
   });
 }

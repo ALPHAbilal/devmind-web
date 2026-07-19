@@ -3,11 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { Wizard } from "@/components/wizard/Wizard";
 
 /**
- * Mission creation wizard route. Phase 4.1: shell-only — the 4-step flow
- * runs end-to-end against a hardcoded MissionSpec mock. Real Opus call
- * arrives in 4.2 via /api/missions/generate.
+ * Notebook creation wizard route. Phase 4.1: shell-only — the 4-step flow
+ * runs end-to-end against a hardcoded NotebookSpec mock. Real Opus call
+ * arrives in 4.2 via /api/notebooks/generate.
  */
-export default async function MissionsNewPage() {
+export default async function NotebooksNewPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -15,11 +15,11 @@ export default async function MissionsNewPage() {
 
   // Belt-and-suspenders on top of middleware.
   if (!user) {
-    redirect("/login?next=/missions/new");
+    redirect("/login?next=/notebooks/new");
   }
 
   return (
-    <main className="theme-mission wizard-page">
+    <main className="theme-notebook wizard-page">
       <Wizard userEmail={user.email ?? "you@example.com"} />
     </main>
   );

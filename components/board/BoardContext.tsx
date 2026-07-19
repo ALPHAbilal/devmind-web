@@ -32,7 +32,7 @@ export interface BoardContextValue {
   markKnown: (concept: Concept) => void;
   /** A prereq's triage checkbox (gated flow step 2). */
   prereqToggle: (prereq: SessionPrereq) => void;
-  /** "Open notebook →" → mock: preview sheet · supabase: /missions/[id]. */
+  /** "Open notebook →" → mock: preview sheet · supabase: /notebooks/[id]. */
   openNotebook: (concept: Concept) => void;
   /** A History row → mock: preview sheet · supabase: navigate to its notebook. */
   openHistory: (item: string) => void;

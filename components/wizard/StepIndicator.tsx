@@ -1,6 +1,6 @@
 import "./step-indicator.css";
 
-const LABELS = ["Topic", "Level", "Shape", "Mission"] as const;
+const LABELS = ["Topic", "Level", "Shape", "Notebook"] as const;
 
 interface StepIndicatorProps {
   current: 1 | 2 | 3 | 4;

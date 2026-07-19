@@ -31,7 +31,7 @@ type ThreadRow = Tables<"question_threads">;
 type ThreadConceptRow = Tables<"thread_concepts">;
 type TechRow = Tables<"technologies">;
 type SectionRow = Tables<"tech_sections">;
-type MissionRow = Tables<"missions">;
+type NotebookRow = Tables<"notebooks">;
 
 export interface BoardRows {
   concepts: ConceptRow[];
@@ -40,8 +40,8 @@ export interface BoardRows {
   threadConcepts: ThreadConceptRow[];
   technologies: TechRow[];
   sections: SectionRow[];
-  /** Recent missions for the sidebar History section (label + link). */
-  recentMissions: Pick<MissionRow, "id" | "title">[];
+  /** Recent notebooks for the sidebar History section (label + link). */
+  recentNotebooks: Pick<NotebookRow, "id" | "title">[];
 }
 
 const DAY = 86_400_000;
@@ -112,8 +112,8 @@ export function rowToConcept(c: ConceptRow, needs: string[], now: Date): Concept
     state: c.state,
     by: c.verified_by ?? undefined,
     ev: c.evidence ?? undefined,
-    nb: c.last_mission_id ? 1 : undefined,
-    missionId: c.last_mission_id ?? undefined,
+    nb: c.last_notebook_id ? 1 : undefined,
+    notebookId: c.last_notebook_id ?? undefined,
     due: due ? 1 : undefined,
     review: due ? reviewText(c, now) : undefined,
     built: c.built_from ?? undefined,
@@ -226,9 +226,9 @@ export function buildBoardData(rows: BoardRows, now: Date): BoardData {
     ord: tc.ord,
   }));
 
-  // History = recent notebooks; clicking navigates to /missions/[id]
+  // History = recent notebooks; clicking navigates to /notebooks/[id]
   const historyLinks: Record<string, string> = {};
-  for (const m of rows.recentMissions) {
+  for (const m of rows.recentNotebooks) {
     const label = m.title?.trim();
     if (label && !(label in historyLinks)) historyLinks[label] = m.id;
   }

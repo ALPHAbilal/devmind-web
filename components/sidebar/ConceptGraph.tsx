@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import "./concept-graph.css";
 
-/* ─── Shapes (subset of mission.spec_json) ──────────────────────────────── */
+/* ─── Shapes (subset of notebook.spec_json) ──────────────────────────────── */
 
 export interface ConceptNode {
   id: string;

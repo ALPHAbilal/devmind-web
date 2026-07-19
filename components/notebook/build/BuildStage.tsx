@@ -150,7 +150,7 @@ function buildTree(files: StageFile[]): TreeRow[] {
 
 export function BuildStage({ cells }: { cells: Cell[] }) {
   const {
-    missionId,
+    notebookId,
     sessionActive,
     stageExpanded,
     closeStage,
@@ -231,7 +231,7 @@ export function BuildStage({ cells }: { cells: Cell[] }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mission_id: missionId,
+          notebook_id: notebookId,
           cell_id: activeFile.cellId,
           file_path: activeFile.name,
           code: buffer,
@@ -246,7 +246,7 @@ export function BuildStage({ cells }: { cells: Cell[] }) {
     } finally {
       setRunning(false);
     }
-  }, [activeFile, buffer, missionId, running]);
+  }, [activeFile, buffer, notebookId, running]);
 
   const monacoLang = activeFile
     ? MONACO_LANG[activeFile.language] ?? "plaintext"
@@ -386,7 +386,7 @@ export function BuildStage({ cells }: { cells: Cell[] }) {
             </pre>
             {!sessionActive ? (
               <div className="terminal-hint">
-                Start the mission to run code in the sandbox.
+                Start the notebook to run code in the sandbox.
               </div>
             ) : null}
           </div>

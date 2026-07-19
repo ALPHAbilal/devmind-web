@@ -1,11 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { postToFly } from "@/lib/flyClient";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-export async function POST(req: NextRequest) {
+export async function POST(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -17,18 +22,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
+  const { data: notebookRow } = await supabase
+    .from("notebooks")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!notebookRow) {
     return NextResponse.json(
-      { error: { code: "validation_failed", message: "Body must be JSON" } },
-      { status: 400 },
+      { error: { code: "not_found", message: "Notebook not found" } },
+      { status: 404 },
     );
   }
 
   try {
-    const { status, data } = await postToFly("/missions/generate", user.id, body);
+    const { status, data } = await postToFly(`/notebooks/${id}/start`, user.id, {});
     return NextResponse.json(data, { status });
   } catch (err) {
     return NextResponse.json(

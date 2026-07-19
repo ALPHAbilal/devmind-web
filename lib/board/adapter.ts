@@ -43,7 +43,7 @@ export interface BoardData {
   samplePrereqs: SamplePrereq[];
   /** Supabase only — raw thread↔concept join seeding live ThreadNote derivation. */
   threadLinks?: ThreadLink[];
-  /** Supabase only — History label → mission id for "Open notebook" navigation. */
+  /** Supabase only — History label → notebook id for "Open notebook" navigation. */
   historyLinks?: Record<string, string>;
 }
 

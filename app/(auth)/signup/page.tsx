@@ -38,7 +38,7 @@ export default function SignupPage() {
     // If email confirmation is enabled, session is null until the user clicks
     // the link. Otherwise we get a session immediately.
     if (data.session) {
-      router.push("/missions/new");
+      router.push("/notebooks/new");
       router.refresh();
     } else {
       setInfo(
@@ -49,7 +49,7 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="theme-mission auth-page">
+    <main className="theme-notebook auth-page">
       <div className="auth-card">
         <div className="auth-header">
           <span className="auth-greeting">First time here?</span>

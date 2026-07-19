@@ -7,19 +7,15 @@ import { createClient } from "@/lib/supabase/client";
 /**
  * The tables we subscribe to. All are in the `supabase_realtime` publication
  * (see spec/db/001_initial_schema.sql + 005_board_concepts_threads.sql) so no
- * DB-side setup is required at the call site. The board (Phase 2) subscribes to
- * `concepts` (column moves), `question_threads` (status), and `thread_concepts`
- * (prereq cards streaming in during mapping).
+ * DB-side setup is required at the call site. The board subscribes to
+ * `concepts` (column moves).
  */
 export type RealtimeTable =
-  | "notebook_cells"
-  | "learning_sessions"
+  | "cells"
   | "thread_messages"
   | "puzzles"
-  | "missions"
-  | "concepts"
-  | "question_threads"
-  | "thread_concepts";
+  | "notebooks"
+  | "concepts";
 
 export type RealtimeEventType = "INSERT" | "UPDATE" | "DELETE";
 
@@ -30,7 +26,7 @@ export interface RealtimeChangePayload<Row> {
 }
 
 interface UseRealtimeChannelOptions {
-  /** Column-equality filter, e.g. { column: 'mission_id', value: m_42 } */
+  /** Column-equality filter, e.g. { column: 'notebook_id', value: m_42 } */
   filter: { column: string; value: string };
 }
 

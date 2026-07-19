@@ -535,7 +535,7 @@ function AbandonedView() {
       <h3 className="puzzle-section-title">Puzzle closed</h3>
       <p className="puzzle-pane-muted">
         A summary cell has been added to the notebook. You can resume the
-        mission from where you left off.
+        notebook from where you left off.
       </p>
       <div className="puzzle-section-actions">
         <button
@@ -543,7 +543,7 @@ function AbandonedView() {
           className="puzzle-pane-primary"
           onClick={() => setPuzzle(null)}
         >
-          Resume mission
+          Resume notebook
         </button>
       </div>
     </section>

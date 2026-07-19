@@ -13,7 +13,7 @@ interface SeamAskProps {
 }
 
 export function SeamAsk({ cellId, onThreadOpened }: SeamAskProps) {
-  const { missionId, sessionActive } = useNotebook();
+  const { notebookId, sessionActive } = useNotebook();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -42,7 +42,7 @@ export function SeamAsk({ cellId, onThreadOpened }: SeamAskProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mission_id: missionId,
+          notebook_id: notebookId,
           content: trimmed,
           mode: "chat",
           anchor: { kind: "after_cell", cell_id: cellId, new: true },

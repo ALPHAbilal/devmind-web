@@ -1,17 +1,17 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MissionList } from "@/components/dashboard/MissionList";
+import { NotebookList } from "@/components/dashboard/NotebookList";
 import type { Tables } from "@/lib/supabase/types";
 import "@/components/dashboard/dashboard.css";
 
-// Same @supabase/ssr typing mismatch documented in app/missions/[id]/page.tsx:
+// Same @supabase/ssr typing mismatch documented in app/notebooks/[id]/page.tsx:
 // chained .select() resolves to `never`, so we cast rows back to Tables<>.
 // RLS still gates every read to the owner.
-type MissionRow = Tables<"missions">;
+type NotebookRow = Tables<"notebooks">;
 
 /**
- * Missions dashboard — SSR seeds the signed-in user's missions; MissionList
- * (client) attaches a Realtime subscription so status flips and new missions
+ * Notebooks dashboard — SSR seeds the signed-in user's notebooks; NotebookList
+ * (client) attaches a Realtime subscription so status flips and new notebooks
  * appear without a refresh. RLS scopes the SELECT to the owner.
  */
 export default async function DashboardPage() {
@@ -25,20 +25,20 @@ export default async function DashboardPage() {
   }
 
   const { data } = await supabase
-    .from("missions")
+    .from("notebooks")
     .select("*")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
-  const missions = (data ?? []) as MissionRow[];
+  const notebooks = (data ?? []) as NotebookRow[];
 
   return (
     <main className="theme-notebook dashboard-page">
       <header className="dashboard-header">
-        <h1 className="dashboard-title">Your missions</h1>
+        <h1 className="dashboard-title">Your notebooks</h1>
         <p className="dashboard-subtitle">{user.email ?? "Signed in"}</p>
       </header>
-      <MissionList userId={user.id} initialMissions={missions} />
+      <NotebookList userId={user.id} initialNotebooks={notebooks} />
     </main>
   );
 }

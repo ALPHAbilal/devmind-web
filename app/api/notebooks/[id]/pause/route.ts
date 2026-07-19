@@ -5,6 +5,12 @@ import { postToFly } from "@/lib/flyClient";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+/**
+ * Proxy for an explicit pause. The Fly /notebooks/{id}/pause endpoint may not
+ * exist yet (Lane A owns resume/close; explicit pause may be unbuilt) — if so
+ * the backend 404s and the UI surfaces a toast. Wiring it now is harmless.
+ * Mirrors ./start/route.ts.
+ */
 export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -22,21 +28,21 @@ export async function POST(
     );
   }
 
-  const { data: missionRow } = await supabase
-    .from("missions")
+  const { data: notebookRow } = await supabase
+    .from("notebooks")
     .select("id")
     .eq("id", id)
     .maybeSingle();
 
-  if (!missionRow) {
+  if (!notebookRow) {
     return NextResponse.json(
-      { error: { code: "not_found", message: "Mission not found" } },
+      { error: { code: "not_found", message: "Notebook not found" } },
       { status: 404 },
     );
   }
 
   try {
-    const { status, data } = await postToFly(`/missions/${id}/start`, user.id, {});
+    const { status, data } = await postToFly(`/notebooks/${id}/pause`, user.id, {});
     return NextResponse.json(data, { status });
   } catch (err) {
     return NextResponse.json(

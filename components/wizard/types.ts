@@ -2,14 +2,14 @@
  * Wizard state + payload shapes.
  *
  * `GeneratePayload` MUST match spec/ROUTES_AND_CHANNELS.md §2.1 verbatim —
- * Phase 4.2 will POST exactly this shape to /api/missions/generate.
+ * Phase 4.2 will POST exactly this shape to /api/notebooks/generate.
  *
- * `MissionSpec` MUST match spec/FILE_SCHEMAS.md §1 (mission.json) — the mock
+ * `NotebookSpec` MUST match spec/FILE_SCHEMAS.md §1 (notebook.json) — the mock
  * preview in Step 4 conforms so the swap-to-real-data in 4.2 is a no-op.
  */
 
-export type MissionGoal = "build" | "understand" | "interview" | "work";
-export type MissionLevel = "beginner" | "intermediate" | "advanced";
+export type NotebookGoal = "build" | "understand" | "interview" | "work";
+export type NotebookLevel = "beginner" | "intermediate" | "advanced";
 
 /** User-selectable time chips. Values are the minute integers we send. */
 export type TimeChipValue = 15 | 30 | 60 | 120 | 240;
@@ -30,9 +30,9 @@ export const TIME_CHIPS: TimeChip[] = [
 export interface WizardState {
   step: 1 | 2 | 3 | 4;
   topic: string;
-  level: MissionLevel | null;
+  level: NotebookLevel | null;
   time: TimeChipValue;
-  goal: MissionGoal | null;
+  goal: NotebookGoal | null;
   known: string[];
   customConstraint: string;
 }
@@ -50,15 +50,15 @@ export const INITIAL_STATE: WizardState = {
 /** §2.1 request body shape. */
 export interface GeneratePayload {
   topic: string;
-  level: MissionLevel;
+  level: NotebookLevel;
   time_budget_minutes: number;
-  goal: MissionGoal;
+  goal: NotebookGoal;
   known: string[];
   constraints: string[];
   exclude_variants: string[];
 }
 
-/* ── MissionSpec (subset used by the preview; full schema in §1) ───────── */
+/* ── NotebookSpec (subset used by the preview; full schema in §1) ───────── */
 
 export interface ConceptNode {
   id: string;
@@ -113,13 +113,13 @@ export interface FinalSynthesis {
   run_command?: string;
 }
 
-export interface MissionSpec {
-  mission_id: string;
+export interface NotebookSpec {
+  notebook_id: string;
   title: string;
   technology: string;
   path_card: string;
-  goal: MissionGoal;
-  level: MissionLevel;
+  goal: NotebookGoal;
+  level: NotebookLevel;
   time_budget_minutes: number;
   constraints: string[];
   concept_graph: { nodes: ConceptNode[]; edges: ConceptEdge[] };

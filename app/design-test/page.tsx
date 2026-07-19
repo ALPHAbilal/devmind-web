@@ -9,12 +9,12 @@ import "./design-test.css";
  * Visual verifier for devmind_web/DESIGN_TOKENS.md.
  *
  * Acceptance test (per BUILD_PLAN Task 3.2):
- *   Open this page side-by-side with demo-mission-creation.html and
+ *   Open this page side-by-side with demo-notebook-creation.html and
  *   demo-notebook.html. Every swatch / type sample / radius / brand mark
  *   should match what the demos render.
  * ========================================================================== */
 
-type Theme = "mission" | "notebook";
+type Theme = "notebook" | "notebook";
 
 const DevMindMark = () => (
   <svg
@@ -34,7 +34,7 @@ const DevMindMark = () => (
 
 type TokenRow = [name: string, value: string];
 
-const missionBgTokens: TokenRow[] = [
+const notebookBgTokens: TokenRow[] = [
   ["--bg-base", "#1a1d18"],
   ["--bg-subtle", "#22261f"],
   ["--bg-elevated", "#2a2f26"],
@@ -42,21 +42,21 @@ const missionBgTokens: TokenRow[] = [
   ["--bg-interactive-hover", "#3f4639"],
 ];
 
-const missionTextTokens: TokenRow[] = [
+const notebookTextTokens: TokenRow[] = [
   ["--text-primary", "#f4f5f2"],
   ["--text-secondary", "#b8bdb2"],
   ["--text-tertiary", "#7d8477"],
   ["--text-quaternary", "#565b51"],
 ];
 
-const missionAccentTokens: TokenRow[] = [
+const notebookAccentTokens: TokenRow[] = [
   ["--accent-green", "#9cd594"],
   ["--accent-green-soft", "rgba(156,213,148,0.12)"],
   ["--accent-green-border", "rgba(156,213,148,0.25)"],
   ["--accent-green-glow", "rgba(156,213,148,0.08)"],
 ];
 
-const missionBorderTokens: TokenRow[] = [
+const notebookBorderTokens: TokenRow[] = [
   ["--border-subtle", "rgba(255,255,255,0.06)"],
   ["--border-medium", "rgba(255,255,255,0.1)"],
 ];
@@ -95,7 +95,7 @@ const notebookBorderTokens: TokenRow[] = [
   ["--border-strong", "rgba(255,255,255,0.22)"],
 ];
 
-const missionRadii: Array<[string, string]> = [
+const notebookRadii: Array<[string, string]> = [
   ["--radius-sm", "8px"],
   ["--radius-md", "12px"],
   ["--radius-lg", "16px"],
@@ -116,7 +116,7 @@ type TypeRow = {
   style: React.CSSProperties;
 };
 
-const missionTypeRows: TypeRow[] = [
+const notebookTypeRows: TypeRow[] = [
   {
     label: "main-title · display · 32px / 400 / -0.02em",
     sample: "What do you want to learn today?",
@@ -130,7 +130,7 @@ const missionTypeRows: TypeRow[] = [
   },
   {
     label: "constraints-title · display · 28px / 400",
-    sample: "Shape your mission",
+    sample: "Shape your notebook",
     style: {
       fontFamily: "var(--font-display)",
       fontSize: 28,
@@ -138,7 +138,7 @@ const missionTypeRows: TypeRow[] = [
     },
   },
   {
-    label: "mission-title · display · 26px / 400 / 1.3",
+    label: "notebook-title · display · 26px / 400 / 1.3",
     sample: "Build a Task Tracker with React Hooks",
     style: {
       fontFamily: "var(--font-display)",
@@ -168,7 +168,7 @@ const missionTypeRows: TypeRow[] = [
   },
   {
     label: "btn-primary · body · 14px / 600",
-    sample: "✨ Generate Mission",
+    sample: "✨ Generate Notebook",
     style: { fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 600 },
   },
   {
@@ -178,7 +178,7 @@ const missionTypeRows: TypeRow[] = [
   },
   {
     label: "constraints-subtitle · body · 14px / tertiary",
-    sample: "Set constraints so the AI builds a mission that fits your reality.",
+    sample: "Set constraints so the AI builds a notebook that fits your reality.",
     style: {
       fontFamily: "var(--font-body)",
       fontSize: 14,
@@ -408,11 +408,11 @@ function BrandRow() {
     <div>
       <h3 className="dt-section-title">Brand mark (DESIGN_TOKENS §8)</h3>
       <div className="dt-brand-row">
-        <div className="dt-brand-mission">
+        <div className="dt-brand-notebook">
           <DevMindMark />
         </div>
         <div className="dt-brand-meta">
-          <span className="dt-brand-title">Mission rail · 32×32 · radius 10</span>
+          <span className="dt-brand-title">Notebook rail · 32×32 · radius 10</span>
           <span className="dt-brand-desc">
             linear-gradient(145deg, #7bc474, #4a8a44) · shadow 0 2px 8px
             rgba(74,138,68,0.3)
@@ -434,54 +434,54 @@ function BrandRow() {
 }
 
 export default function DesignTestPage() {
-  const [theme, setTheme] = useState<Theme>("mission");
+  const [theme, setTheme] = useState<Theme>("notebook");
 
-  const isMission = theme === "mission";
-  const themeClass = isMission ? "theme-mission" : "theme-notebook";
+  const isNotebook = theme === "notebook";
+  const themeClass = isNotebook ? "theme-notebook" : "theme-notebook";
 
   return (
     <main className={`dt-page ${themeClass}`}>
       <div className="dt-toolbar">
         <span className="dt-toolbar-title">
           DevMind · Design Token Verifier · Theme:{" "}
-          {isMission ? "mission" : "notebook"}
+          {isNotebook ? "notebook" : "notebook"}
         </span>
         <button
           className="dt-toolbar-toggle"
-          onClick={() => setTheme(isMission ? "notebook" : "mission")}
+          onClick={() => setTheme(isNotebook ? "notebook" : "notebook")}
         >
           <span className="dt-toolbar-toggle-dot" />
-          Switch to .theme-{isMission ? "notebook" : "mission"}
+          Switch to .theme-{isNotebook ? "notebook" : "notebook"}
         </button>
       </div>
 
       <div className="dt-content">
-        {isMission ? (
+        {isNotebook ? (
           <>
             <SwatchGroup
-              title="Backgrounds (mission §1.1)"
-              tokens={missionBgTokens}
+              title="Backgrounds (notebook §1.1)"
+              tokens={notebookBgTokens}
             />
             <SwatchGroup
-              title="Text colors (mission §1.1)"
-              tokens={missionTextTokens}
+              title="Text colors (notebook §1.1)"
+              tokens={notebookTextTokens}
               textOnSurface
             />
             <SwatchGroup
-              title="Accent (mission §1.1)"
-              tokens={missionAccentTokens}
+              title="Accent (notebook §1.1)"
+              tokens={notebookAccentTokens}
             />
             <SwatchGroup
-              title="Borders (mission §1.1)"
-              tokens={missionBorderTokens}
+              title="Borders (notebook §1.1)"
+              tokens={notebookBorderTokens}
             />
             <TypeBlock
-              title="Typography (mission §2.2)"
-              rows={missionTypeRows}
+              title="Typography (notebook §2.2)"
+              rows={notebookTypeRows}
             />
             <RadiusGrid
-              title="Radii (mission §3)"
-              radii={missionRadii}
+              title="Radii (notebook §3)"
+              radii={notebookRadii}
             />
             <BrandRow />
           </>

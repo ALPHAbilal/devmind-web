@@ -1,12 +1,12 @@
 /**
  * Cell type definitions for the notebook renderer.
  *
- * Mirrors the `notebook_cells` row shape from spec/db/001_initial_schema.sql
+ * Mirrors the `cells` row shape from spec/db/001_initial_schema.sql
  * and the `cell_kind` / `cell_source` enums declared there. Kept hand-written
  * (instead of `supabase gen types`) so this file stays scoped to cells only.
  *
  * `exit_code` is a UI-only field — there is no column for it on
- * notebook_cells. For `output` cells it is parsed from the notebook.md header
+ * cells. For `output` cells it is parsed from the notebook.md header
  * (see spec/FILE_SCHEMAS.md §4) or derived from sandbox_runs and passed in
  * by the caller. Renderers tolerate it being absent.
  */
@@ -27,7 +27,7 @@ export type CellSource = "agent" | "learner" | "backend";
 
 export interface Cell {
   id: string;
-  mission_id: string;
+  notebook_id: string;
   ord: number;
   kind: CellKind;
   content: string;
