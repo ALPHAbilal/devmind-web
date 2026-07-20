@@ -291,38 +291,93 @@ export function BranchWorkspace({
   );
 
   /* ── picking ───────────────────────────────────────────────────────────── */
+  /** In-flight branch_sessions insert for a brand-new branch — the UI runs on
+   * a temp session id until the row returns, then everything remaps. */
+  const pendingSession = useRef<{
+    tempId: string;
+    promise: Promise<BranchSession | null>;
+  } | null>(null);
+
   const addPick = useCallback(
     async (cellId: string, text: string) => {
       let sessionId = view?.sessionId ?? null;
       if (sessionId && branchMap.get(sessionId)?.status !== "collecting")
         return;
 
+      // Brand-new branch: run on a TEMP session id so the first clip shows
+      // instantly; the insert happens behind and everything remaps to the
+      // real id when it returns.
       if (!sessionId) {
-        const { data } = await supabase
-          .from("branch_sessions")
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .insert({ parent_notebook_id: notebookId, status: "collecting" } as any)
-          .select("*")
-          .single();
-        const session = (data ?? null) as BranchSession | null;
-        if (!session) return;
-        sessionId = session.id;
-        setBranchMap((prev) => {
-          const next = new Map(prev);
-          next.set(session.id, {
-            session,
-            picks: [],
-            turns: [],
-            child: null,
+        if (!pendingSession.current) {
+          const tempId = `temp-s-${Date.now()}`;
+          const now = new Date().toISOString();
+          const tempSession = {
+            id: tempId,
+            parent_notebook_id: notebookId,
             status: "collecting",
-            agentTyping: false,
-            options: null,
-            agreedTitle: null,
+            first_quote: text,
+            note: null,
+            child_notebook_id: null,
+            created_at: now,
+            updated_at: now,
+            user_id: "",
+          } as unknown as BranchSession;
+          setBranchMap((prev) => {
+            const next = new Map(prev);
+            next.set(tempId, {
+              session: tempSession,
+              picks: [],
+              turns: [],
+              child: null,
+              status: "collecting",
+              agentTyping: false,
+              options: null,
+              agreedTitle: null,
+            });
+            return next;
           });
-          return next;
-        });
-        seqRef.current.set(session.id, 0);
-        setView({ sessionId: session.id });
+          seqRef.current.set(tempId, 0);
+          setView({ sessionId: tempId });
+          const promise = supabase
+            .from("branch_sessions")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .insert({ parent_notebook_id: notebookId, status: "collecting" } as any)
+            .select("*")
+            .single()
+            .then(({ data }) => {
+              const session = (data ?? null) as BranchSession | null;
+              if (session) {
+                setBranchMap((prev) => {
+                  const cur = prev.get(tempId);
+                  if (!cur) return prev;
+                  const next = new Map(prev);
+                  next.delete(tempId);
+                  next.set(session.id, {
+                    ...cur,
+                    session: { ...session, first_quote: cur.session.first_quote },
+                    picks: cur.picks.map((p) => ({ ...p, session_id: session.id })),
+                  });
+                  return next;
+                });
+                seqRef.current.set(session.id, seqRef.current.get(tempId) ?? 0);
+                setView((v) =>
+                  v?.sessionId === tempId ? { sessionId: session.id } : v,
+                );
+              } else {
+                // insert failed — drop the temp branch, back to the hub
+                setBranchMap((prev) => {
+                  const next = new Map(prev);
+                  next.delete(tempId);
+                  return next;
+                });
+                setView((v) => (v?.sessionId === tempId ? null : v));
+              }
+              pendingSession.current = null;
+              return session;
+            });
+          pendingSession.current = { tempId, promise };
+        }
+        sessionId = pendingSession.current.tempId;
       }
 
       const order = (branchMap.get(sessionId)?.picks.length ?? 0) + 1;
@@ -349,13 +404,22 @@ export function BranchWorkspace({
         });
         return next;
       });
+      // The DB writes below need the REAL session id — wait for the
+      // background insert only here, after the clip is already on screen.
+      let realSessionId = sessionId;
+      const pending = pendingSession.current;
+      if (pending && sessionId === pending.tempId) {
+        const session = await pending.promise;
+        if (!session) return; // temp branch already rolled back
+        realSessionId = session.id;
+      }
       // Denormalize the first clipping onto the session — the hub reads
       // first_quote in one query instead of joining all highlights.
       if (order === 1) {
         void supabase
           .from("branch_sessions")
           .update({ first_quote: text } as never)
-          .eq("id", sessionId)
+          .eq("id", realSessionId)
           .then(() => undefined);
       }
       const { data: hlData } = await supabase
@@ -364,7 +428,7 @@ export function BranchWorkspace({
           parent_notebook_id: notebookId,
           cell_id: cellId,
           selected_text: text,
-          session_id: sessionId,
+          session_id: realSessionId,
           pick_order: order,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any)
@@ -372,10 +436,10 @@ export function BranchWorkspace({
         .single();
       const hl = (hlData ?? null) as Highlight | null;
       setBranchMap((prev) => {
-        const cur = prev.get(sessionId as string);
+        const cur = prev.get(realSessionId);
         if (!cur) return prev;
         const next = new Map(prev);
-        next.set(sessionId as string, {
+        next.set(realSessionId, {
           ...cur,
           picks: hl
             ? cur.picks.map((p) => (p.id === tempId ? hl : p))
