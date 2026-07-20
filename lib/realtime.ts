@@ -13,7 +13,6 @@ import { createClient } from "@/lib/supabase/client";
 export type RealtimeTable =
   | "cells"
   | "thread_messages"
-  | "puzzles"
   | "notebooks"
   | "concepts";
 

@@ -70,16 +70,6 @@ export function OutputCell({
 
 type OutputStatus = "passed" | "failed" | "errored" | "empty";
 
-/** True when an output cell's content reads as a failed/errored run.
- * Same parsing the pill uses — shared with the puzzle-mode trigger. */
-export function outputIsFailure(
-  content: string,
-  exit?: number | null,
-): boolean {
-  const status = computeStatus(exit ?? 0, parsePytestSummary(stripAnsi(content)));
-  return status === "failed" || status === "errored";
-}
-
 interface PytestSummary {
   counts: string | null;
   duration: string | null;

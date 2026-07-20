@@ -9,10 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Tables } from "@/lib/supabase/types";
-
-export type Puzzle = Tables<"puzzles">;
-
 interface NotebookContextValue {
   notebookId: string;
   /** Whether the notebook's learning_session exists and is active. */
@@ -26,14 +22,8 @@ interface NotebookContextValue {
   endThinking: () => void;
   /** NotebookContent calls this on cell/thread-message INSERT to settle the spinner. */
   notifyAgentReply: () => void;
-  /** Latest puzzle row for this notebook (any status). NotebookContent owns it. */
-  puzzle: Puzzle | null;
-  setPuzzle: (p: Puzzle | null) => void;
-  /** mc_id of the current in-progress micro-challenge, derived from session.state_json. */
-  currentMicroChallengeId: string | null;
-  setCurrentMicroChallengeId: (id: string | null) => void;
-  /** Build stage (the right-side workspace). Open/expand mirror the puzzle
-   *  pattern — view state lives here, the surface reads it. */
+  /** Build stage (the right-side workspace) — view state lives here, the
+   *  surface reads it. */
   stageOpen: boolean;
   stageExpanded: boolean;
   openStage: () => void;
@@ -54,10 +44,6 @@ export function NotebookProvider({
 }) {
   const [sessionActive, setSessionActive] = useState(initialSessionActive);
   const [thinking, setThinking] = useState(false);
-  const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
-  const [currentMicroChallengeId, setCurrentMicroChallengeId] = useState<
-    string | null
-  >(null);
   const [stageOpen, setStageOpen] = useState(false);
   const [stageExpanded, setStageExpanded] = useState(false);
 
@@ -101,10 +87,6 @@ export function NotebookProvider({
       beginThinking,
       endThinking,
       notifyAgentReply,
-      puzzle,
-      setPuzzle,
-      currentMicroChallengeId,
-      setCurrentMicroChallengeId,
       stageOpen,
       stageExpanded,
       openStage,
@@ -118,8 +100,6 @@ export function NotebookProvider({
       beginThinking,
       endThinking,
       notifyAgentReply,
-      puzzle,
-      currentMicroChallengeId,
       stageOpen,
       stageExpanded,
       openStage,

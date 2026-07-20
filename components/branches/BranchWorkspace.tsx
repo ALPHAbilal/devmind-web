@@ -338,8 +338,9 @@ export function BranchWorkspace({
           });
           seqRef.current.set(tempId, 0);
           setView({ sessionId: tempId });
-          const promise = supabase
-            .from("branch_sessions")
+          const promise = Promise.resolve(
+            supabase
+              .from("branch_sessions")
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .insert({ parent_notebook_id: notebookId, status: "collecting" } as any)
             .select("*")
@@ -374,10 +375,11 @@ export function BranchWorkspace({
               }
               pendingSession.current = null;
               return session;
-            });
+            }),
+          );
           pendingSession.current = { tempId, promise };
         }
-        sessionId = pendingSession.current.tempId;
+        sessionId = pendingSession.current!.tempId; // set just above
       }
 
       const order = (branchMap.get(sessionId)?.picks.length ?? 0) + 1;

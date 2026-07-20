@@ -2,7 +2,7 @@
 
 /**
  * BuildStage — the right-side workspace ("the Stage" in demo-notebook.html).
- * Same shape as PuzzlePane: a client <aside> driven by NotebookProvider state,
+ * A client <aside> driven by NotebookProvider state,
  * overlaid on the notebook. Code tab only for now — file drawer + Monaco editor
  * + terminal, all wired to the real run path (POST /api/runs → an `output`
  * notebook_cell arrives via Realtime, which we surface in the terminal).

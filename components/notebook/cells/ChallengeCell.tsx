@@ -12,7 +12,7 @@ import type { Cell } from "./types";
  *   any other lines   → descriptive prose paragraphs
  *
  * Checkboxes are presentational here — pass/fail state is owned by the
- * backend (puzzle / micro-challenge verification), not the cell content.
+ * backend (challenge verification), not the cell content.
  */
 export function ChallengeCell({ cell }: { cell: Cell }) {
   const nb = useNotebookOptional();

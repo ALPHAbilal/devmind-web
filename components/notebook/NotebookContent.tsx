@@ -14,12 +14,9 @@ import {
 } from "@/lib/realtime";
 import { CellRenderer, type CellMeta } from "./cells";
 import type { Cell } from "./cells";
-import { outputIsFailure } from "./cells/OutputCell";
-import { createClient } from "@/lib/supabase/client";
 import { SeamAsk } from "./SeamAsk";
 import { Thread } from "./Thread";
-import { useNotebook, type Puzzle } from "./NotebookProvider";
-import { PuzzlePane } from "@/components/puzzle/PuzzlePane";
+import { useNotebook } from "./NotebookProvider";
 import { BuildStage } from "./build/BuildStage";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -53,8 +50,6 @@ interface NotebookContentProps {
   /** Set when THIS notebook is a child — renders the back-crumb and disables
    *  further branching (one depth only). */
   parentNotebook?: { id: string; title: string } | null;
-  /** Active puzzle at SSR time — reopens the pane after a reload. */
-  initialPuzzle?: Puzzle | null;
 }
 
 /**
@@ -78,14 +73,10 @@ export function NotebookContent({
   initialState,
   notebookTitle,
   parentNotebook = null,
-  initialPuzzle = null,
 }: NotebookContentProps) {
   const {
     setSessionActive,
     notifyAgentReply,
-    puzzle,
-    setPuzzle,
-    setCurrentMicroChallengeId,
     stageOpen,
     stageExpanded,
     openStage,
@@ -113,68 +104,6 @@ export function NotebookContent({
     setSessionActive(Boolean(session && session.status === "active"));
   }, [session, setSessionActive]);
 
-  // Seed the SSR-loaded active puzzle once; Realtime takes over from there.
-  useEffect(() => {
-    if (initialPuzzle) setPuzzle(initialPuzzle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── Puzzle mode trigger ──────────────────────────────────────────────────
-  // Puzzle mode activates itself: three failed runs of the same code cell in
-  // a row open a puzzle anchored to it. From there the flow is agent-driven.
-  // Streaks are per-visit; a passing run resets its cell's streak.
-  const failStreaks = useRef<Map<string, number>>(new Map());
-  const puzzleOpening = useRef(false);
-  const supabaseRef = useRef(createClient());
-
-  const maybeOpenPuzzle = useCallback(
-    async (codeCellId: string, outputCellId: string) => {
-      if (puzzle || puzzleOpening.current) return;
-      puzzleOpening.current = true;
-      try {
-        const supabase = supabaseRef.current;
-        const { data: userData } = await supabase.auth.getUser();
-        const uid = userData.user?.id;
-        if (!uid) return;
-        const { data } = await supabase
-          .from("puzzles")
-          .insert({
-            notebook_id: notebookId,
-            user_id: uid,
-            // stand-in id until the agent layer names real challenges
-            micro_challenge_id: codeCellId,
-            anchor: { cell_id: codeCellId, output_cell_id: outputCellId },
-            framing_text:
-              "Three runs in a row failed here. Time to debug it properly — step by step.",
-          } as never)
-          .select("*")
-          .single();
-        if (data) setPuzzle(data as Puzzle);
-      } finally {
-        puzzleOpening.current = false;
-      }
-    },
-    [puzzle, notebookId, setPuzzle],
-  );
-
-  const trackRunResult = useCallback(
-    (cell: Cell) => {
-      if (cell.kind !== "output" || !cell.attached_to) return;
-      const key = cell.attached_to;
-      if (outputIsFailure(cell.content, cell.exit_code)) {
-        const n = (failStreaks.current.get(key) ?? 0) + 1;
-        failStreaks.current.set(key, n);
-        if (n >= 3) {
-          failStreaks.current.set(key, 0);
-          void maybeOpenPuzzle(key, cell.id);
-        }
-      } else {
-        failStreaks.current.set(key, 0);
-      }
-    },
-    [maybeOpenPuzzle],
-  );
-
   const onCellChange = useCallback(
     (payload: RealtimeChangePayload<Cell>) => {
       setCells((prev) => {
@@ -197,10 +126,9 @@ export function NotebookContent({
       });
       if (payload.eventType === "INSERT") {
         notifyAgentReply();
-        trackRunResult(payload.new);
       }
     },
-    [notifyAgentReply, trackRunResult],
+    [notifyAgentReply],
   );
 
   useRealtimeChannel<Cell>(
@@ -209,53 +137,6 @@ export function NotebookContent({
     onCellChange,
     [notebookId],
   );
-
-  const onPuzzleChange = useCallback(
-    (payload: RealtimeChangePayload<Puzzle>) => {
-      if (payload.eventType === "DELETE") {
-        setPuzzle(null);
-        return;
-      }
-      setPuzzle(payload.new);
-    },
-    [setPuzzle],
-  );
-
-  useRealtimeChannel<Puzzle>(
-    "puzzles",
-    { filter: { column: "notebook_id", value: notebookId } },
-    onPuzzleChange,
-    [notebookId],
-  );
-
-  // Derive current micro-challenge id from session.state_json so StuckButton
-  // can pass it to /api/puzzle/open without an extra round-trip. Picks the
-  // first non-passed micro within the active checkpoint.
-  useEffect(() => {
-    const state = session?.state_json as
-      | {
-          current_checkpoint_id?: string | null;
-          checkpoints?: Record<
-            string,
-            {
-              micro_challenges?: Record<string, { status?: string }>;
-            }
-          >;
-        }
-      | null
-      | undefined;
-    const ckId = state?.current_checkpoint_id ?? null;
-    if (!ckId) {
-      setCurrentMicroChallengeId(null);
-      return;
-    }
-    const micros = state?.checkpoints?.[ckId]?.micro_challenges ?? {};
-    const next =
-      Object.entries(micros).find(([, mc]) => mc?.status !== "passed")?.[0] ??
-      Object.keys(micros)[0] ??
-      null;
-    setCurrentMicroChallengeId(next);
-  }, [session?.state_json, setCurrentMicroChallengeId]);
 
   const orderedCells = useMemo(
     () => [...cells].sort((a, b) => a.ord - b.ord),
@@ -453,7 +334,6 @@ export function NotebookContent({
           </div>
         ) : null}
       </div>
-      {puzzle ? <PuzzlePane puzzle={puzzle} /> : null}
       </div>
       {stageOpen ? <BuildStage cells={orderedCells} /> : null}
     </div>

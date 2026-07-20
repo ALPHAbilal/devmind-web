@@ -458,80 +458,6 @@ export type Database = {
           },
         ]
       }
-      puzzles: {
-        Row: {
-          anchor: Json
-          fix_attempts: Json
-          framing_text: string | null
-          generalization_passed: boolean
-          generalization_unlocked: boolean
-          id: string
-          log_md: string
-          micro_challenge_id: string
-          notebook_id: string
-          opened_at: string
-          probe_code: string | null
-          probe_result: Json | null
-          resolved_at: string | null
-          solution_revealed: boolean
-          status: Database["public"]["Enums"]["puzzle_status"]
-          step: Database["public"]["Enums"]["puzzle_step"]
-          updated_at: string
-          user_hypothesis: string | null
-          user_id: string
-        }
-        Insert: {
-          anchor: Json
-          fix_attempts?: Json
-          framing_text?: string | null
-          generalization_passed?: boolean
-          generalization_unlocked?: boolean
-          id?: string
-          log_md?: string
-          micro_challenge_id: string
-          notebook_id: string
-          opened_at?: string
-          probe_code?: string | null
-          probe_result?: Json | null
-          resolved_at?: string | null
-          solution_revealed?: boolean
-          status?: Database["public"]["Enums"]["puzzle_status"]
-          step?: Database["public"]["Enums"]["puzzle_step"]
-          updated_at?: string
-          user_hypothesis?: string | null
-          user_id: string
-        }
-        Update: {
-          anchor?: Json
-          fix_attempts?: Json
-          framing_text?: string | null
-          generalization_passed?: boolean
-          generalization_unlocked?: boolean
-          id?: string
-          log_md?: string
-          micro_challenge_id?: string
-          notebook_id?: string
-          opened_at?: string
-          probe_code?: string | null
-          probe_result?: Json | null
-          resolved_at?: string | null
-          solution_revealed?: boolean
-          status?: Database["public"]["Enums"]["puzzle_status"]
-          step?: Database["public"]["Enums"]["puzzle_step"]
-          updated_at?: string
-          user_hypothesis?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "puzzles_notebook_id_fkey"
-            columns: ["notebook_id"]
-            isOneToOne: false
-            referencedRelation: "notebooks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       technologies: {
         Row: {
           key: string
@@ -673,8 +599,6 @@ export type Database = {
         | "abandoned"
         | "generating"
         | "failed"
-      puzzle_status: "active" | "completed" | "abandoned"
-      puzzle_step: "framing" | "hypothesis" | "try_it" | "fix" | "generalize"
       thread_status: "open" | "closed"
     }
     CompositeTypes: {
@@ -828,8 +752,6 @@ export const Constants = {
         "generating",
         "failed",
       ],
-      puzzle_status: ["active", "completed", "abandoned"],
-      puzzle_step: ["framing", "hypothesis", "try_it", "fix", "generalize"],
       thread_status: ["open", "closed"],
     },
   },
